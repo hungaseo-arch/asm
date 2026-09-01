@@ -5,7 +5,6 @@ import {
   ChevronRight,
   CircleDollarSign,
   Hourglass,
-  Info,
   Plus,
   Printer,
   TriangleAlert,
@@ -102,16 +101,6 @@ function printPage() {
 
     <InventoryFilterPanel />
     <InventoryTable ref="table" />
-
-    <!-- 사내 숫자 표기 규칙 안내 -->
-    <aside class="note">
-      <Info :size="16" />
-      <p class="mb-0">
-        <b>숫자 표기 규칙</b> — 수량(EA)은 정수, 단가·금액은 소수점 둘째 자리, 퍼센트는 소수점 첫째
-        자리로 표기합니다. 천 단위 구분은 콤마(,) · 소수점은 마침표(.)로 통일하며,
-        규격·품번(1200R24 등)에는 콤마를 쓰지 않습니다.
-      </p>
-    </aside>
   </AppShell>
 </template>
 
@@ -150,19 +139,6 @@ function printPage() {
   gap: 12px;
   margin-bottom: 16px;
 }
-
-.note {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-  padding: 12px 16px;
-  border-radius: var(--asm-radius-xl);
-  background: var(--asm-info-bg);
-  color: var(--asm-info-fg);
-  font-size: 12px;
-  line-height: 1.6;
-}
-.note svg { flex: none; margin-top: 2px; }
 
 @media (max-width: 1150px) {
   .summary-grid { grid-template-columns: repeat(2, 1fr); }

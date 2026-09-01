@@ -110,7 +110,7 @@ export const userScreen: ScreenDef = {
   "rows": [
     {
       "uid": "seo",
-      "nm": "Seo Hunga",
+      "nm": "Seo Jonghwan",
       "dept": "Management",
       "pos": "General Manager",
       "mail": "seo@ascendotyre.com",

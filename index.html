@@ -4,7 +4,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/favicon.ico" />
+    <!-- %BASE_URL% 은 vite 의 base 로 치환됩니다 (GitHub Pages 하위 경로 배포 대응) -->
+    <link rel="icon" href="%BASE_URL%favicon.ico" />
 
     <!--
       디자인 가이드 4-1 — 본문 Inter + Noto Sans KR, 숫자·코드 JetBrains Mono.
@@ -19,7 +20,7 @@
 
     <title>ASM · Ascendo Management System</title>
     <meta name="description" content="ASM — PT Ascendo Internasional 통합 관리 시스템" />
-    <script src="/app-config.js"></script>
+    <script src="%BASE_URL%app-config.js"></script>
   </head>
   <body>
     <div id="app"></div>

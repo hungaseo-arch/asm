@@ -1,0 +1,54 @@
+# GitHub Pages 배포 (Deploy / Penerapan)
+# main 브랜치 push 시 vue-tsc 타입체크 + vite 빌드 후 Pages 에 게시합니다.
+# 사전 설정: 저장소 Settings → Pages → Build and deployment → Source = "GitHub Actions"
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 항상 마지막 커밋 하나만 진행합니다.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # base 경로는 vite.config.ts 의 ASM_BASE 로 주입합니다 (기본값 /asm/).
+      - run: npm run build
+        env:
+          ASM_BASE: /${{ github.event.repository.name }}/
+
+      # SPA 새로고침 대응 — Pages 는 없는 경로에 404.html 을 돌려주므로 index 사본을 둡니다.
+      - run: cp dist/index.html dist/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -39,7 +39,8 @@ const routes: RouteRecordRaw[] = [
 ]
 
 export const router = createRouter({
-  history: createWebHistory(),
+  // BASE_URL = vite 의 base. 하위 경로 배포(GitHub Pages 등)에서도 경로가 맞습니다.
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior: () => ({ top: 0 }),
 })

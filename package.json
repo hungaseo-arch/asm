@@ -1,0 +1,30 @@
+{
+  "name": "asm-web-vue",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "ASM (Ascendo Management System) web client — Vue 3 + Vite + Bootstrap 5.3",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "build:only": "vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "better-auth": "^1.6.14",
+    "bootstrap": "^5.3.3",
+    "lucide-vue-next": "^0.469.0",
+    "pinia": "^3.0.1",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "vue-sonner": "^1.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "~5.7.3",
+    "vite": "^6.0.7",
+    "vue-tsc": "^2.2.0"
+  }
+}

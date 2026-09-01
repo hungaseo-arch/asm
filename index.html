@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- ASM 은 라이트 모드 전용입니다 (디자인 가이드 3-3). Bootstrap 5.3 의 다크 테마 진입점을 light 로 고정합니다. -->
+<html lang="ko" data-bs-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.ico" />
+
+    <!--
+      디자인 가이드 4-1 — 본문 Inter + Noto Sans KR, 숫자·코드 JetBrains Mono.
+      asm-theme.css 의 --bs-body-font-family / --bs-font-monospace 가 이 패밀리를 참조합니다.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
+
+    <title>ASM · Ascendo Management System</title>
+    <meta name="description" content="ASM — PT Ascendo Internasional 통합 관리 시스템" />
+    <script src="/app-config.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

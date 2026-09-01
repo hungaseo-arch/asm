@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASM — Inventory List</title>
+<!--
+================================================================================
+  ASM (asm.ascendotyre.com) — Inventory List 화면 복제본
+  PT ASCENDO INTERNASIONAL
+  단일 HTML 파일 · 외부 의존성 없음 · VSCode에서 바로 수정 가능
+
+  [수정 포인트]
+  1) 색상/여백/폰트  → 아래 :root 의 CSS 변수만 바꾸면 전체 톤이 바뀝니다.
+  2) 좌측 메뉴       → <nav class="side"> 의 <a> 항목 추가/삭제
+  3) 표 컬럼         → <thead> 의 <th> 와 renderRows() 의 <td> 를 함께 수정
+  4) 데이터          → 하단 <script> 의 DATA 배열 (실제 API 연결 시 fetch 로 교체)
+  5) 숫자 표기       → fmt.int / fmt.pct / fmt.price 헬퍼 사용 (사내 표기 규칙 반영)
+================================================================================
+-->
+<style>
+/* ── 1. 디자인 토큰 ─────────────────────────────────────────────── */
+:root{
+  /* 배경 60% */
+  --bg:            #F0F0F0;
+  --surface:       #FFFFFF;
+  --surface-alt:   #ECEFF1;   /* PASTEL BLUE-GREY : 보조 배경·음영 */
+  /* 주요 요소 30% */
+  --primary:       #E3F2FD;   /* SOFT BLUE : 헤더·CTA */
+  --primary-deep:  #1E5B8A;   /* 액션 버튼·링크 (대비 확보용) */
+  /* 강조 10% */
+  --accent:        #E8F5E9;   /* SAGE GREEN : 완료·긍정 상태 */
+  --accent-deep:   #2E7D52;
+  /* 텍스트·라인 */
+  --text:          #546E7A;
+  --text-strong:   #33474F;
+  --text-mute:     #8AA0AA;
+  --line:          #D6DEE2;
+  /* 상태 */
+  --warn:          #FFF4E0;
+  --warn-deep:     #A96A16;
+  --danger:        #FDECEC;
+  --danger-deep:   #B5443F;
+
+  --radius:        6px;
+  --side-w:        228px;
+  --top-h:         52px;
+  --font: "Malgun Gothic","Segoe UI",Roboto,"Noto Sans KR",system-ui,sans-serif;
+  --mono: "Consolas","SF Mono",ui-monospace,monospace;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font);
+  font-size:13px;
+  color:var(--text);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none;}
+
+/* ── 2. 레이아웃 ────────────────────────────────────────────────── */
+.app{display:flex;min-height:100vh;}
+
+/* 좌측 사이드바 */
+.side{
+  width:var(--side-w);flex:0 0 var(--side-w);
+  background:var(--surface);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+}
+.side .brand{
+  height:var(--top-h);display:flex;align-items:center;gap:9px;
+  padding:0 16px;border-bottom:1px solid var(--line);background:var(--primary);
+}
+.side .brand .logo{
+  width:26px;height:26px;border-radius:5px;background:var(--primary-deep);
+  color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;
+}
+.side .brand b{color:var(--text-strong);font-size:14px;letter-spacing:.4px;}
+.side .brand small{color:var(--text-mute);font-size:10px;margin-left:auto;}
+
+.side nav{overflow-y:auto;padding:10px 0 24px;flex:1;}
+.nav-group{margin-bottom:2px;}
+.nav-group > .nav-head{
+  display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;
+  color:var(--text-strong);font-weight:600;font-size:12.5px;user-select:none;
+}
+.nav-group > .nav-head:hover{background:var(--surface-alt);}
+.nav-group .caret{margin-left:auto;font-size:9px;color:var(--text-mute);transition:transform .15s;}
+.nav-group.open .caret{transform:rotate(90deg);}
+.nav-group .nav-items{display:none;padding-bottom:4px;}
+.nav-group.open .nav-items{display:block;}
+.nav-items a{
+  display:block;padding:6px 16px 6px 40px;font-size:12.5px;color:var(--text);
+  border-left:3px solid transparent;
+}
+.nav-items a:hover{background:var(--surface-alt);}
+.nav-items a.active{
+  background:var(--primary);color:var(--primary-deep);font-weight:600;
+  border-left-color:var(--primary-deep);
+}
+.side .ver{padding:10px 16px;border-top:1px solid var(--line);font-size:10.5px;color:var(--text-mute);}
+
+/* 우측 본문 */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+
+.topbar{
+  height:var(--top-h);background:var(--surface);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:14px;padding:0 20px;position:sticky;top:0;z-index:20;
+}
+.crumb{font-size:12px;color:var(--text-mute);}
+.crumb b{color:var(--text-strong);font-weight:600;}
+.topbar .spacer{flex:1;}
+.top-search{
+  display:flex;align-items:center;gap:6px;background:var(--surface-alt);
+  border:1px solid var(--line);border-radius:var(--radius);padding:5px 10px;width:250px;
+}
+.top-search input{border:0;background:transparent;outline:none;font:inherit;color:var(--text);width:100%;}
+.user{display:flex;align-items:center;gap:8px;}
+.avatar{
+  width:28px;height:28px;border-radius:50%;background:var(--primary);
+  color:var(--primary-deep);font-weight:700;font-size:11px;
+  display:flex;align-items:center;justify-content:center;
+}
+.user .u-name{font-size:12px;color:var(--text-strong);font-weight:600;line-height:1.2;}
+.user .u-role{font-size:10.5px;color:var(--text-mute);}
+
+.content{padding:18px 20px 40px;}
+
+/* 페이지 헤더 */
+.page-head{display:flex;align-items:flex-end;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.page-head h1{margin:0;font-size:19px;color:var(--text-strong);font-weight:700;letter-spacing:-.2px;}
+.page-head .sub{font-size:11.5px;color:var(--text-mute);}
+.page-head .actions{margin-left:auto;display:flex;gap:8px;}
+
+/* 버튼 */
+.btn{
+  font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface);color:var(--text-strong);
+  padding:7px 14px;border-radius:var(--radius);display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{background:var(--surface-alt);}
+.btn.primary{background:var(--primary-deep);border-color:var(--primary-deep);color:#fff;}
+.btn.primary:hover{filter:brightness(1.08);}
+.btn.soft{background:var(--primary);border-color:#C7E1F7;color:var(--primary-deep);}
+.btn.ghost{background:transparent;}
+
+/* KPI 카드 */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;}
+.kpi{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:13px 15px;border-top:3px solid var(--primary);
+}
+.kpi.is-accent{border-top-color:var(--accent-deep);}
+.kpi.is-warn{border-top-color:var(--warn-deep);}
+.kpi .k-label{font-size:11px;color:var(--text-mute);margin-bottom:6px;letter-spacing:.2px;}
+.kpi .k-value{font-size:21px;font-weight:700;color:var(--text-strong);line-height:1.1;font-variant-numeric:tabular-nums;}
+.kpi .k-value span{font-size:12px;font-weight:600;color:var(--text-mute);margin-left:3px;}
+.kpi .k-foot{font-size:11px;margin-top:6px;color:var(--text-mute);}
+.kpi .up{color:var(--accent-deep);font-weight:600;}
+.kpi .down{color:var(--danger-deep);font-weight:600;}
+
+/* 필터 바 */
+.filters{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:14px;
+}
+.filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px 12px;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:11px;color:var(--text-mute);font-weight:600;}
+.field select,.field input{
+  font:inherit;font-size:12.5px;color:var(--text-strong);
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:6px 8px;background:var(--surface);outline:none;
+}
+.field select:focus,.field input:focus{border-color:var(--primary-deep);}
+.filter-foot{display:flex;gap:8px;margin-top:11px;padding-top:11px;border-top:1px dashed var(--line);}
+.filter-foot .spacer{flex:1;}
+
+/* 테이블 */
+.table-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.table-bar{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-bottom:1px solid var(--line);background:var(--surface-alt);
+}
+.table-bar .t-count{font-size:12px;color:var(--text);}
+.table-bar .t-count b{color:var(--text-strong);}
+.table-bar .spacer{flex:1;}
+
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap;}
+thead th{
+  background:var(--primary);color:var(--text-strong);font-weight:700;font-size:11.5px;
+  text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:5;letter-spacing:.2px;
+}
+thead th.num{text-align:right;}
+thead th.sortable{cursor:pointer;user-select:none;}
+thead th.sortable:hover{background:#D6EAFA;}
+thead th .arrow{font-size:9px;color:var(--primary-deep);margin-left:3px;}
+tbody td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--text);vertical-align:middle;}
+tbody td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:12px;}
+tbody td.code{font-family:var(--mono);font-size:11.5px;color:var(--text-strong);}
+tbody tr:nth-child(even){background:#FAFBFC;}
+tbody tr:hover{background:var(--primary);}
+tbody td.item{color:var(--text-strong);font-weight:600;}
+tfoot td{
+  padding:9px 10px;background:var(--surface-alt);font-weight:700;color:var(--text-strong);
+  border-top:2px solid var(--line);
+}
+tfoot td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);}
+
+/* 상태 배지 */
+.badge{
+  display:inline-block;padding:2px 8px;border-radius:11px;font-size:11px;font-weight:600;line-height:1.5;
+}
+.badge.ok    {background:var(--accent);      color:var(--accent-deep);}
+.badge.low   {background:var(--warn);        color:var(--warn-deep);}
+.badge.out   {background:var(--danger);      color:var(--danger-deep);}
+.badge.hold  {background:var(--surface-alt); color:var(--text);}
+
+/* 페이지네이션 */
+.pager{display:flex;align-items:center;gap:6px;padding:11px 14px;border-top:1px solid var(--line);}
+.pager .p-info{font-size:11.5px;color:var(--text-mute);}
+.pager .spacer{flex:1;}
+.pager button{
+  min-width:29px;height:29px;border:1px solid var(--line);background:var(--surface);
+  border-radius:var(--radius);font:inherit;font-size:12px;color:var(--text);cursor:pointer;
+}
+.pager button:hover:not(:disabled){background:var(--surface-alt);}
+.pager button.on{background:var(--primary-deep);border-color:var(--primary-deep);color:#fff;font-weight:700;}
+.pager button:disabled{opacity:.4;cursor:default;}
+
+.note{
+  margin-top:14px;padding:10px 13px;background:var(--accent);border-left:3px solid var(--accent-deep);
+  border-radius:4px;font-size:11.5px;color:var(--text);
+}
+
+/* 반응형 */
+@media (max-width:960px){
+  .app{display:block;}
+  .side{display:none;}          /* 모바일: 사이드바 숨김 (필요 시 토글 버튼 추가) */
+  .content{padding:14px 12px 32px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ 좌측 메뉴 ══════════════════════════════════════════════ -->
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">A</div>
+      <b>ASM</b>
+      <small>v1.0</small>
+    </div>
+
+    <nav>
+      <div class="nav-group">
+        <div class="nav-head">I. Purchasing <span class="caret">▶</span></div>
+        <div class="nav-items">
+          <a href="#">Purchase PO</a>
+          <a href="#">PPC</a>
+          <a href="#">Shipment</a>
+          <a href="#">Customs</a>
+          <a href="#">Receipt</a>
+          <a href="#">Receipt (WH)</a>
+          <a href="#">Import Cost</a>
+          <a href="#">Vendor Return</a>
+          <a href="#">Credit Note</a>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-head">II. Sales <span class="caret">▶</span></div>
+        <div class="nav-items">
+          <a href="#">Quotation</a>
+          <a href="#">Customer PO</a>
+          <a href="#">SO</a>
+          <a href="#">Delivery Order</a>
+          <a href="#">Delivery Note</a>
+          <a href="#">Delivery Note (WH)</a>
+        </div>
+      </div>
+
+      <div class="nav-group open">
+        <div class="nav-head">III. Inventory <span class="caret">▶</span></div>
+        <div class="nav-items">
+          <a href="#" class="active">Inventory List</a>
+          <a href="#">Stock Movement</a>
+          <a href="#">Stock Adjustment</a>
+          <a href="#">Stock Transfer</a>
+          <a href="#">Stock Opname</a>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-head">IV. Partners <span class="caret">▶</span></div>
+        <div class="nav-items">
+          <a href="#">Customer</a>
+          <a href="#">Vendor</a>
+          <a href="#">Forwarder</a>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-head">V. Master Data <span class="caret">▶</span></div>
+        <div class="nav-items">
+          <a href="#">Item</a>
+          <a href="#">Brand / Pattern</a>
+          <a href="#">Warehouse</a>
+          <a href="#">Currency</a>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-head">VI. Settings <span class="caret">▶</span></div>
+        <div class="nav-items">
+          <a href="#">User</a>
+          <a href="#">Role / Permission</a>
+          <a href="#">Approval Matrix</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="ver">PT ASCENDO INTERNASIONAL</div>
+  </aside>
+
+  <!-- ══ 본문 ══════════════════════════════════════════════════ -->
+  <div class="main">
+
+    <header class="topbar">
+      <div class="crumb">Inventory &nbsp;/&nbsp; <b>Inventory List</b></div>
+      <div class="spacer"></div>
+      <div class="top-search">
+        <span>🔍</span>
+        <input type="search" placeholder="Item code / Size / Pattern 검색">
+      </div>
+      <div class="user">
+        <div class="avatar">SH</div>
+        <div>
+          <div class="u-name">Seo Hunga</div>
+          <div class="u-role">General Manager</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <div class="page-head">
+        <div>
+          <h1>Inventory List</h1>
+          <div class="sub">Daftar Persediaan · 재고 현황 &nbsp;|&nbsp; 기준일 <span id="asof">2026-09-01</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn ghost" onclick="window.print()">🖨 Print</button>
+          <button class="btn soft" onclick="exportCsv()">⭳ Excel</button>
+          <button class="btn primary">＋ Stock Adjustment</button>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <section class="kpis">
+        <div class="kpi">
+          <div class="k-label">Total Stock Qty / Total Qty</div>
+          <div class="k-value" id="kpiQty">0<span>EA</span></div>
+          <div class="k-foot">전 창고 합계</div>
+        </div>
+        <div class="kpi">
+          <div class="k-label">Stock Value (Nilai Persediaan)</div>
+          <div class="k-value" id="kpiVal">USD 0</div>
+          <div class="k-foot">CIF 원가 기준</div>
+        </div>
+        <div class="kpi is-warn">
+          <div class="k-label">Below Buffer / Di Bawah Buffer</div>
+          <div class="k-value" id="kpiLow">0<span>SKU</span></div>
+          <div class="k-foot">재발주 검토 필요</div>
+        </div>
+        <div class="kpi is-accent">
+          <div class="k-label">Aged Stock &gt; 365 days</div>
+          <div class="k-value" id="kpiAged">0<span>SKU</span></div>
+          <div class="k-foot">장기재고 처분 대상</div>
+        </div>
+      </section>
+
+      <!-- 필터 -->
+      <section class="filters">
+        <div class="filter-grid">
+          <div class="field">
+            <label>Warehouse / Gudang / 창고</label>
+            <select id="fWh"><option value="">전체</option></select>
+          </div>
+          <div class="field">
+            <label>Category / Kategori / 카테고리</label>
+            <select id="fCat"><option value="">전체</option></select>
+          </div>
+          <div class="field">
+            <label>Brand / Merek / 브랜드</label>
+            <select id="fBrand"><option value="">전체</option></select>
+          </div>
+          <div class="field">
+            <label>Size / Ukuran / 규격</label>
+            <input id="fSize" type="text" placeholder="예: 1200R24">
+          </div>
+          <div class="field">
+            <label>Status / 상태</label>
+            <select id="fStatus">
+              <option value="">전체</option>
+              <option value="ok">Normal</option>
+              <option value="low">Below Buffer</option>
+              <option value="out">Out of Stock</option>
+              <option value="hold">Hold</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-foot">
+          <button class="btn primary" onclick="applyFilter()">🔍 Search</button>
+          <button class="btn" onclick="resetFilter()">↺ Reset</button>
+          <div class="spacer"></div>
+          <button class="btn ghost" onclick="exportCsv()">⭳ CSV 내려받기</button>
+        </div>
+      </section>
+
+      <!-- 테이블 -->
+      <section class="table-card">
+        <div class="table-bar">
+          <div class="t-count">조회 결과 <b id="rowCount">0</b> 건</div>
+          <div class="spacer"></div>
+          <div class="t-count" style="color:var(--text-mute)">행 표시</div>
+          <select class="field" id="pageSize" style="padding:4px 6px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:12px;">
+            <option>10</option><option selected>15</option><option>30</option><option>50</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table id="grid">
+            <thead>
+              <tr>
+                <th style="width:44px">No</th>
+                <th class="sortable" data-key="wh">Warehouse</th>
+                <th class="sortable" data-key="cat">Category</th>
+                <th class="sortable" data-key="brand">Brand</th>
+                <th class="sortable" data-key="size">Size</th>
+                <th>Pattern</th>
+                <th class="sortable" data-key="code">Item Code</th>
+                <th>PR / TL</th>
+                <th class="num sortable" data-key="qty">Stock (EA)</th>
+                <th class="num">Reserved</th>
+                <th class="num">Available</th>
+                <th class="num sortable" data-key="cost">Unit Cost (USD)</th>
+                <th class="num">Stock Value (USD)</th>
+                <th class="num sortable" data-key="aging">Aging (days)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="8">합계 / Total</td>
+                <td class="num" id="sumQty">0</td>
+                <td class="num" id="sumRsv">0</td>
+                <td class="num" id="sumAvl">0</td>
+                <td class="num">—</td>
+                <td class="num" id="sumVal">0</td>
+                <td class="num">—</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="pager">
+          <div class="p-info" id="pInfo">—</div>
+          <div class="spacer"></div>
+          <div id="pButtons" style="display:flex;gap:6px;"></div>
+        </div>
+      </section>
+
+      <div class="note">
+        <b>숫자 표기 규칙</b> — 수량(EA)은 정수, 단가는 소수점 둘째 자리, 퍼센트는 소수점 첫째 자리,
+        천 단위 구분은 콤마(,) · 소수점은 마침표(.)로 통일. 규격·품번(1200R24 등)에는 콤마를 쓰지 않습니다.
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+/* ── 3. 숫자 포맷 헬퍼 (사내 표기 규칙) ───────────────────────── */
+const fmt = {
+  int:   n => Number(n).toLocaleString('en-US', {maximumFractionDigits:0}),
+  price: n => Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}),
+  pct:   n => Number(n).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}) + '%',
+  kg:    n => Number(n).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' kg'
+};
+
+/* ── 4. 샘플 데이터 (실서비스 연결 시 fetch 결과로 교체) ──────── */
+/*    fetch('/api/inventory').then(r=>r.json()).then(d=>{ DATA=d; init(); })          */
+let DATA = [
+  {wh:'Cikarang WH', cat:'OTR', brand:'Ascendo',  size:'26.5R25',  pattern:'E3/L3',  code:'OTR-265R25-E3',  pr:'**',   qty:184,  rsv:24,  cost:1450.00, aging:112, status:'ok'},
+  {wh:'Cikarang WH', cat:'OTR', brand:'Ascendo',  size:'23.5R25',  pattern:'E3/L3',  code:'OTR-235R25-E3',  pr:'**',   qty:96,   rsv:12,  cost:1120.50, aging:78,  status:'ok'},
+  {wh:'Cikarang WH', cat:'OTR', brand:'Techking', size:'29.5R25',  pattern:'ETSM',   code:'OTR-295R25-ET',  pr:'**',   qty:18,   rsv:6,   cost:2380.00, aging:401, status:'low'},
+  {wh:'Surabaya WH', cat:'TB-R',brand:'Ascendo',  size:'1200R24',  pattern:'AS-668', code:'TBR-1200R24-668',pr:'20PR', qty:640,  rsv:80,  cost:284.25,  aging:56,  status:'ok'},
+  {wh:'Surabaya WH', cat:'TB-R',brand:'Ascendo',  size:'1100R20',  pattern:'AS-668', code:'TBR-1100R20-668',pr:'18PR', qty:412,  rsv:40,  cost:236.80,  aging:63,  status:'ok'},
+  {wh:'Surabaya WH', cat:'TB-B',brand:'Ascendo',  size:'750-16',   pattern:'AS-108', code:'TBB-750-16-108', pr:'14PR', qty:0,    rsv:0,   cost:84.25,   aging:0,   status:'out'},
+  {wh:'Semarang WH', cat:'TB-B',brand:'Ascendo',  size:'825-16',   pattern:'AS-108', code:'TBB-825-16-108', pr:'16PR', qty:238,  rsv:18,  cost:96.40,   aging:145, status:'ok'},
+  {wh:'Semarang WH', cat:'IND', brand:'Ascendo',  size:'700-12',   pattern:'FL-01',  code:'IND-700-12-FL',  pr:'12PR', qty:74,   rsv:10,  cost:62.75,   aging:388, status:'low'},
+  {wh:'Semarang WH', cat:'IND', brand:'Ascendo',  size:'815-15',   pattern:'FL-01',  code:'IND-815-15-FL',  pr:'14PR', qty:126,  rsv:0,   cost:78.90,   aging:210, status:'ok'},
+  {wh:'Cikarang WH', cat:'IND', brand:'Solideal', size:'600-9',    pattern:'SOLID',  code:'IND-600-9-SLD',  pr:'—',    qty:52,   rsv:52,  cost:118.30,  aging:96,  status:'hold'},
+  {wh:'Cikarang WH', cat:'AGR', brand:'Ascendo',  size:'18.4-34',  pattern:'R-1',    code:'AGR-184-34-R1',  pr:'12PR', qty:34,   rsv:4,   cost:412.00,  aging:452, status:'low'},
+  {wh:'Surabaya WH', cat:'AGR', brand:'Ascendo',  size:'14.9-28',  pattern:'R-1',    code:'AGR-149-28-R1',  pr:'10PR', qty:61,   rsv:0,   cost:298.60,  aging:174, status:'ok'},
+  {wh:'Balikpapan WH',cat:'OTR',brand:'Ascendo',  size:'17.5-25',  pattern:'E3',     code:'OTR-175-25-E3',  pr:'20PR', qty:44,   rsv:8,   cost:686.40,  aging:88,  status:'ok'},
+  {wh:'Balikpapan WH',cat:'TB-R',brand:'Ascendo', size:'1000R20',  pattern:'AS-668', code:'TBR-1000R20-668',pr:'18PR', qty:208,  rsv:24,  cost:198.75,  aging:41,  status:'ok'},
+  {wh:'Palembang WH',cat:'TB-R', brand:'Ascendo', size:'1200R20',  pattern:'AS-682', code:'TBR-1200R20-682',pr:'20PR', qty:12,   rsv:0,   cost:262.10,  aging:512, status:'low'},
+  {wh:'Palembang WH',cat:'TB-B', brand:'Ascendo', size:'900-20',   pattern:'AS-108', code:'TBB-900-20-108', pr:'16PR', qty:186,  rsv:22,  cost:128.55,  aging:132, status:'ok'},
+  {wh:'Cikarang WH', cat:'OTR', brand:'Techking', size:'18.00-25', pattern:'E4',     code:'OTR-1800-25-E4', pr:'40PR', qty:8,    rsv:8,   cost:1980.00, aging:298, status:'hold'},
+  {wh:'Semarang WH', cat:'TB-R',brand:'Ascendo',  size:'750R16',   pattern:'AS-661', code:'TBR-750R16-661', pr:'14PR', qty:322,  rsv:36,  cost:112.40,  aging:70,  status:'ok'}
+];
+
+const STATUS_LABEL = {ok:'Normal', low:'Below Buffer', out:'Out of Stock', hold:'Hold'};
+
+/* ── 5. 상태 ────────────────────────────────────────────────── */
+let view = [...DATA], page = 1, sortKey = null, sortDir = 1;
+
+/* ── 6. 렌더링 ──────────────────────────────────────────────── */
+function renderRows(){
+  const size = +document.getElementById('pageSize').value;
+  const total = view.length;
+  const pages = Math.max(1, Math.ceil(total / size));
+  page = Math.min(page, pages);
+  const start = (page - 1) * size;
+  const rows = view.slice(start, start + size);
+
+  document.getElementById('tbody').innerHTML = rows.map((r, i) => {
+    const avail = r.qty - r.rsv;
+    return `<tr>
+      <td class="num">${start + i + 1}</td>
+      <td>${r.wh}</td>
+      <td>${r.cat}</td>
+      <td>${r.brand}</td>
+      <td class="item">${r.size}</td>
+      <td>${r.pattern}</td>
+      <td class="code">${r.code}</td>
+      <td>${r.pr}</td>
+      <td class="num">${fmt.int(r.qty)}</td>
+      <td class="num">${fmt.int(r.rsv)}</td>
+      <td class="num">${fmt.int(avail)}</td>
+      <td class="num">${fmt.price(r.cost)}</td>
+      <td class="num">${fmt.price(r.qty * r.cost)}</td>
+      <td class="num">${fmt.int(r.aging)}</td>
+      <td><span class="badge ${r.status}">${STATUS_LABEL[r.status]}</span></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="15" style="text-align:center;padding:30px;color:var(--text-mute)">조회된 데이터가 없습니다.</td></tr>`;
+
+  // 합계 (현재 필터 전체 기준)
+  const sQty = view.reduce((a,r)=>a+r.qty,0);
+  const sRsv = view.reduce((a,r)=>a+r.rsv,0);
+  const sVal = view.reduce((a,r)=>a+r.qty*r.cost,0);
+  document.getElementById('sumQty').textContent = fmt.int(sQty);
+  document.getElementById('sumRsv').textContent = fmt.int(sRsv);
+  document.getElementById('sumAvl').textContent = fmt.int(sQty - sRsv);
+  document.getElementById('sumVal').textContent = fmt.price(sVal);
+  document.getElementById('rowCount').textContent = fmt.int(total);
+
+  // KPI
+  document.getElementById('kpiQty').innerHTML  = fmt.int(sQty) + '<span>EA</span>';
+  document.getElementById('kpiVal').textContent = 'USD ' + fmt.int(sVal);
+  document.getElementById('kpiLow').innerHTML  = fmt.int(view.filter(r=>r.status==='low'||r.status==='out').length) + '<span>SKU</span>';
+  document.getElementById('kpiAged').innerHTML = fmt.int(view.filter(r=>r.aging>365).length) + '<span>SKU</span>';
+
+  // 페이저
+  document.getElementById('pInfo').textContent =
+    total ? `${fmt.int(start+1)} – ${fmt.int(Math.min(start+size,total))} / 총 ${fmt.int(total)} 건` : '0 건';
+  let html = `<button ${page===1?'disabled':''} onclick="go(${page-1})">‹</button>`;
+  for(let p=1;p<=pages;p++) html += `<button class="${p===page?'on':''}" onclick="go(${p})">${p}</button>`;
+  html += `<button ${page===pages?'disabled':''} onclick="go(${page+1})">›</button>`;
+  document.getElementById('pButtons').innerHTML = html;
+}
+function go(p){ page = p; renderRows(); }
+
+/* ── 7. 필터 ────────────────────────────────────────────────── */
+function applyFilter(){
+  const wh = fWh.value, cat = fCat.value, br = fBrand.value,
+        sz = fSize.value.trim().toUpperCase(), st = fStatus.value;
+  view = DATA.filter(r =>
+    (!wh  || r.wh === wh) &&
+    (!cat || r.cat === cat) &&
+    (!br  || r.brand === br) &&
+    (!sz  || r.size.toUpperCase().includes(sz)) &&
+    (!st  || r.status === st)
+  );
+  page = 1; renderRows();
+}
+function resetFilter(){
+  fWh.value = fCat.value = fBrand.value = fStatus.value = ''; fSize.value = '';
+  view = [...DATA]; page = 1; renderRows();
+}
+
+/* ── 8. 정렬 ────────────────────────────────────────────────── */
+document.querySelectorAll('th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.dataset.key;
+    sortDir = (sortKey === k) ? -sortDir : 1;
+    sortKey = k;
+    view.sort((a,b) => (typeof a[k] === 'number')
+      ? (a[k]-b[k])*sortDir
+      : String(a[k]).localeCompare(String(b[k]))*sortDir);
+    document.querySelectorAll('th .arrow').forEach(e=>e.remove());
+    th.insertAdjacentHTML('beforeend', `<span class="arrow">${sortDir>0?'▲':'▼'}</span>`);
+    renderRows();
+  });
+});
+
+/* ── 9. CSV 내보내기 ────────────────────────────────────────── */
+function exportCsv(){
+  const head = ['Warehouse','Category','Brand','Size','Pattern','Item Code','PR/TL','Stock','Reserved','Available','Unit Cost','Stock Value','Aging','Status'];
+  const body = view.map(r => [r.wh,r.cat,r.brand,r.size,r.pattern,r.code,r.pr,r.qty,r.rsv,r.qty-r.rsv,r.cost.toFixed(2),(r.qty*r.cost).toFixed(2),r.aging,STATUS_LABEL[r.status]]);
+  const csv = '﻿' + [head, ...body].map(row => row.map(c => `"${c}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = 'ASM_Inventory_List.csv';
+  a.click();
+}
+
+/* ── 10. 초기화 ─────────────────────────────────────────────── */
+function fillSelect(el, key){
+  [...new Set(DATA.map(r => r[key]))].sort().forEach(v => {
+    el.insertAdjacentHTML('beforeend', `<option value="${v}">${v}</option>`);
+  });
+}
+document.querySelectorAll('.nav-group > .nav-head').forEach(h => {
+  h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
+});
+fillSelect(fWh,'wh'); fillSelect(fCat,'cat'); fillSelect(fBrand,'brand');
+document.getElementById('pageSize').addEventListener('change', () => { page = 1; renderRows(); });
+document.getElementById('asof').textContent = new Date().toISOString().slice(0,10);
+renderRows();
+</script>
+</body>
+</html>

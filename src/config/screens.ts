@@ -70,6 +70,10 @@ export const screenRoutes: ScreenRoute[] = [
   // ── VI. Settings ────────────────────────────────────────────────────────
   { slug: 'search-staff', path: '/settings/search-staff', title: 'Search Staff',
     load: () => import('@/data/screens/search-staff').then((m) => m.searchStaffScreen) },
+  { slug: 'role-permission', path: '/settings/role-permission', title: 'Role / Permission',
+    load: () => import('@/data/screens/role-permission').then((m) => m.rolePermissionScreen) },
+  { slug: 'approval-matrix', path: '/settings/approval-matrix', title: 'Approval Matrix',
+    load: () => import('@/data/screens/approval-matrix').then((m) => m.approvalMatrixScreen) },
 
   // ── 시안 전용 (Mock-up) — 운영 ASM 메뉴에는 없는 화면입니다.
   //    실 메뉴만 남기려면 아래 6줄과 navigation.ts 의 'MOCK-UP' 그룹을 함께 지우면 됩니다.
@@ -83,10 +87,6 @@ export const screenRoutes: ScreenRoute[] = [
     load: () => import('@/data/screens/stock-opname').then((m) => m.stockOpnameScreen) },
   { slug: 'brand-pattern', path: '/master/brand-pattern', title: 'Brand / Pattern',
     load: () => import('@/data/screens/brand-pattern').then((m) => m.brandPatternScreen) },
-  { slug: 'role-permission', path: '/settings/role-permission', title: 'Role / Permission',
-    load: () => import('@/data/screens/role-permission').then((m) => m.rolePermissionScreen) },
-  { slug: 'approval-matrix', path: '/settings/approval-matrix', title: 'Approval Matrix',
-    load: () => import('@/data/screens/approval-matrix').then((m) => m.approvalMatrixScreen) },
 ]
 
 export const screenBySlug = (slug: string) => screenRoutes.find((screen) => screen.slug === slug)

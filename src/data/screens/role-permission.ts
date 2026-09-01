@@ -1,18 +1,19 @@
 import type { ScreenDef } from '@/types/list-screen'
 
 /**
- * Role / Permission — Peran & Hak Akses · 권한 매트릭스
- * 화면 시안(asm-mockup)에서 옮긴 예시 데이터입니다. 운영 전환 시 rows 를
- * `GET /api/role-permission` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ * Role / Permission — 역할 × 모듈 권한 매트릭스
+ * 출처: 「ASM2 권한 가이드라인 v3.0」 3장. 기호는 ● 전체 / ◐ 편집 / ○ 조회 / △ 조건부(C1~C4) / × 없음.
+ * 조건부(△)의 범위 제한(C1)·필드 마스킹(C2)은 가이드라인 4장에 따라 서버에서 처리해야 하며,
+ * 화면 숨김(front-end hide)은 통제로 인정되지 않습니다.
  */
 export const rolePermissionScreen: ScreenDef = {
   "slug": "role-permission",
   "group": "Settings",
   "navLabel": "Role / Permission",
   "title": "Role / Permission",
-  "subtitle": "Peran & Hak Akses · 권한 매트릭스",
-  "cardTitle": "Role / Permission List",
-  "searchPlaceholder": "Role code, Role name, Module",
+  "subtitle": "Peran & Hak Akses · 역할별 권한 매트릭스 (권한 가이드라인 v3.0)",
+  "cardTitle": "Access Matrix",
+  "searchPlaceholder": "Role, Role name, Data scope",
   "primaryAction": "＋ NEW ROLE",
   "searchFields": [
     {
@@ -20,107 +21,135 @@ export const rolePermissionScreen: ScreenDef = {
       "key": "all"
     },
     {
-      "label": "ROLE CODE",
-      "key": "rc"
+      "label": "ROLE",
+      "key": "code"
     },
     {
       "label": "ROLE NAME",
-      "key": "rn"
-    },
-    {
-      "label": "MODULE",
-      "key": "mod"
-    },
-    {
-      "label": "VIEW",
-      "key": "v"
-    },
-    {
-      "label": "CREATE",
-      "key": "c"
-    },
-    {
-      "label": "EDIT",
-      "key": "e"
-    },
-    {
-      "label": "DELETE",
-      "key": "dl"
-    },
-    {
-      "label": "APPROVE",
-      "key": "ap"
-    },
-    {
-      "label": "EXPORT",
-      "key": "ex"
-    },
-    {
-      "label": "USERS",
-      "key": "cnt"
+      "key": "name"
     }
   ],
   "columns": [
     {
-      "key": "rc",
-      "label": "ROLE CODE",
+      "key": "code",
+      "label": "ROLE",
       "align": "left",
       "format": "code"
     },
     {
-      "key": "rn",
+      "key": "name",
       "label": "ROLE NAME",
       "align": "left",
       "format": "text",
       "ellipsis": true
     },
     {
-      "key": "mod",
-      "label": "MODULE",
+      "key": "scope",
+      "label": "DATA SCOPE",
       "align": "left",
       "format": "text"
     },
     {
-      "key": "v",
-      "label": "VIEW",
-      "align": "center",
-      "format": "mark"
-    },
-    {
-      "key": "c",
-      "label": "CREATE",
-      "align": "center",
-      "format": "mark"
-    },
-    {
-      "key": "e",
-      "label": "EDIT",
-      "align": "center",
-      "format": "mark"
-    },
-    {
-      "key": "dl",
-      "label": "DELETE",
-      "align": "center",
-      "format": "mark"
-    },
-    {
-      "key": "ap",
-      "label": "APPROVE",
-      "align": "center",
-      "format": "mark"
-    },
-    {
-      "key": "ex",
-      "label": "EXPORT",
-      "align": "center",
-      "format": "mark"
-    },
-    {
       "key": "cnt",
       "label": "USERS",
-      "align": "right",
-      "format": "int"
+      "align": "center",
+      "format": "text"
+    },
+    {
+      "key": "dash",
+      "label": "대시보드",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "cust",
+      "label": "고객·CRM",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "quote",
+      "label": "견적",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "order",
+      "label": "주문·판매",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "margin",
+      "label": "가격·마진",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "stock",
+      "label": "재고",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "ship",
+      "label": "출고·배송",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "ar",
+      "label": "청구·미수",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "purch",
+      "label": "구매·입고",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "impor",
+      "label": "수입·통관",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "report",
+      "label": "보고서",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "export",
+      "label": "내보내기",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "master",
+      "label": "마스터",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "access",
+      "label": "사용자·권한",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "approve",
+      "label": "전자결재",
+      "align": "center",
+      "format": "access"
+    },
+    {
+      "key": "audit",
+      "label": "감사로그",
+      "align": "center",
+      "format": "access"
     }
   ],
   "totalKeys": [],
@@ -128,148 +157,334 @@ export const rolePermissionScreen: ScreenDef = {
   "pageSize": 15,
   "rows": [
     {
-      "rc": "ADMIN",
-      "rn": "System Administrator",
-      "mod": "All Modules",
-      "v": 1,
-      "c": 1,
-      "e": 1,
-      "dl": 1,
-      "ap": 1,
-      "ex": 1,
-      "cnt": 1
+      "code": "R0-A",
+      "name": "시스템 관리자 / System Admin",
+      "scope": "전사 + 시스템",
+      "cnt": "한국 1",
+      "dash": "F",
+      "cust": "V",
+      "quote": "V",
+      "order": "V",
+      "margin": "V",
+      "stock": "V",
+      "ship": "V",
+      "ar": "V",
+      "purch": "V",
+      "impor": "V",
+      "report": "F",
+      "export": "C",
+      "master": "E",
+      "access": "F",
+      "approve": "E",
+      "audit": "V"
     },
     {
-      "rc": "SALES",
-      "rn": "Sales Representative",
-      "mod": "Sales",
-      "v": 1,
-      "c": 1,
-      "e": 1,
-      "dl": 0,
-      "ap": 0,
-      "ex": 1,
-      "cnt": 5
+      "code": "R0-B",
+      "name": "보안 관리자 / Security Admin",
+      "scope": "전사 + 보안",
+      "cnt": "한국 1",
+      "dash": "E",
+      "cust": "V",
+      "quote": "N",
+      "order": "N",
+      "margin": "N",
+      "stock": "N",
+      "ship": "N",
+      "ar": "N",
+      "purch": "N",
+      "impor": "N",
+      "report": "V",
+      "export": "V",
+      "master": "N",
+      "access": "C",
+      "approve": "V",
+      "audit": "F"
     },
     {
-      "rc": "SALES",
-      "rn": "Sales Representative",
-      "mod": "Inventory",
-      "v": 1,
-      "c": 0,
-      "e": 0,
-      "dl": 0,
-      "ap": 0,
-      "ex": 0,
-      "cnt": 5
+      "code": "R1",
+      "name": "경영진 / Executive",
+      "scope": "전사",
+      "cnt": "한국 2",
+      "dash": "F",
+      "cust": "F",
+      "quote": "V",
+      "order": "F",
+      "margin": "F",
+      "stock": "V",
+      "ship": "V",
+      "ar": "F",
+      "purch": "V",
+      "impor": "V",
+      "report": "F",
+      "export": "F",
+      "master": "E",
+      "access": "V",
+      "approve": "F",
+      "audit": "V"
     },
     {
-      "rc": "SALES",
-      "rn": "Sales Representative",
-      "mod": "Partners",
-      "v": 1,
-      "c": 1,
-      "e": 1,
-      "dl": 0,
-      "ap": 0,
-      "ex": 0,
-      "cnt": 5
+      "code": "R2",
+      "name": "영업 관리자 / Sales Mgr",
+      "scope": "본사 영업",
+      "cnt": "4",
+      "dash": "E",
+      "cust": "E",
+      "quote": "F",
+      "order": "F",
+      "margin": "E",
+      "stock": "V",
+      "ship": "C",
+      "ar": "V",
+      "purch": "N",
+      "impor": "N",
+      "report": "E",
+      "export": "E",
+      "master": "C",
+      "access": "N",
+      "approve": "E",
+      "audit": "C"
     },
     {
-      "rc": "PURCHASING",
-      "rn": "Purchasing / Import Staff",
-      "mod": "Purchasing",
-      "v": 1,
-      "c": 1,
-      "e": 1,
-      "dl": 0,
-      "ap": 0,
-      "ex": 1,
-      "cnt": 1
+      "code": "R3",
+      "name": "영업 담당자 / Sales Staff",
+      "scope": "담당 고객",
+      "cnt": "9",
+      "dash": "C",
+      "cust": "C",
+      "quote": "E",
+      "order": "E",
+      "margin": "C",
+      "stock": "V",
+      "ship": "V",
+      "ar": "C",
+      "purch": "N",
+      "impor": "N",
+      "report": "C",
+      "export": "N",
+      "master": "C",
+      "access": "N",
+      "approve": "N",
+      "audit": "N"
     },
     {
-      "rc": "PURCHASING",
-      "rn": "Purchasing / Import Staff",
-      "mod": "Inventory",
-      "v": 1,
-      "c": 0,
-      "e": 0,
-      "dl": 0,
-      "ap": 0,
-      "ex": 1,
-      "cnt": 1
+      "code": "R4",
+      "name": "수입·구매 관리자 / Imp·Pur Mgr",
+      "scope": "전사 수입·구매",
+      "cnt": "한국 1",
+      "dash": "E",
+      "cust": "N",
+      "quote": "N",
+      "order": "V",
+      "margin": "E",
+      "stock": "V",
+      "ship": "C",
+      "ar": "V",
+      "purch": "F",
+      "impor": "F",
+      "report": "E",
+      "export": "F",
+      "master": "E",
+      "access": "N",
+      "approve": "E",
+      "audit": "C"
     },
     {
-      "rc": "WAREHOUSE",
-      "rn": "Warehouse Staff",
-      "mod": "Inventory",
-      "v": 1,
-      "c": 1,
-      "e": 1,
-      "dl": 0,
-      "ap": 0,
-      "ex": 1,
-      "cnt": 1
+      "code": "R5",
+      "name": "수입·구매 담당자 / Imp·Pur Staff",
+      "scope": "전사 수입·구매",
+      "cnt": "5",
+      "dash": "C",
+      "cust": "N",
+      "quote": "N",
+      "order": "V",
+      "margin": "C",
+      "stock": "V",
+      "ship": "C",
+      "ar": "N",
+      "purch": "E",
+      "impor": "E",
+      "report": "C",
+      "export": "N",
+      "master": "C",
+      "access": "N",
+      "approve": "N",
+      "audit": "N"
     },
     {
-      "rc": "WAREHOUSE",
-      "rn": "Warehouse Staff",
-      "mod": "Sales",
-      "v": 1,
-      "c": 0,
-      "e": 1,
-      "dl": 0,
-      "ap": 0,
-      "ex": 0,
-      "cnt": 1
+      "code": "R8",
+      "name": "지원 관리자 / Support Mgr",
+      "scope": "전사 재무·관리",
+      "cnt": "2 + 한국 2",
+      "dash": "E",
+      "cust": "F",
+      "quote": "V",
+      "order": "V",
+      "margin": "V",
+      "stock": "V",
+      "ship": "V",
+      "ar": "F",
+      "purch": "V",
+      "impor": "V",
+      "report": "E",
+      "export": "F",
+      "master": "E",
+      "access": "N",
+      "approve": "E",
+      "audit": "C"
     },
     {
-      "rc": "FINANCE",
-      "rn": "Finance / Accounting",
-      "mod": "Sales",
-      "v": 1,
-      "c": 0,
-      "e": 0,
-      "dl": 0,
-      "ap": 1,
-      "ex": 1,
-      "cnt": 2
+      "code": "R9",
+      "name": "지원 담당자 / Support Staff",
+      "scope": "담당 업무",
+      "cnt": "10",
+      "dash": "C",
+      "cust": "C",
+      "quote": "C",
+      "order": "C",
+      "margin": "V",
+      "stock": "C",
+      "ship": "N",
+      "ar": "E",
+      "purch": "C",
+      "impor": "N",
+      "report": "C",
+      "export": "N",
+      "master": "C",
+      "access": "N",
+      "approve": "N",
+      "audit": "N"
     },
     {
-      "rc": "FINANCE",
-      "rn": "Finance / Accounting",
-      "mod": "Purchasing",
-      "v": 1,
-      "c": 0,
-      "e": 0,
-      "dl": 0,
-      "ap": 1,
-      "ex": 1,
-      "cnt": 2
+      "code": "R10",
+      "name": "창고 관리자 / Warehouse Mgr",
+      "scope": "전 창고",
+      "cnt": "1",
+      "dash": "E",
+      "cust": "N",
+      "quote": "N",
+      "order": "V",
+      "margin": "N",
+      "stock": "F",
+      "ship": "F",
+      "ar": "N",
+      "purch": "E",
+      "impor": "C",
+      "report": "E",
+      "export": "N",
+      "master": "C",
+      "access": "N",
+      "approve": "E",
+      "audit": "C"
     },
     {
-      "rc": "MANAGER",
-      "rn": "Department Manager",
-      "mod": "All Modules",
-      "v": 1,
-      "c": 1,
-      "e": 1,
-      "dl": 0,
-      "ap": 1,
-      "ex": 1,
-      "cnt": 0
+      "code": "R11",
+      "name": "창고 담당자 / Warehouse Staff",
+      "scope": "소속 창고",
+      "cnt": "4",
+      "dash": "C",
+      "cust": "N",
+      "quote": "N",
+      "order": "V",
+      "margin": "N",
+      "stock": "E",
+      "ship": "E",
+      "ar": "N",
+      "purch": "C",
+      "impor": "C",
+      "report": "N",
+      "export": "N",
+      "master": "N",
+      "access": "N",
+      "approve": "N",
+      "audit": "N"
     },
     {
-      "rc": "VIEWER",
-      "rn": "Read-only / Auditor",
-      "mod": "All Modules",
-      "v": 1,
-      "c": 0,
-      "e": 0,
-      "dl": 0,
-      "ap": 0,
-      "ex": 1,
-      "cnt": 1
+      "code": "R12",
+      "name": "지점장 / Branch Head",
+      "scope": "소속 지점",
+      "cnt": "2",
+      "dash": "E",
+      "cust": "E",
+      "quote": "F",
+      "order": "F",
+      "margin": "C",
+      "stock": "E",
+      "ship": "E",
+      "ar": "E",
+      "purch": "C",
+      "impor": "N",
+      "report": "F",
+      "export": "E",
+      "master": "C",
+      "access": "N",
+      "approve": "E",
+      "audit": "C"
+    },
+    {
+      "code": "R13",
+      "name": "지점 담당자 / Branch Staff",
+      "scope": "지점·담당",
+      "cnt": "10",
+      "dash": "C",
+      "cust": "C",
+      "quote": "E",
+      "order": "E",
+      "margin": "C",
+      "stock": "C",
+      "ship": "C",
+      "ar": "C",
+      "purch": "N",
+      "impor": "N",
+      "report": "C",
+      "export": "N",
+      "master": "C",
+      "access": "N",
+      "approve": "N",
+      "audit": "N"
+    },
+    {
+      "code": "NA",
+      "name": "전산권한 없음 / No Access",
+      "scope": "—",
+      "cnt": "14",
+      "dash": "N",
+      "cust": "N",
+      "quote": "N",
+      "order": "N",
+      "margin": "N",
+      "stock": "N",
+      "ship": "N",
+      "ar": "N",
+      "purch": "N",
+      "impor": "N",
+      "report": "N",
+      "export": "N",
+      "master": "N",
+      "access": "N",
+      "approve": "N",
+      "audit": "N"
+    },
+    {
+      "code": "EA",
+      "name": "비상 관리자 / Emergency",
+      "scope": "전사(한시)",
+      "cnt": "필요시",
+      "dash": "F",
+      "cust": "F",
+      "quote": "F",
+      "order": "F",
+      "margin": "F",
+      "stock": "F",
+      "ship": "F",
+      "ar": "F",
+      "purch": "F",
+      "impor": "F",
+      "report": "F",
+      "export": "F",
+      "master": "F",
+      "access": "F",
+      "approve": "F",
+      "audit": "F"
     }
   ]
 }

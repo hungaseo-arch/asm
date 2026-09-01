@@ -1,11 +1,12 @@
 import type { ScreenDef } from '@/types/list-screen'
 
 /**
- * User — Pengguna · 사용자 계정 관리
- * 화면 시안(asm-mockup)에서 옮긴 예시 데이터입니다. 운영 전환 시 rows 를
- * `GET /api/search-staff` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
- * 개선의견서 이슈 21 — DEPARTMENT 를 표준 코드(SALES / FINANCE / WAREHOUSE / ACCOUNTING / GENERAL)로 정비했습니다.
- * 구매(Purchasing)는 표준 코드 목록에 없어 GENERAL 로 배정했습니다 — 코드 확정 시 조정 필요.
+ * Search Staff — 직원 계정 관리
+ * 역할(R0-A ~ R13 · NA · EA)과 부서 체계는 「ASM2 권한 가이드라인 v3.0」 2장(역할 정의)과
+ * 5장(부서별 데이터 오너십)을 따릅니다. 구매 부서는 수입·구매(Impor · Pembelian)로
+ * 통합 운영되므로 부서 코드는 IMPORT-PURCHASING 입니다.
+ * DATA SCOPE 는 조건부 권한 C1(Row Level Security)의 적용값입니다.
+ * 운영 전환 시 rows 를 `GET /api/search-staff` 결과로 교체하십시오.
  */
 export const searchStaffScreen: ScreenDef = {
   "slug": "search-staff",
@@ -22,10 +23,6 @@ export const searchStaffScreen: ScreenDef = {
       "key": "all"
     },
     {
-      "label": "USER ID",
-      "key": "uid"
-    },
-    {
       "label": "NAME",
       "key": "nm"
     },
@@ -34,24 +31,8 @@ export const searchStaffScreen: ScreenDef = {
       "key": "dept"
     },
     {
-      "label": "POSITION",
-      "key": "pos"
-    },
-    {
-      "label": "EMAIL",
-      "key": "mail"
-    },
-    {
       "label": "ROLE",
       "key": "role"
-    },
-    {
-      "label": "LAST LOGIN",
-      "key": "last"
-    },
-    {
-      "label": "STATUS",
-      "key": "st"
     }
   ],
   "columns": [
@@ -91,7 +72,21 @@ export const searchStaffScreen: ScreenDef = {
       "key": "role",
       "label": "ROLE",
       "align": "center",
-      "format": "text"
+      "format": "code"
+    },
+    {
+      "key": "rname",
+      "label": "ROLE NAME",
+      "align": "left",
+      "format": "text",
+      "ellipsis": true
+    },
+    {
+      "key": "scope",
+      "label": "DATA SCOPE (C1)",
+      "align": "left",
+      "format": "text",
+      "ellipsis": true
     },
     {
       "key": "last",
@@ -113,12 +108,14 @@ export const searchStaffScreen: ScreenDef = {
     {
       "uid": "seo",
       "nm": "Seo Jonghwan",
-      "dept": "GENERAL",
+      "dept": "MANAGEMENT",
       "pos": "General Manager",
       "mail": "seo@ascendotyre.com",
-      "role": "ADMIN",
+      "role": "R1",
       "last": "2026-08-13",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "경영진 / Executive",
+      "scope": "전사"
     },
     {
       "uid": "hery",
@@ -126,9 +123,11 @@ export const searchStaffScreen: ScreenDef = {
       "dept": "SALES",
       "pos": "Sales Rep — Surabaya",
       "mail": "hery@ascendotyre.com",
-      "role": "SALES",
+      "role": "R2",
       "last": "2026-08-22",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "영업 관리자 / Sales Mgr",
+      "scope": "본사 전 고객"
     },
     {
       "uid": "hanif",
@@ -136,9 +135,11 @@ export const searchStaffScreen: ScreenDef = {
       "dept": "SALES",
       "pos": "Sales Rep — Central/East Java",
       "mail": "hanif@ascendotyre.com",
-      "role": "SALES",
+      "role": "R3",
       "last": "2026-08-20",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "영업 담당자 / Sales Staff",
+      "scope": "본인 담당 고객 (sales_rep_id)"
     },
     {
       "uid": "eri",
@@ -146,9 +147,11 @@ export const searchStaffScreen: ScreenDef = {
       "dept": "SALES",
       "pos": "Sales Rep — Jakarta",
       "mail": "eri@ascendotyre.com",
-      "role": "SALES",
+      "role": "R2",
       "last": "2026-08-23",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "영업 관리자 / Sales Mgr",
+      "scope": "본사 전 고객"
     },
     {
       "uid": "arif",
@@ -156,9 +159,11 @@ export const searchStaffScreen: ScreenDef = {
       "dept": "SALES",
       "pos": "Sales Rep — West Kalimantan",
       "mail": "arif@ascendotyre.com",
-      "role": "SALES",
+      "role": "R2",
       "last": "2026-08-26",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "영업 관리자 / Sales Mgr",
+      "scope": "본사 전 고객"
     },
     {
       "uid": "rizki",
@@ -166,9 +171,11 @@ export const searchStaffScreen: ScreenDef = {
       "dept": "SALES",
       "pos": "Field Team",
       "mail": "rizki@ascendotyre.com",
-      "role": "SALES",
+      "role": "R3",
       "last": "2026-08-23",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "영업 담당자 / Sales Staff",
+      "scope": "본인 담당 고객 (sales_rep_id)"
     },
     {
       "uid": "firman",
@@ -176,9 +183,11 @@ export const searchStaffScreen: ScreenDef = {
       "dept": "WAREHOUSE",
       "pos": "Warehouse Staff",
       "mail": "firman@ascendotyre.com",
-      "role": "WAREHOUSE",
+      "role": "R10",
       "last": "2026-08-17",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "창고 관리자 / Warehouse Mgr",
+      "scope": "전 창고"
     },
     {
       "uid": "komang",
@@ -186,19 +195,23 @@ export const searchStaffScreen: ScreenDef = {
       "dept": "FINANCE",
       "pos": "Finance Staff",
       "mail": "komang@ascendotyre.com",
-      "role": "FINANCE",
+      "role": "R8",
       "last": "2026-08-28",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "지원 관리자 / Support Mgr",
+      "scope": "전사 재무·관리"
     },
     {
       "uid": "purch01",
       "nm": "Andi Pratama",
-      "dept": "GENERAL",
+      "dept": "IMPORT-PURCHASING",
       "pos": "Import Staff",
       "mail": "purch01@ascendotyre.com",
-      "role": "PURCHASING",
+      "role": "R5",
       "last": "2026-08-29",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "수입·구매 담당자 / Imp·Pur Staff",
+      "scope": "전사 수입·구매"
     },
     {
       "uid": "acc01",
@@ -206,19 +219,23 @@ export const searchStaffScreen: ScreenDef = {
       "dept": "FINANCE",
       "pos": "Accounting Staff",
       "mail": "acc01@ascendotyre.com",
-      "role": "FINANCE",
+      "role": "R9",
       "last": "2026-08-24",
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "rname": "지원 담당자 / Support Staff",
+      "scope": "담당 업무 범위"
     },
     {
       "uid": "audit01",
       "nm": "External Auditor",
-      "dept": "GENERAL",
+      "dept": "GENERAL-AFFAIRS",
       "pos": "Read-only Access",
       "mail": "audit01@ascendotyre.com",
-      "role": "VIEWER",
+      "role": "NA",
       "last": "2026-08-24",
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "rname": "전산권한 없음 / No Access",
+      "scope": "— (계정 미부여)"
     }
   ]
 }

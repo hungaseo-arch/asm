@@ -1,18 +1,18 @@
 import type { ScreenDef } from '@/types/list-screen'
 
 /**
- * Approval Matrix — Matriks Persetujuan · 승인 매트릭스
- * 화면 시안(asm-mockup)에서 옮긴 예시 데이터입니다. 운영 전환 시 rows 를
- * `GET /api/approval-matrix` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ * Approval Matrix — 승인 매트릭스 10항목
+ * 출처: 「ASM2 권한 가이드라인 v3.0」 6장. 승인 주체는 개인이 아닌 역할(Role) 기준이며,
+ * SoD 금지 조합(7장)에 따라 1차·최종 승인자는 동일인이 될 수 없습니다.
  */
 export const approvalMatrixScreen: ScreenDef = {
   "slug": "approval-matrix",
   "group": "Settings",
   "navLabel": "Approval Matrix",
   "title": "Approval Matrix",
-  "subtitle": "Matriks Persetujuan · 승인 매트릭스",
-  "cardTitle": "Approval Matrix List",
-  "searchPlaceholder": "Doc type, Approver, Status",
+  "subtitle": "Matriks Persetujuan · 승인 매트릭스 (권한 가이드라인 v3.0)",
+  "cardTitle": "Approval Matrix",
+  "searchPlaceholder": "Task, Trigger, Approver",
   "primaryAction": "＋ NEW RULE",
   "searchFields": [
     {
@@ -20,89 +20,51 @@ export const approvalMatrixScreen: ScreenDef = {
       "key": "all"
     },
     {
-      "label": "DOC TYPE",
-      "key": "doc"
+      "label": "TASK",
+      "key": "task"
     },
     {
-      "label": "AMOUNT LIMIT",
-      "key": "lim"
-    },
-    {
-      "label": "STEP 1",
-      "key": "s1"
-    },
-    {
-      "label": "STEP 2",
-      "key": "s2"
-    },
-    {
-      "label": "STEP 3",
-      "key": "s3"
-    },
-    {
-      "label": "SoD RULE",
-      "key": "sod"
-    },
-    {
-      "label": "EFFECTIVE DATE",
-      "key": "eff"
-    },
-    {
-      "label": "STATUS",
-      "key": "st"
+      "label": "FIRST APPROVER",
+      "key": "first"
     }
   ],
   "columns": [
     {
-      "key": "doc",
-      "label": "DOC TYPE",
+      "key": "no",
+      "label": "RULE NO.",
+      "align": "left",
+      "format": "code"
+    },
+    {
+      "key": "task",
+      "label": "TASK",
+      "align": "left",
+      "format": "text"
+    },
+    {
+      "key": "trigger",
+      "label": "TRIGGER",
       "align": "left",
       "format": "text",
       "ellipsis": true
     },
     {
-      "key": "lim",
-      "label": "AMOUNT LIMIT",
-      "align": "right",
-      "format": "currency",
-      "currency": "USD"
-    },
-    {
-      "key": "s1",
-      "label": "STEP 1",
+      "key": "first",
+      "label": "FIRST APPROVER",
       "align": "center",
       "format": "text"
     },
     {
-      "key": "s2",
-      "label": "STEP 2",
+      "key": "last",
+      "label": "FINAL APPROVER",
       "align": "center",
       "format": "text"
     },
     {
-      "key": "s3",
-      "label": "STEP 3",
+      "key": "sla",
+      "label": "SLA",
       "align": "center",
       "format": "text"
-    },
-    {
-      "key": "sod",
-      "label": "SoD RULE",
-      "align": "left",
-      "format": "text",
-      "ellipsis": true
-    },
-    {
-      "key": "eff",
-      "label": "EFFECTIVE DATE",
-      "align": "center",
-      "format": "date"
-    },
-    {
-      "key": "st",
-      "label": "STATUS",
-      "align": "center",
-      "format": "badge"
     }
   ],
   "totalKeys": [],
@@ -110,124 +72,84 @@ export const approvalMatrixScreen: ScreenDef = {
   "pageSize": 15,
   "rows": [
     {
-      "doc": "Quotation",
-      "lim": 50000,
-      "s1": "Sales Rep",
-      "s2": "Sales Manager",
-      "s3": "—",
-      "sod": "기안자 승인 불가",
-      "eff": "2026-01-01",
-      "st": "ACTIVE"
+      "no": "APR-01",
+      "task": "할인 판매",
+      "trigger": "견적·수주가 < 표준마진",
+      "first": "R2 / R12(지점)",
+      "last": "R1",
+      "sla": "당일"
     },
     {
-      "doc": "Quotation",
-      "lim": 0,
-      "s1": "Sales Rep",
-      "s2": "Sales Manager",
-      "s3": "General Manager",
-      "sod": "기안자 승인 불가",
-      "eff": "2026-01-01",
-      "st": "ACTIVE"
+      "no": "APR-02",
+      "task": "여신 초과",
+      "trigger": "미수잔액 > 여신한도",
+      "first": "R8",
+      "last": "R1",
+      "sla": "당일"
     },
     {
-      "doc": "Customer PO",
-      "lim": 100000,
-      "s1": "Sales Manager",
-      "s2": "Finance",
-      "s3": "—",
-      "sod": "여신한도 초과 시 Finance 필수",
-      "eff": "2026-01-01",
-      "st": "ACTIVE"
+      "no": "APR-03",
+      "task": "신규 고객 등록",
+      "trigger": "고객 마스터 신규·상태변경",
+      "first": "R8 / R12(지점)",
+      "last": "R1",
+      "sla": "1영업일"
     },
     {
-      "doc": "Sales Order",
-      "lim": 0,
-      "s1": "Sales Manager",
-      "s2": "Finance",
-      "s3": "General Manager",
-      "sod": "재고 미확보 시 반려",
-      "eff": "2026-01-01",
-      "st": "ACTIVE"
+      "no": "APR-04",
+      "task": "신규 공급사 등록",
+      "trigger": "공급사 마스터 신규·상태변경",
+      "first": "R4",
+      "last": "R1",
+      "sla": "2영업일"
     },
     {
-      "doc": "Delivery Order",
-      "lim": 0,
-      "s1": "Warehouse Staff",
-      "s2": "Warehouse Manager",
-      "s3": "—",
-      "sod": "출고자·승인자 분리",
-      "eff": "2026-03-01",
-      "st": "ACTIVE"
+      "no": "APR-05",
+      "task": "판매가 변경",
+      "trigger": "표준 판매단가·표준마진 변경",
+      "first": "R2",
+      "last": "R1",
+      "sla": "1영업일"
     },
     {
-      "doc": "Purchase PO",
-      "lim": 200000,
-      "s1": "Purchasing Staff",
-      "s2": "Purchasing Manager",
-      "s3": "—",
-      "sod": "발주자 승인 불가",
-      "eff": "2026-01-01",
-      "st": "ACTIVE"
+      "no": "APR-06",
+      "task": "매입가 변경",
+      "trigger": "공급사 단가·표준 매입원가 변경 (L4 극비)",
+      "first": "R4",
+      "last": "R1",
+      "sla": "1영업일"
     },
     {
-      "doc": "Purchase PO",
-      "lim": 0,
-      "s1": "Purchasing Staff",
-      "s2": "Purchasing Manager",
-      "s3": "General Manager",
-      "sod": "발주자 승인 불가",
-      "eff": "2026-01-01",
-      "st": "ACTIVE"
+      "no": "APR-07",
+      "task": "재고 조정",
+      "trigger": "실사 차이·폐기·등급변경",
+      "first": "R10",
+      "last": "R8",
+      "sla": "당일"
     },
     {
-      "doc": "Stock Adjustment",
-      "lim": 5000,
-      "s1": "Warehouse Staff",
-      "s2": "Warehouse Manager",
-      "s3": "—",
-      "sod": "실사자·승인자 분리",
-      "eff": "2026-03-01",
-      "st": "ACTIVE"
+      "no": "APR-08",
+      "task": "창고 마스터 변경",
+      "trigger": "창고 신설·폐지·TYPE(자가/3PL) 변경",
+      "first": "R10",
+      "last": "R8",
+      "sla": "1영업일"
     },
     {
-      "doc": "Stock Adjustment",
-      "lim": 0,
-      "s1": "Warehouse Staff",
-      "s2": "Warehouse Manager",
-      "s3": "General Manager",
-      "sod": "실사자·승인자 분리",
-      "eff": "2026-03-01",
-      "st": "ACTIVE"
+      "no": "APR-09",
+      "task": "수입비용 확정",
+      "trigger": "Landed Cost·관세 확정",
+      "first": "R4",
+      "last": "R1",
+      "sla": "월 마감 前"
     },
     {
-      "doc": "Stock Transfer",
-      "lim": 0,
-      "s1": "Warehouse Staff",
-      "s2": "Warehouse Manager",
-      "s3": "—",
-      "sod": "출고창고·입고창고 각각 확인",
-      "eff": "2026-03-01",
-      "st": "ACTIVE"
-    },
-    {
-      "doc": "Credit Note",
-      "lim": 0,
-      "s1": "Finance",
-      "s2": "Finance Manager",
-      "s3": "General Manager",
-      "sod": "발행자 승인 불가",
-      "eff": "2026-05-01",
-      "st": "ACTIVE"
-    },
-    {
-      "doc": "Master Data 변경",
-      "lim": 0,
-      "s1": "해당 부서",
-      "s2": "System Administrator",
-      "s3": "—",
-      "sod": "데이터 오너 승인 필수",
-      "eff": "2026-06-01",
-      "st": "PENDING"
+      "no": "APR-10",
+      "task": "권한 변경",
+      "trigger": "역할 부여·회수",
+      "first": "R0-A",
+      "last": "R0-B",
+      "sla": "당일"
     }
   ]
 }

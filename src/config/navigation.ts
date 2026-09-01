@@ -116,7 +116,10 @@ export const navGroups: NavGroup[] = [
     label: 'VI. SETTINGS',
     items: [
       { label: 'Search Staff', icon: UserCog, to: '/settings/search-staff' },
-      { label: 'Change Password', icon: ShieldCheck },
+      // 권한 가이드라인 v3.0 기준 화면 (3장 권한 매트릭스 · 6장 승인 매트릭스)
+      { label: 'Role / Permission', icon: ShieldCheck, to: '/settings/role-permission' },
+      { label: 'Approval Matrix', icon: Workflow, to: '/settings/approval-matrix' },
+      { label: 'Change Password', icon: Repeat },
     ],
   },
   {
@@ -128,8 +131,6 @@ export const navGroups: NavGroup[] = [
       { label: 'Stock Transfer', icon: Repeat, to: '/inventory/stock-transfer' },
       { label: 'Stock Opname', icon: ClipboardCheck, to: '/inventory/stock-opname' },
       { label: 'Brand / Pattern', icon: Tag, to: '/master/brand-pattern' },
-      { label: 'Role / Permission', icon: ShieldCheck, to: '/settings/role-permission' },
-      { label: 'Approval Matrix', icon: Workflow, to: '/settings/approval-matrix' },
     ],
   },
 ]

@@ -24,7 +24,13 @@ import {
   formatSigned,
   formatWeight,
 } from '@/lib/format'
-import { toneOf, type ScreenColumn, type ScreenDef, type ScreenRow } from '@/types/list-screen'
+import {
+  ACCESS_LEVEL,
+  toneOf,
+  type ScreenColumn,
+  type ScreenDef,
+  type ScreenRow,
+} from '@/types/list-screen'
 
 const props = defineProps<{ screen: ScreenDef }>()
 
@@ -335,6 +341,13 @@ const primaryLabel = computed(() => {
               <AsmBadge v-if="column.format === 'badge'" :tone="toneOf(String(row[column.key]))" dot>
                 {{ row[column.key] }}
               </AsmBadge>
+              <template v-else-if="column.format === 'access'">
+                <span
+                  class="access"
+                  :class="`access--${ACCESS_LEVEL[String(row[column.key])]?.tone ?? 'none'}`"
+                  :title="ACCESS_LEVEL[String(row[column.key])]?.label ?? String(row[column.key])"
+                >{{ ACCESS_LEVEL[String(row[column.key])]?.mark ?? '—' }}</span>
+              </template>
               <template v-else-if="column.format === 'mark'">
                 <Check v-if="Number(row[column.key])" :size="15" class="mark-yes" />
                 <Minus v-else :size="15" class="mark-no" />
@@ -496,6 +509,14 @@ const primaryLabel = computed(() => {
 .table-scroll tbody tr:hover :is(td.no-col, td.col-key) { background: var(--asm-muted); }
 .cell-code { font-family: var(--bs-font-monospace); font-size: 12px; color: var(--asm-fg); }
 .asm-ellipsis { max-width: 260px; }
+
+/* 권한 수준 기호 — 가이드라인 3장 범례와 동일한 색 체계 */
+.access { font-size: 14px; line-height: 1; }
+.access--full { color: var(--asm-primary); font-weight: 700; }
+.access--edit { color: var(--asm-success-fg); font-weight: 700; }
+.access--view { color: var(--bs-info); }
+.access--cond { color: var(--asm-warning-fg); font-weight: 700; }
+.access--none { color: var(--asm-border-strong); }
 
 .mark-yes { color: var(--asm-success-fg); }
 .mark-no { color: var(--asm-border-strong); }

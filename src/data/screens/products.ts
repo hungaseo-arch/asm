@@ -3,15 +3,16 @@ import type { ScreenDef } from '@/types/list-screen'
 /**
  * Item Master — Master Barang · 품목 마스터
  * 화면 시안(asm-mockup)에서 옮긴 예시 데이터입니다. 운영 전환 시 rows 를
- * `GET /api/item` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ * `GET /api/products` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ * 개선의견서 이슈 19 — 현지 필수 관리항목(SNI 인증번호·TKDN)을 추가했습니다.
  */
-export const itemScreen: ScreenDef = {
-  "slug": "item",
+export const productsScreen: ScreenDef = {
+  "slug": "products",
   "group": "Master Data",
-  "navLabel": "Item",
-  "title": "Item Master",
+  "navLabel": "Products",
+  "title": "Products",
   "subtitle": "Master Barang · 품목 마스터",
-  "cardTitle": "Item Master List",
+  "cardTitle": "Product List",
   "searchPlaceholder": "Item code, Size, Pattern, Brand",
   "primaryAction": "＋ NEW ITEM",
   "searchFields": [
@@ -114,6 +115,18 @@ export const itemScreen: ScreenDef = {
       "format": "code"
     },
     {
+      "key": "sni",
+      "label": "SNI CERT.",
+      "align": "left",
+      "format": "code"
+    },
+    {
+      "key": "tkdn",
+      "label": "TKDN",
+      "align": "right",
+      "format": "percent"
+    },
+    {
       "key": "uom",
       "label": "UOM",
       "align": "center",
@@ -147,7 +160,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.80.00",
       "uom": "EA",
       "cost": 2296.54,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1200-2026",
+      "tkdn": 24.5
     },
     {
       "code": "TB-R-1112",
@@ -160,7 +175,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.70.00",
       "uom": "EA",
       "cost": 1808.83,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1207-2026",
+      "tkdn": 31.2
     },
     {
       "code": "TB-B-5115",
@@ -173,7 +190,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.20.10",
       "uom": "EA",
       "cost": 1136.41,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1214-2026",
+      "tkdn": 18.7
     },
     {
       "code": "OTR-6627",
@@ -186,7 +205,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.20.10",
       "uom": "EA",
       "cost": 1665.85,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "sni": "SNI-1221-2026",
+      "tkdn": 42
     },
     {
       "code": "OTR-3994",
@@ -199,7 +220,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.80.00",
       "uom": "EA",
       "cost": 1286.6,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1228-2026",
+      "tkdn": 36.4
     },
     {
       "code": "TB-B-6633",
@@ -212,7 +235,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.80.00",
       "uom": "EA",
       "cost": 743.07,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "sni": "SNI-1235-2026",
+      "tkdn": 24.5
     },
     {
       "code": "IND-6359",
@@ -225,7 +250,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.70.00",
       "uom": "EA",
       "cost": 1387.22,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1242-2026",
+      "tkdn": 31.2
     },
     {
       "code": "TB-R-2178",
@@ -238,7 +265,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.90.00",
       "uom": "EA",
       "cost": 1574.35,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "sni": "SNI-1249-2026",
+      "tkdn": 18.7
     },
     {
       "code": "AGR-4466",
@@ -251,7 +280,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.20.10",
       "uom": "EA",
       "cost": 484.28,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "sni": "SNI-1256-2026",
+      "tkdn": 42
     },
     {
       "code": "OTR-1108",
@@ -264,7 +295,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.20.10",
       "uom": "EA",
       "cost": 2072.9,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "sni": "SNI-1263-2026",
+      "tkdn": 36.4
     },
     {
       "code": "TB-R-2857",
@@ -277,7 +310,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.90.00",
       "uom": "EA",
       "cost": 453.87,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1270-2026",
+      "tkdn": 24.5
     },
     {
       "code": "AGR-5344",
@@ -290,7 +325,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.20.10",
       "uom": "EA",
       "cost": 129.97,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1277-2026",
+      "tkdn": 31.2
     },
     {
       "code": "OTR-7039",
@@ -303,7 +340,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.80.00",
       "uom": "EA",
       "cost": 1416.46,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1284-2026",
+      "tkdn": 18.7
     },
     {
       "code": "AGR-1920",
@@ -316,7 +355,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.20.10",
       "uom": "EA",
       "cost": 512.49,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "sni": "SNI-1291-2026",
+      "tkdn": 42
     },
     {
       "code": "TB-R-9408",
@@ -329,7 +370,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.70.00",
       "uom": "EA",
       "cost": 1017.37,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "sni": "SNI-1298-2026",
+      "tkdn": 36.4
     },
     {
       "code": "OTR-9536",
@@ -342,7 +385,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.90.00",
       "uom": "EA",
       "cost": 486.51,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1305-2026",
+      "tkdn": 24.5
     },
     {
       "code": "TB-B-5688",
@@ -355,7 +400,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.90.00",
       "uom": "EA",
       "cost": 184.14,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1312-2026",
+      "tkdn": 31.2
     },
     {
       "code": "AGR-2635",
@@ -368,7 +415,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.70.00",
       "uom": "EA",
       "cost": 1735.88,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1319-2026",
+      "tkdn": 18.7
     },
     {
       "code": "IND-8778",
@@ -381,7 +430,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.70.00",
       "uom": "EA",
       "cost": 262.83,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1326-2026",
+      "tkdn": 42
     },
     {
       "code": "OTR-2635",
@@ -394,7 +445,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.20.10",
       "uom": "EA",
       "cost": 1532.07,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1333-2026",
+      "tkdn": 36.4
     },
     {
       "code": "AGR-1946",
@@ -407,7 +460,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.20.10",
       "uom": "EA",
       "cost": 769.37,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1340-2026",
+      "tkdn": 24.5
     },
     {
       "code": "TB-R-3960",
@@ -420,7 +475,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.90.00",
       "uom": "EA",
       "cost": 2319.47,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1347-2026",
+      "tkdn": 31.2
     },
     {
       "code": "AGR-8614",
@@ -433,7 +490,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.20.10",
       "uom": "EA",
       "cost": 1291.73,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "sni": "SNI-1354-2026",
+      "tkdn": 18.7
     },
     {
       "code": "OTR-9156",
@@ -446,7 +505,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.70.00",
       "uom": "EA",
       "cost": 78.86,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "sni": "SNI-1361-2026",
+      "tkdn": 42
     },
     {
       "code": "TB-R-6237",
@@ -459,7 +520,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.70.00",
       "uom": "EA",
       "cost": 1337.35,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1368-2026",
+      "tkdn": 36.4
     },
     {
       "code": "TB-R-6761",
@@ -472,7 +535,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.90.00",
       "uom": "EA",
       "cost": 2102.49,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1375-2026",
+      "tkdn": 24.5
     },
     {
       "code": "TB-R-5947",
@@ -485,7 +550,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.70.00",
       "uom": "EA",
       "cost": 640.02,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1382-2026",
+      "tkdn": 31.2
     },
     {
       "code": "TB-R-1918",
@@ -498,7 +565,9 @@ export const itemScreen: ScreenDef = {
       "hs": "4011.80.00",
       "uom": "EA",
       "cost": 647.7,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "sni": "SNI-1389-2026",
+      "tkdn": 18.7
     }
   ]
 }

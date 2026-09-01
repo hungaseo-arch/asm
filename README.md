@@ -50,11 +50,11 @@ src/
 ├─ composables/              useBodyScrollLock · useEscapeToClose
 ├─ config/
 │  ├─ navigation.ts          상단/사이드 메뉴 정의 (운영 ASM 6개 대분류)
-│  └─ screens.ts             목록 화면 레지스트리 (26종 · 동적 import)
+│  └─ screens.ts             목록 화면 레지스트리 (28종 · 동적 import)
 ├─ data/                     프로토타입 시드 데이터 (운영 전환 시 삭제)
 │  ├─ purchase-orders.ts
 │  ├─ inventory.ts
-│  └─ screens/               목록 화면 26종 정의 + 예시 데이터
+│  └─ screens/               목록 화면 28종 정의 + 예시 데이터
 ├─ lib/
 │  ├─ api-base.ts            API base URL 결정 (빌드타임 > 런타임 > same-origin)
 │  ├─ api.ts                 apiFetch / apiGet / apiSend / OAuth 토큰 동기화
@@ -138,8 +138,10 @@ src/
 
 - Purchase PO 화면 전체 (요약 카드 · 필터 · 정렬/페이징 테이블 · 상세 드로어 · 신규 등록 다이얼로그 · CSV 내보내기)
 - Inventory List 화면 (운영 ASM `asminventorylist.html` 복제 · KPI 4종 · 필터 · 정렬/페이징 테이블 + 합계 행 · CSV/Print)
-- 목록 화면 26종 (Purchasing 9 · Sales 5 · Inventory 4 · Partners 2 · Master Data 3 · Settings 3) — 화면 시안 `asm-mockup` 이식 + Payment Plan 신설.
-  `ListScreen` 하나가 검색·정렬·페이징·합계·CSV 를 처리하고 화면별 컬럼·데이터만 `data/screens/` 에 둡니다
+- 목록 화면 28종 — 메뉴 구성·명칭은 **개선의견서(실서버 테스트 결과)의 목차** 기준.
+  Purchasing 9 (Payment Plan 신설) · Sales 5 · Inventory 1 (Monthly Closing 신설) · Partners 2 ·
+  Master Data 3 · Settings 1 · 시안 전용 7(MOCK-UP 그룹, 운영 ASM 메뉴 외).
+  `ListScreen` 하나가 검색·기간필터·정렬·페이징·합계·CSV 를 처리하고 화면별 컬럼·데이터만 `data/screens/` 에 둡니다
 - 레이아웃(상단바 · 접이식 사이드바 · 모바일 오프캔버스), 404, 로그인/가입/이메일 인증
 - API·인증 레이어, 숫자 표기 표준 모듈
 - 타입체크(`vue-tsc`) 및 프로덕션 빌드 통과, 데스크톱/모바일 렌더링 검증
@@ -149,7 +151,8 @@ src/
 1. **API 연동** — `stores/purchase-po.ts` 의 시드 데이터를 `GET /api/purchase-orders` 호출로 교체 (화면 코드 수정 불필요)
 2. 신규 PO 저장을 `POST /api/purchase-orders` 로 연결 (현재는 클라이언트 상태에만 반영)
 3. Inventory 데이터 연동 — `stores/inventory.ts` 시드를 `GET /api/inventory` 로 교체
-4. 남은 메뉴 화면 — Delivery Note (WH) · Currency (현재는 안내 토스트만 표시)
+   (목록 화면 28종은 `data/screens/*.ts` 의 rows 를 각 API 결과로 교체하면 화면 수정 없이 동작)
+4. 남은 메뉴 화면 — Delivery Note (Warehouse) · Upload Monthly Closing Data · Change Password (현재는 안내 토스트만 표시)
 5. 서버 사이드 페이징/정렬 (데이터 1,000건 초과 시 필요)
 6. 로그인 필수화 여부 결정 → `meta.requiresAuth: true` 적용
 7. 단위 테스트(Vitest + @vue/test-utils) 도입 — 우선순위: `lib/format.ts`, `stores/*.ts`

@@ -49,13 +49,18 @@ export const topNav = [
   { label: 'Sales', to: '/sales/quotation', match: ['/sales'] },
   { label: 'Inventory', to: '/inventory-list', match: ['/inventory'] },
   { label: 'Partners', to: '/partners/customer', match: ['/partners'] },
-  { label: 'Master Data', to: '/master/item', match: ['/master'] },
+  { label: 'Master Data', to: '/master/products', match: ['/master'] },
   { label: 'Settings', to: '/settings/user', match: ['/settings'] },
 ] satisfies Array<{ label: string; to?: string; match?: string[] }>
 
 /**
  * 좌측 사이드바 (Sidebar / Bilah sisi)
  * 메뉴 구성은 운영 ASM(asm.ascendotyre.com)의 6개 대분류를 그대로 따릅니다.
+ */
+/**
+ * 좌측 사이드바 (Sidebar / Bilah sisi)
+ * 메뉴 구성·명칭은 개선의견서(ASM 실서버 테스트 결과)의 목차를 따릅니다.
+ * 라우트가 아직 없는 항목(Delivery Note (Warehouse) 등)은 안내 토스트만 표시합니다.
  */
 export const navGroups: NavGroup[] = [
   {
@@ -88,10 +93,7 @@ export const navGroups: NavGroup[] = [
     label: 'III. INVENTORY',
     items: [
       { label: 'Inventory List', icon: Boxes, to: '/inventory-list' },
-      { label: 'Stock Movement', icon: ArrowLeftRight, to: '/inventory/stock-movement' },
-      { label: 'Stock Adjustment', icon: SlidersHorizontal, to: '/inventory/stock-adjustment' },
-      { label: 'Stock Transfer', icon: Repeat, to: '/inventory/stock-transfer' },
-      { label: 'Stock Opname', icon: ClipboardCheck, to: '/inventory/stock-opname' },
+      { label: 'Inventory Monthly Closing', icon: ClipboardCheck, to: '/inventory/monthly-closing' },
     ],
   },
   {
@@ -104,26 +106,34 @@ export const navGroups: NavGroup[] = [
   {
     label: 'V. MASTER DATA',
     items: [
-      { label: 'Item', icon: Package, to: '/master/item' },
-      { label: 'Brand / Pattern', icon: Tag, to: '/master/brand-pattern' },
-      { label: 'Warehouse', icon: Warehouse, to: '/master/warehouse' },
-      { label: 'Currency', icon: CircleDollarSign },
+      { label: 'Products', icon: Package, to: '/master/products' },
+      { label: 'Warehouses', icon: Warehouse, to: '/master/warehouses' },
+      { label: 'Monthly Closed Data List', icon: FileSpreadsheet, to: '/master/monthly-closed-data' },
+      { label: 'Upload Monthly Closing Data', icon: Repeat },
     ],
   },
   {
     label: 'VI. SETTINGS',
     items: [
-      { label: 'User', icon: UserCog, to: '/settings/user' },
+      { label: 'Search Staff', icon: UserCog, to: '/settings/search-staff' },
+      { label: 'Change Password', icon: ShieldCheck },
+    ],
+  },
+  {
+    // 운영 ASM 메뉴에는 없는 시안(Mock-up) 화면입니다. 불필요하면 이 그룹만 지우면 됩니다.
+    label: 'MOCK-UP (시안)',
+    items: [
+      { label: 'Stock Movement', icon: ArrowLeftRight, to: '/inventory/stock-movement' },
+      { label: 'Stock Adjustment', icon: SlidersHorizontal, to: '/inventory/stock-adjustment' },
+      { label: 'Stock Transfer', icon: Repeat, to: '/inventory/stock-transfer' },
+      { label: 'Stock Opname', icon: ClipboardCheck, to: '/inventory/stock-opname' },
+      { label: 'Brand / Pattern', icon: Tag, to: '/master/brand-pattern' },
       { label: 'Role / Permission', icon: ShieldCheck, to: '/settings/role-permission' },
       { label: 'Approval Matrix', icon: Workflow, to: '/settings/approval-matrix' },
     ],
   },
 ]
 
-/**
- * 상단바 표시용 사용자 (Display user / Pengguna tampilan)
- * 로그인 기능이 꺼져 있어 세션 대신 이 값을 표시합니다.
- */
 export const APP_USER = { name: 'Seo Jonghwan', initials: 'SH', role: 'General Manager' }
 
 export const APP_VERSION = 'v1.0 · 01 Sep 2026'

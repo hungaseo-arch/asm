@@ -3,13 +3,14 @@ import type { ScreenDef } from '@/types/list-screen'
 /**
  * Warehouse — Gudang · 창고 마스터
  * 화면 시안(asm-mockup)에서 옮긴 예시 데이터입니다. 운영 전환 시 rows 를
- * `GET /api/warehouse` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ * `GET /api/warehouses` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ * 개선의견서 이슈 20 — TYPE 만으로는 구분이 불명확하여 자가창고(OWN)·위탁(3PL) 열을 추가했습니다.
  */
-export const warehouseScreen: ScreenDef = {
-  "slug": "warehouse",
+export const warehousesScreen: ScreenDef = {
+  "slug": "warehouses",
   "group": "Master Data",
-  "navLabel": "Warehouse",
-  "title": "Warehouse",
+  "navLabel": "Warehouses",
+  "title": "Warehouses",
   "subtitle": "Gudang · 창고 마스터",
   "cardTitle": "Warehouse List",
   "searchPlaceholder": "WH code, Warehouse name, City, PIC",
@@ -81,6 +82,12 @@ export const warehouseScreen: ScreenDef = {
       "format": "text"
     },
     {
+      "key": "own",
+      "label": "OWNERSHIP",
+      "align": "center",
+      "format": "text"
+    },
+    {
       "key": "city",
       "label": "CITY",
       "align": "left",
@@ -141,7 +148,8 @@ export const warehouseScreen: ScreenDef = {
       "cap": 12000,
       "cur": 8420,
       "util": 70.2,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "own": "OWN"
     },
     {
       "code": "WH-SBY",
@@ -153,7 +161,8 @@ export const warehouseScreen: ScreenDef = {
       "cap": 6000,
       "cur": 4130,
       "util": 68.8,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "own": "OWN"
     },
     {
       "code": "WH-SMG",
@@ -165,7 +174,8 @@ export const warehouseScreen: ScreenDef = {
       "cap": 4500,
       "cur": 2680,
       "util": 59.6,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "own": "3PL"
     },
     {
       "code": "WH-BPP",
@@ -177,7 +187,8 @@ export const warehouseScreen: ScreenDef = {
       "cap": 3500,
       "cur": 1940,
       "util": 55.4,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "own": "OWN"
     },
     {
       "code": "WH-PLB",
@@ -189,7 +200,8 @@ export const warehouseScreen: ScreenDef = {
       "cap": 3000,
       "cur": 860,
       "util": 28.7,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "own": "OWN"
     },
     {
       "code": "WH-TRN",
@@ -201,7 +213,8 @@ export const warehouseScreen: ScreenDef = {
       "cap": 2000,
       "cur": 320,
       "util": 16,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "own": "3PL"
     },
     {
       "code": "WH-QAR",
@@ -213,7 +226,8 @@ export const warehouseScreen: ScreenDef = {
       "cap": 800,
       "cur": 214,
       "util": 26.8,
-      "st": "ACTIVE"
+      "st": "ACTIVE",
+      "own": "OWN"
     },
     {
       "code": "WH-OLD",
@@ -225,7 +239,8 @@ export const warehouseScreen: ScreenDef = {
       "cap": 2500,
       "cur": 0,
       "util": 0,
-      "st": "INACTIVE"
+      "st": "INACTIVE",
+      "own": "OWN"
     }
   ]
 }

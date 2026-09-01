@@ -4,6 +4,8 @@ import type { ScreenDef } from '@/types/list-screen'
  * Customers — Pelanggan · 고객사 마스터
  * 화면 시안(asm-mockup)에서 옮긴 예시 데이터입니다. 운영 전환 시 rows 를
  * `GET /api/customer` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ * 개선의견서 이슈 16 — 여신한도(Credit Limit)·여신등급·결제조건·담당 영업 열을 추가했습니다.
+ * 여신 소진율(USAGE)이 100%를 넘으면 CREDIT STATUS 가 OVERDUE 로 표시됩니다.
  */
 export const customerScreen: ScreenDef = {
   "slug": "customer",
@@ -24,20 +26,12 @@ export const customerScreen: ScreenDef = {
       "key": "nm"
     },
     {
-      "label": "TYPE",
-      "key": "typ"
+      "label": "SALES REP",
+      "key": "rep"
     },
     {
-      "label": "ADDRESS",
-      "key": "addr"
-    },
-    {
-      "label": "PIC NAME",
-      "key": "pic"
-    },
-    {
-      "label": "PHONE NO.",
-      "key": "tel"
+      "label": "CREDIT STATUS",
+      "key": "cst"
     }
   ],
   "columns": [
@@ -53,6 +47,50 @@ export const customerScreen: ScreenDef = {
       "label": "TYPE",
       "align": "center",
       "format": "text"
+    },
+    {
+      "key": "term",
+      "label": "PAYMENT TERM",
+      "align": "center",
+      "format": "text"
+    },
+    {
+      "key": "limit",
+      "label": "CREDIT LIMIT",
+      "align": "right",
+      "format": "currency",
+      "currency": "IDR"
+    },
+    {
+      "key": "ar",
+      "label": "AR BALANCE",
+      "align": "right",
+      "format": "currency",
+      "currency": "IDR"
+    },
+    {
+      "key": "use",
+      "label": "USAGE",
+      "align": "right",
+      "format": "percent"
+    },
+    {
+      "key": "grade",
+      "label": "GRADE",
+      "align": "center",
+      "format": "text"
+    },
+    {
+      "key": "rep",
+      "label": "SALES REP",
+      "align": "center",
+      "format": "text"
+    },
+    {
+      "key": "cst",
+      "label": "CREDIT STATUS",
+      "align": "center",
+      "format": "badge"
     },
     {
       "key": "addr",
@@ -83,84 +121,168 @@ export const customerScreen: ScreenDef = {
       "typ": "DISTRIBUTOR",
       "addr": "Pantai Indah Utara 2 Galeri Niaga, Mediterania II L, 8B, Kapuk Muara, Penjaringan, 14460",
       "pic": "Stevie",
-      "tel": "021-5566-8821"
+      "tel": "021-5566-8821",
+      "term": "CBD",
+      "limit": 500000000,
+      "ar": 160000000,
+      "use": 32,
+      "grade": "A",
+      "rep": "Eri",
+      "cst": "ACTIVE"
     },
     {
       "nm": "PT. BUKIT MAKMUR MANDIRI UTAMA",
       "typ": "END USER",
       "addr": "Jl. TB Simatupang No. 1, Cilandak, Jakarta Selatan, 12560",
       "pic": "Bpk. Suryanto",
-      "tel": "021-2997-1000"
+      "tel": "021-2997-1000",
+      "term": "COD",
+      "limit": 750000000,
+      "ar": 510000000,
+      "use": 68,
+      "grade": "B",
+      "rep": "Hery",
+      "cst": "ACTIVE"
     },
     {
       "nm": "PT. PAMAPERSADA NUSANTARA",
       "typ": "END USER",
       "addr": "Jl. Rawa Gelam I No. 9, Kawasan Industri Pulogadung, Jakarta Timur",
       "pic": "Bpk. Herman",
-      "tel": "021-4602-2000"
+      "tel": "021-4602-2000",
+      "term": "TOP 30 days",
+      "limit": 1000000000,
+      "ar": 940000000,
+      "use": 94,
+      "grade": "C",
+      "rep": "Arif",
+      "cst": "PENDING"
     },
     {
       "nm": "PT. KALTIM PRIMA COAL",
       "typ": "END USER",
       "addr": "Mine Site Sangatta, Kutai Timur, Kalimantan Timur, 75611",
       "pic": "Bpk. Rahmat",
-      "tel": "0549-521-000"
+      "tel": "0549-521-000",
+      "term": "TOP 45 days",
+      "limit": 1500000000,
+      "ar": 1680000000,
+      "use": 112,
+      "grade": "A",
+      "rep": "Rizki",
+      "cst": "OVERDUE"
     },
     {
       "nm": "PT. SAPTAINDRA SEJATI",
       "typ": "END USER",
       "addr": "TMT 2 Building, Jl. Cilandak KKO No. 1, Jakarta Selatan",
       "pic": "Bpk. Dedi",
-      "tel": "021-2997-4000"
+      "tel": "021-2997-4000",
+      "term": "TOP 60 days",
+      "limit": 2000000000,
+      "ar": 900000000,
+      "use": 45,
+      "grade": "B",
+      "rep": "Hanif",
+      "cst": "ACTIVE"
     },
     {
       "nm": "PT. THIESS CONTRACTORS INDONESIA",
       "typ": "END USER",
       "addr": "Ratu Prabu 2 Building, Jl. TB Simatupang Kav. 1B, Jakarta",
       "pic": "Mr. Andrew",
-      "tel": "021-7883-1000"
+      "tel": "021-7883-1000",
+      "term": "CBD",
+      "limit": 500000000,
+      "ar": 160000000,
+      "use": 32,
+      "grade": "C",
+      "rep": "Eri",
+      "cst": "ACTIVE"
     },
     {
       "nm": "CV. SUMBER BAN JAYA",
       "typ": "DEALER",
       "addr": "Jl. Raya Kaligawe KM 6 No. 88, Semarang, 50118",
       "pic": "Bpk. Yanto",
-      "tel": "024-658-2211"
+      "tel": "024-658-2211",
+      "term": "COD",
+      "limit": 750000000,
+      "ar": 510000000,
+      "use": 68,
+      "grade": "A",
+      "rep": "Hery",
+      "cst": "ACTIVE"
     },
     {
       "nm": "UD. MAKMUR TYRE",
       "typ": "DEALER",
       "addr": "Jl. Margomulyo Indah Blok C-12, Surabaya, 60186",
       "pic": "Bpk. Anton",
-      "tel": "031-749-3300"
+      "tel": "031-749-3300",
+      "term": "TOP 30 days",
+      "limit": 1000000000,
+      "ar": 940000000,
+      "use": 94,
+      "grade": "B",
+      "rep": "Arif",
+      "cst": "PENDING"
     },
     {
       "nm": "PT. PUTRA PERKASA ABADI",
       "typ": "END USER",
       "addr": "Jl. Kebon Sirih No. 39, Menteng, Jakarta Pusat",
       "pic": "Bpk. Fajar",
-      "tel": "021-3193-8800"
+      "tel": "021-3193-8800",
+      "term": "TOP 45 days",
+      "limit": 1500000000,
+      "ar": 1680000000,
+      "use": 112,
+      "grade": "C",
+      "rep": "Rizki",
+      "cst": "OVERDUE"
     },
     {
       "nm": "PT. CIPTA KRIDATAMA",
       "typ": "END USER",
       "addr": "Jl. Mulawarman No. 12, Balikpapan, Kalimantan Timur",
       "pic": "Bpk. Wawan",
-      "tel": "0542-771-200"
+      "tel": "0542-771-200",
+      "term": "TOP 60 days",
+      "limit": 2000000000,
+      "ar": 900000000,
+      "use": 45,
+      "grade": "A",
+      "rep": "Hanif",
+      "cst": "ACTIVE"
     },
     {
       "nm": "PT. ULIMA NITRA",
       "typ": "END USER",
       "addr": "Jl. Soekarno Hatta KM 12, Palembang, Sumatera Selatan",
       "pic": "Bpk. Rudi",
-      "tel": "0711-411-800"
+      "tel": "0711-411-800",
+      "term": "CBD",
+      "limit": 500000000,
+      "ar": 160000000,
+      "use": 32,
+      "grade": "B",
+      "rep": "Eri",
+      "cst": "ACTIVE"
     },
     {
       "nm": "PT. BERAU COAL",
       "typ": "END USER",
       "addr": "Jl. Pemuda No. 40, Tanjung Redeb, Berau, Kalimantan Timur",
       "pic": "Bpk. Iskandar",
-      "tel": "0554-233-00"
+      "tel": "0554-233-00",
+      "term": "COD",
+      "limit": 750000000,
+      "ar": 510000000,
+      "use": 68,
+      "grade": "C",
+      "rep": "Hery",
+      "cst": "ACTIVE"
     }
   ]
 }

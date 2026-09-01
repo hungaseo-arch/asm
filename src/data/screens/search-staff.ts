@@ -3,15 +3,17 @@ import type { ScreenDef } from '@/types/list-screen'
 /**
  * User — Pengguna · 사용자 계정 관리
  * 화면 시안(asm-mockup)에서 옮긴 예시 데이터입니다. 운영 전환 시 rows 를
- * `GET /api/user` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ * `GET /api/search-staff` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ * 개선의견서 이슈 21 — DEPARTMENT 를 표준 코드(SALES / FINANCE / WAREHOUSE / ACCOUNTING / GENERAL)로 정비했습니다.
+ * 구매(Purchasing)는 표준 코드 목록에 없어 GENERAL 로 배정했습니다 — 코드 확정 시 조정 필요.
  */
-export const userScreen: ScreenDef = {
-  "slug": "user",
+export const searchStaffScreen: ScreenDef = {
+  "slug": "search-staff",
   "group": "Settings",
-  "navLabel": "User",
-  "title": "User",
-  "subtitle": "Pengguna · 사용자 계정 관리",
-  "cardTitle": "User List",
+  "navLabel": "Search Staff",
+  "title": "Search Staff",
+  "subtitle": "Pengguna · 직원 계정 관리",
+  "cardTitle": "Staff List",
   "searchPlaceholder": "User ID, Name, Department, Role",
   "primaryAction": "＋ NEW USER",
   "searchFields": [
@@ -111,7 +113,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "seo",
       "nm": "Seo Jonghwan",
-      "dept": "Management",
+      "dept": "GENERAL",
       "pos": "General Manager",
       "mail": "seo@ascendotyre.com",
       "role": "ADMIN",
@@ -121,7 +123,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "hery",
       "nm": "Hery",
-      "dept": "Sales",
+      "dept": "SALES",
       "pos": "Sales Rep — Surabaya",
       "mail": "hery@ascendotyre.com",
       "role": "SALES",
@@ -131,7 +133,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "hanif",
       "nm": "Hanif",
-      "dept": "Sales",
+      "dept": "SALES",
       "pos": "Sales Rep — Central/East Java",
       "mail": "hanif@ascendotyre.com",
       "role": "SALES",
@@ -141,7 +143,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "eri",
       "nm": "Eri",
-      "dept": "Sales",
+      "dept": "SALES",
       "pos": "Sales Rep — Jakarta",
       "mail": "eri@ascendotyre.com",
       "role": "SALES",
@@ -151,7 +153,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "arif",
       "nm": "Arif",
-      "dept": "Sales",
+      "dept": "SALES",
       "pos": "Sales Rep — West Kalimantan",
       "mail": "arif@ascendotyre.com",
       "role": "SALES",
@@ -161,7 +163,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "rizki",
       "nm": "Rizki",
-      "dept": "Sales",
+      "dept": "SALES",
       "pos": "Field Team",
       "mail": "rizki@ascendotyre.com",
       "role": "SALES",
@@ -171,7 +173,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "firman",
       "nm": "Firman",
-      "dept": "Warehouse",
+      "dept": "WAREHOUSE",
       "pos": "Warehouse Staff",
       "mail": "firman@ascendotyre.com",
       "role": "WAREHOUSE",
@@ -181,7 +183,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "komang",
       "nm": "Komang",
-      "dept": "Finance",
+      "dept": "FINANCE",
       "pos": "Finance Staff",
       "mail": "komang@ascendotyre.com",
       "role": "FINANCE",
@@ -191,7 +193,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "purch01",
       "nm": "Andi Pratama",
-      "dept": "Purchasing",
+      "dept": "GENERAL",
       "pos": "Import Staff",
       "mail": "purch01@ascendotyre.com",
       "role": "PURCHASING",
@@ -201,7 +203,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "acc01",
       "nm": "Sri Wahyuni",
-      "dept": "Finance",
+      "dept": "FINANCE",
       "pos": "Accounting Staff",
       "mail": "acc01@ascendotyre.com",
       "role": "FINANCE",
@@ -211,7 +213,7 @@ export const userScreen: ScreenDef = {
     {
       "uid": "audit01",
       "nm": "External Auditor",
-      "dept": "—",
+      "dept": "GENERAL",
       "pos": "Read-only Access",
       "mail": "audit01@ascendotyre.com",
       "role": "VIEWER",

@@ -1,0 +1,353 @@
+import type { ScreenDef } from '@/types/list-screen'
+
+/**
+ * Stock Adjustment — Penyesuaian Stok · 재고 조정
+ * 화면 시안(asm-mockup)에서 옮긴 예시 데이터입니다. 운영 전환 시 rows 를
+ * `GET /api/stock-adjustment` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ */
+export const stockAdjustmentScreen: ScreenDef = {
+  "slug": "stock-adjustment",
+  "group": "Inventory",
+  "navLabel": "Stock Adjustment",
+  "title": "Stock Adjustment",
+  "subtitle": "Penyesuaian Stok · 재고 조정",
+  "cardTitle": "Stock Adjustment List",
+  "searchPlaceholder": "Adj no, Item code, Warehouse, Reason",
+  "primaryAction": "＋ NEW ADJUSTMENT",
+  "searchFields": [
+    {
+      "label": "Keyword",
+      "key": "all"
+    },
+    {
+      "label": "ADJ NO.",
+      "key": "no"
+    },
+    {
+      "label": "ADJ DATE",
+      "key": "dt"
+    },
+    {
+      "label": "WAREHOUSE",
+      "key": "wh"
+    },
+    {
+      "label": "ITEM CODE",
+      "key": "code"
+    },
+    {
+      "label": "SIZE",
+      "key": "size"
+    },
+    {
+      "label": "SYSTEM QTY",
+      "key": "sys"
+    },
+    {
+      "label": "ACTUAL QTY",
+      "key": "act"
+    },
+    {
+      "label": "DIFF",
+      "key": "dif"
+    },
+    {
+      "label": "REASON",
+      "key": "rsn"
+    },
+    {
+      "label": "REQUESTED BY",
+      "key": "req"
+    },
+    {
+      "label": "STATUS",
+      "key": "st"
+    }
+  ],
+  "columns": [
+    {
+      "key": "no",
+      "label": "ADJ NO.",
+      "align": "left",
+      "format": "code"
+    },
+    {
+      "key": "dt",
+      "label": "ADJ DATE",
+      "align": "center",
+      "format": "date"
+    },
+    {
+      "key": "wh",
+      "label": "WAREHOUSE",
+      "align": "center",
+      "format": "text"
+    },
+    {
+      "key": "code",
+      "label": "ITEM CODE",
+      "align": "left",
+      "format": "code"
+    },
+    {
+      "key": "size",
+      "label": "SIZE",
+      "align": "left",
+      "format": "text"
+    },
+    {
+      "key": "sys",
+      "label": "SYSTEM QTY",
+      "align": "right",
+      "format": "int"
+    },
+    {
+      "key": "act",
+      "label": "ACTUAL QTY",
+      "align": "right",
+      "format": "int"
+    },
+    {
+      "key": "dif",
+      "label": "DIFF",
+      "align": "right",
+      "format": "signed"
+    },
+    {
+      "key": "rsn",
+      "label": "REASON",
+      "align": "left",
+      "format": "text",
+      "ellipsis": true
+    },
+    {
+      "key": "req",
+      "label": "REQUESTED BY",
+      "align": "center",
+      "format": "text"
+    },
+    {
+      "key": "st",
+      "label": "STATUS",
+      "align": "center",
+      "format": "badge"
+    }
+  ],
+  "totalKeys": [
+    "sys",
+    "act",
+    "dif"
+  ],
+  "totalLabelSpan": 6,
+  "pageSize": 15,
+  "rows": [
+    {
+      "no": "ADJ-2608-700",
+      "dt": "2026-08-19",
+      "wh": "Balikpapan WH",
+      "code": "AGR-2607",
+      "size": "825-16",
+      "sys": 308,
+      "act": 306,
+      "dif": -2,
+      "rsn": "Retur pelanggan",
+      "req": "Komang",
+      "st": "POSTED"
+    },
+    {
+      "no": "ADJ-2608-701",
+      "dt": "2026-08-02",
+      "wh": "Cikarang WH",
+      "code": "TB-R-4238",
+      "size": "825-16",
+      "sys": 320,
+      "act": 318,
+      "dif": -2,
+      "rsn": "Salah input DO",
+      "req": "Komang",
+      "st": "DRAFT"
+    },
+    {
+      "no": "ADJ-2608-702",
+      "dt": "2026-08-30",
+      "wh": "Balikpapan WH",
+      "code": "OTR-6538",
+      "size": "1200R24",
+      "sys": 392,
+      "act": 388,
+      "dif": -4,
+      "rsn": "Temuan stock opname",
+      "req": "Rizki",
+      "st": "DRAFT"
+    },
+    {
+      "no": "ADJ-2608-703",
+      "dt": "2026-08-15",
+      "wh": "Semarang WH",
+      "code": "IND-7245",
+      "size": "29.5R25",
+      "sys": 36,
+      "act": 37,
+      "dif": 1,
+      "rsn": "Selisih hitung fisik",
+      "req": "Hery",
+      "st": "REJECTED"
+    },
+    {
+      "no": "ADJ-2608-704",
+      "dt": "2026-07-28",
+      "wh": "Balikpapan WH",
+      "code": "AGR-7357",
+      "size": "825-16",
+      "sys": 364,
+      "act": 363,
+      "dif": -1,
+      "rsn": "Salah input DO",
+      "req": "Hery",
+      "st": "POSTED"
+    },
+    {
+      "no": "ADJ-2608-705",
+      "dt": "2026-08-31",
+      "wh": "Surabaya WH",
+      "code": "AGR-1123",
+      "size": "26.5R25",
+      "sys": 252,
+      "act": 257,
+      "dif": 5,
+      "rsn": "Barang rusak (defect)",
+      "req": "Hery",
+      "st": "POSTED"
+    },
+    {
+      "no": "ADJ-2608-706",
+      "dt": "2026-08-26",
+      "wh": "Surabaya WH",
+      "code": "AGR-1720",
+      "size": "26.5R25",
+      "sys": 202,
+      "act": 200,
+      "dif": -2,
+      "rsn": "Salah input DO",
+      "req": "Komang",
+      "st": "REJECTED"
+    },
+    {
+      "no": "ADJ-2608-707",
+      "dt": "2026-08-28",
+      "wh": "Palembang WH",
+      "code": "AGR-4354",
+      "size": "23.5R25",
+      "sys": 239,
+      "act": 237,
+      "dif": -2,
+      "rsn": "Selisih hitung fisik",
+      "req": "Rizki",
+      "st": "POSTED"
+    },
+    {
+      "no": "ADJ-2608-708",
+      "dt": "2026-08-09",
+      "wh": "Palembang WH",
+      "code": "IND-9306",
+      "size": "750-16",
+      "sys": 221,
+      "act": 223,
+      "dif": 2,
+      "rsn": "Barang rusak (defect)",
+      "req": "Komang",
+      "st": "REJECTED"
+    },
+    {
+      "no": "ADJ-2608-709",
+      "dt": "2026-08-10",
+      "wh": "Balikpapan WH",
+      "code": "AGR-9315",
+      "size": "23.5R25",
+      "sys": 395,
+      "act": 391,
+      "dif": -4,
+      "rsn": "Retur pelanggan",
+      "req": "Komang",
+      "st": "POSTED"
+    },
+    {
+      "no": "ADJ-2608-710",
+      "dt": "2026-07-23",
+      "wh": "Palembang WH",
+      "code": "AGR-8502",
+      "size": "1100R20",
+      "sys": 329,
+      "act": 331,
+      "dif": 2,
+      "rsn": "Selisih hitung fisik",
+      "req": "Rizki",
+      "st": "PENDING"
+    },
+    {
+      "no": "ADJ-2608-711",
+      "dt": "2026-08-04",
+      "wh": "Cikarang WH",
+      "code": "AGR-8755",
+      "size": "29.5R25",
+      "sys": 168,
+      "act": 167,
+      "dif": -1,
+      "rsn": "Salah input DO",
+      "req": "Hery",
+      "st": "DRAFT"
+    },
+    {
+      "no": "ADJ-2608-712",
+      "dt": "2026-08-16",
+      "wh": "Surabaya WH",
+      "code": "IND-4643",
+      "size": "18.4-34",
+      "sys": 67,
+      "act": 72,
+      "dif": 5,
+      "rsn": "Barang rusak (defect)",
+      "req": "Hery",
+      "st": "PENDING"
+    },
+    {
+      "no": "ADJ-2608-713",
+      "dt": "2026-08-28",
+      "wh": "Cikarang WH",
+      "code": "IND-1993",
+      "size": "825-16",
+      "sys": 157,
+      "act": 158,
+      "dif": 1,
+      "rsn": "Retur pelanggan",
+      "req": "Rizki",
+      "st": "POSTED"
+    },
+    {
+      "no": "ADJ-2608-714",
+      "dt": "2026-08-12",
+      "wh": "Palembang WH",
+      "code": "TB-R-6436",
+      "size": "18.4-34",
+      "sys": 45,
+      "act": 50,
+      "dif": 5,
+      "rsn": "Barang rusak (defect)",
+      "req": "Rizki",
+      "st": "PENDING"
+    },
+    {
+      "no": "ADJ-2608-715",
+      "dt": "2026-08-17",
+      "wh": "Balikpapan WH",
+      "code": "AGR-2555",
+      "size": "29.5R25",
+      "sys": 285,
+      "act": 283,
+      "dif": -2,
+      "rsn": "Salah input DO",
+      "req": "Rizki",
+      "st": "REJECTED"
+    }
+  ]
+}

@@ -40,14 +40,18 @@ export type NavGroup = {
   items: NavItem[]
 }
 
-/** 상단 메뉴 (Top navigation / Navigasi atas) */
+/**
+ * 상단 메뉴 (Top navigation / Navigasi atas)
+ * `match` 는 활성 표시 판정용 경로 접두사입니다 (하위 화면에서도 대분류가 켜지도록).
+ */
 export const topNav = [
-  { label: 'Purchasing', to: '/purchase-po' },
-  { label: 'Sales' },
-  { label: 'Inventory', to: '/inventory-list' },
+  { label: 'Purchasing', to: '/purchase-po', match: '/purchase-po' },
+  { label: 'Sales', to: '/sales/quotation', match: '/sales' },
+  { label: 'Inventory', to: '/inventory-list', match: '/inventory' },
   { label: 'Partners' },
-  { label: 'Master Data' },
-] satisfies Array<{ label: string; to?: string }>
+  { label: 'Master Data', to: '/master/item', match: '/master' },
+  { label: 'Settings', to: '/settings/user', match: '/settings' },
+] satisfies Array<{ label: string; to?: string; match?: string }>
 
 /**
  * 좌측 사이드바 (Sidebar / Bilah sisi)
@@ -71,11 +75,11 @@ export const navGroups: NavGroup[] = [
   {
     label: 'II. SALES',
     items: [
-      { label: 'Quotation', icon: FileSpreadsheet },
-      { label: 'Customer PO', icon: ClipboardList },
-      { label: 'SO', icon: FileCheck },
-      { label: 'Delivery Order', icon: Truck },
-      { label: 'Delivery Note', icon: FileText },
+      { label: 'Quotation', icon: FileSpreadsheet, to: '/sales/quotation' },
+      { label: 'Customer PO', icon: ClipboardList, to: '/sales/customer-po' },
+      { label: 'SO', icon: FileCheck, to: '/sales/so' },
+      { label: 'Delivery Order', icon: Truck, to: '/sales/delivery-order' },
+      { label: 'Delivery Note', icon: FileText, to: '/sales/delivery-note' },
       { label: 'Delivery Note (WH)', icon: Warehouse },
     ],
   },
@@ -83,10 +87,10 @@ export const navGroups: NavGroup[] = [
     label: 'III. INVENTORY',
     items: [
       { label: 'Inventory List', icon: Boxes, to: '/inventory-list' },
-      { label: 'Stock Movement', icon: ArrowLeftRight },
-      { label: 'Stock Adjustment', icon: SlidersHorizontal },
-      { label: 'Stock Transfer', icon: Repeat },
-      { label: 'Stock Opname', icon: ClipboardCheck },
+      { label: 'Stock Movement', icon: ArrowLeftRight, to: '/inventory/stock-movement' },
+      { label: 'Stock Adjustment', icon: SlidersHorizontal, to: '/inventory/stock-adjustment' },
+      { label: 'Stock Transfer', icon: Repeat, to: '/inventory/stock-transfer' },
+      { label: 'Stock Opname', icon: ClipboardCheck, to: '/inventory/stock-opname' },
     ],
   },
   {
@@ -100,18 +104,18 @@ export const navGroups: NavGroup[] = [
   {
     label: 'V. MASTER DATA',
     items: [
-      { label: 'Item', icon: Package },
-      { label: 'Brand / Pattern', icon: Tag },
-      { label: 'Warehouse', icon: Warehouse },
+      { label: 'Item', icon: Package, to: '/master/item' },
+      { label: 'Brand / Pattern', icon: Tag, to: '/master/brand-pattern' },
+      { label: 'Warehouse', icon: Warehouse, to: '/master/warehouse' },
       { label: 'Currency', icon: CircleDollarSign },
     ],
   },
   {
     label: 'VI. SETTINGS',
     items: [
-      { label: 'User', icon: UserCog },
-      { label: 'Role / Permission', icon: ShieldCheck },
-      { label: 'Approval Matrix', icon: Workflow },
+      { label: 'User', icon: UserCog, to: '/settings/user' },
+      { label: 'Role / Permission', icon: ShieldCheck, to: '/settings/role-permission' },
+      { label: 'Approval Matrix', icon: Workflow, to: '/settings/approval-matrix' },
     ],
   },
 ]

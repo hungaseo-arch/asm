@@ -6,7 +6,7 @@ withDefaults(
     label: string
     active: boolean
     asc: boolean
-    align?: 'left' | 'right'
+    align?: 'left' | 'right' | 'center'
     sticky?: 'first' | 'second'
   }>(),
   { align: 'left' },
@@ -19,7 +19,7 @@ defineEmits<{ (event: 'sort'): void }>()
   <th
     scope="col"
     :class="[
-      align === 'right' ? 'text-end' : '',
+      align === 'right' ? 'text-end' : align === 'center' ? 'text-center' : '',
       sticky ? `asm-sticky-col is-${sticky}` : '',
     ]"
     :aria-sort="active ? (asc ? 'ascending' : 'descending') : 'none'"
@@ -27,7 +27,11 @@ defineEmits<{ (event: 'sort'): void }>()
     <button
       type="button"
       class="sort-button"
-      :class="{ active, 'justify-content-end': align === 'right' }"
+      :class="{
+        active,
+        'justify-content-end': align === 'right',
+        'justify-content-center': align === 'center',
+      }"
       @click="$emit('sort')"
     >
       {{ label }}

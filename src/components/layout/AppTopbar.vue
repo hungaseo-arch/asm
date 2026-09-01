@@ -14,6 +14,11 @@ const session = useSessionStore()
 
 const displayName = computed(() => session.user?.name ?? session.user?.email ?? 'Andi Pratama')
 
+const isActive = (item: { to?: string; match?: string }) => {
+  const prefix = item.match ?? item.to
+  return Boolean(prefix && route.path.startsWith(prefix))
+}
+
 function openItem(item: { label: string; to?: string }) {
   if (item.to) {
     void router.push(item.to)
@@ -55,7 +60,7 @@ async function onSignOut() {
         :key="item.label"
         type="button"
         class="nav-item"
-        :class="{ active: item.to && route.path.startsWith(item.to) }"
+        :class="{ active: isActive(item) }"
         @click="openItem(item)"
       >
         {{ item.label }}

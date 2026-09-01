@@ -1,5 +1,14 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { screenRoutes } from '@/config/screens'
 import { useSessionStore } from '@/stores/session'
+
+/** 화면 시안에서 옮긴 목록 화면들 — 정의만 다르고 컴포넌트는 하나를 공유합니다. */
+const listScreenRoutes: RouteRecordRaw[] = screenRoutes.map((screen) => ({
+  path: screen.path,
+  name: screen.slug,
+  component: () => import('@/pages/ListScreenPage.vue'),
+  meta: { requiresAuth: false, title: screen.title, screen: screen.slug },
+}))
 
 const routes: RouteRecordRaw[] = [
   {
@@ -24,6 +33,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/InventoryListPage.vue'),
     meta: { requiresAuth: false, title: 'Inventory List' },
   },
+  ...listScreenRoutes,
   {
     path: '/auth',
     name: 'auth',

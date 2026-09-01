@@ -44,24 +44,27 @@ src/
 ├─ assets/asm-theme.css      ASM 디자인 토큰 + Bootstrap 5.3 오버라이드 (단일 진실 원천)
 ├─ components/
 │  ├─ layout/                AppShell · AppTopbar · AppSidebar
-│  ├─ common/                AsmBadge · SummaryCard · SortableHeader
+│  ├─ common/                AsmBadge · SummaryCard · SortableHeader · ListScreen
 │  ├─ purchase-po/           PoFilterPanel · PoTable · PoDetailDrawer · NewPoDialog
 │  └─ inventory/             InventoryFilterPanel · InventoryTable
 ├─ composables/              useBodyScrollLock · useEscapeToClose
-├─ config/navigation.ts      상단/사이드 메뉴 정의 (운영 ASM 6개 대분류)
+├─ config/
+│  ├─ navigation.ts          상단/사이드 메뉴 정의 (운영 ASM 6개 대분류)
+│  └─ screens.ts             목록 화면 레지스트리 (시안 15종 · 동적 import)
 ├─ data/                     프로토타입 시드 데이터 (운영 전환 시 삭제)
 │  ├─ purchase-orders.ts
-│  └─ inventory.ts
+│  ├─ inventory.ts
+│  └─ screens/               화면 시안(asm-mockup) 15종 정의 + 예시 데이터
 ├─ lib/
 │  ├─ api-base.ts            API base URL 결정 (빌드타임 > 런타임 > same-origin)
 │  ├─ api.ts                 apiFetch / apiGet / apiSend / OAuth 토큰 동기화
 │  ├─ api-error.ts           서버 오류 정규화 + 토스트
 │  ├─ auth.ts                Better Auth 클라이언트 + Bearer 토큰 저장
 │  └─ format.ts              사내 숫자 표기 표준 (아래 4항)
-├─ pages/                    PurchasePoPage · InventoryListPage · AuthPage · NotFoundPage
+├─ pages/                    PurchasePoPage · InventoryListPage · ListScreenPage · AuthPage · NotFoundPage
 ├─ router/index.ts           라우트 + 인증 가드
 ├─ stores/                   purchase-po · inventory · session (Pinia)
-└─ types/                    purchase-po.ts · inventory.ts (도메인 타입)
+└─ types/                    purchase-po.ts · inventory.ts · list-screen.ts (도메인 타입)
 ```
 
 ---
@@ -80,6 +83,8 @@ src/
 | `formatAmount` | 금액 (IDR 정수 / USD 2자리) | `IDR 185,000,000` |
 | `formatIdrShort` | 사내 요약용 단위 표기 | `IDR 1.25 miliar` |
 | `formatIdrFull` | **대외 문서용** 전체 자리수 + 단위 병기 | `IDR 1,250,000,000 (1.25 miliar)` |
+| `formatDecimal` | 통화코드가 열 제목에 있는 표의 소수 | `84.25` |
+| `formatSigned` | 증감 (양수에 + 표기) | `+120` · `-35` |
 | `formatDate` | dd MMM yyyy | `28 Aug 2026` |
 
 - 로케일은 **항상 `en-US`** 로 고정 — 인도네시아식 표기(`1.234,56`)는 사용하지 않습니다.
@@ -130,6 +135,8 @@ src/
 
 - Purchase PO 화면 전체 (요약 카드 · 필터 · 정렬/페이징 테이블 · 상세 드로어 · 신규 등록 다이얼로그 · CSV 내보내기)
 - Inventory List 화면 (운영 ASM `asminventorylist.html` 복제 · KPI 4종 · 필터 · 정렬/페이징 테이블 + 합계 행 · CSV/Print)
+- 목록 화면 15종 (Sales 5 · Inventory 4 · Master Data 3 · Settings 3) — 화면 시안 `asm-mockup` 이식.
+  `ListScreen` 하나가 검색·정렬·페이징·합계·CSV 를 처리하고 화면별 컬럼·데이터만 `data/screens/` 에 둡니다
 - 레이아웃(상단바 · 접이식 사이드바 · 모바일 오프캔버스), 404, 로그인/가입/이메일 인증
 - API·인증 레이어, 숫자 표기 표준 모듈
 - 타입체크(`vue-tsc`) 및 프로덕션 빌드 통과, 데스크톱/모바일 렌더링 검증

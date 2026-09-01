@@ -33,6 +33,19 @@ export function formatQty(value: number, unit = 'EA'): string {
   return `${formatInt(value)}${unit ? ` ${unit}` : ''}`
 }
 
+/** 소수점 고정 자리수 — 통화 코드가 열 제목에 있는 표에서 사용. 예) 84.25 */
+export function formatDecimal(value: number, digits = 2): string {
+  return new Intl.NumberFormat(NUMBER_LOCALE, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value)
+}
+
+/** 증감 — 양수에 + 를 붙인 정수. 예) +120 / -35 */
+export function formatSigned(value: number): string {
+  return `${value > 0 ? '+' : ''}${formatInt(value)}`
+}
+
 /** 퍼센트 — 소수점 1자리 고정. 예) 12.5% / 3.0% */
 export function formatPercent(value: number): string {
   return `${new Intl.NumberFormat(NUMBER_LOCALE, {

@@ -1,31 +1,25 @@
-<script setup lang="ts">
+<script setup>
 import { computed } from 'vue'
-import { X } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import AsmBadge from '@/components/common/AsmBadge.vue'
 import { formatAmount, formatDate, formatInt, formatPercent } from '@/utils/format'
-import { statusTone, type PurchaseOrder } from '@/types/purchase-po'
+import { statusTone } from '@/types/purchase-po'
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
 import { useEscapeToClose } from '@/composables/useEscapeToClose'
-
-const props = defineProps<{ order: PurchaseOrder }>()
-const emit = defineEmits<{ (event: 'close'): void }>()
-
+const props = defineProps({ order: { type: Object, required: true } })
+const emit = defineEmits(['close'])
 useBodyScrollLock()
 useEscapeToClose(() => emit('close'))
-
 const allocation = computed(() =>
   props.order.totalQty ? (props.order.allocated / props.order.totalQty) * 100 : 0,
 )
 const completion = computed(() =>
   props.order.totalQty ? (props.order.completed / props.order.totalQty) * 100 : 0,
 )
-
 /** 배정량 대비 완성 비율 — 진행바 내부 채움 폭 */
 const completionOfAllocation = computed(() =>
   allocation.value ? (completion.value / allocation.value) * 100 : 0,
 )
-
 const approvalNote = computed(() => {
   if (props.order.status === 'Pending approval') return 'Waiting for manager'
   if (props.order.status === 'Draft') return 'Not submitted'
@@ -35,7 +29,12 @@ const approvalNote = computed(() => {
 
 <template>
   <div class="asm-overlay justify-content-end">
-    <button type="button" class="asm-overlay__scrim" aria-label="상세 닫기" @click="emit('close')"></button>
+    <button
+      type="button"
+      class="asm-overlay__scrim"
+      aria-label="상세 닫기"
+      @click="emit('close')"
+    ></button>
 
     <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
       <header>
@@ -44,7 +43,12 @@ const approvalNote = computed(() => {
           <h2 id="drawer-title">{{ order.poNo }}</h2>
           <AsmBadge :tone="statusTone[order.status]" dot>{{ order.status }}</AsmBadge>
         </div>
-        <button type="button" class="asm-icon-btn is-borderless" aria-label="상세 닫기" @click="emit('close')">
+        <button
+          type="button"
+          class="asm-icon-btn is-borderless"
+          aria-label="상세 닫기"
+          @click="emit('close')"
+        >
           <X :size="19" />
         </button>
       </header>
@@ -156,8 +160,15 @@ const approvalNote = computed(() => {
   justify-content: space-between;
   align-items: flex-start;
 }
-.drawer > header h2 { margin: 0 0 8px; font-size: 20px; font-weight: 600; }
-.drawer-body { padding: 24px; overflow-y: auto; }
+.drawer > header h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.drawer-body {
+  padding: 24px;
+  overflow-y: auto;
+}
 
 .detail-hero {
   background: var(--asm-primary);
@@ -166,15 +177,27 @@ const approvalNote = computed(() => {
   padding: 16px;
   margin-bottom: 16px;
 }
-.detail-hero span { font-size: 11px; opacity: 0.72; text-transform: uppercase; letter-spacing: 0.08em; }
-.detail-hero h3 { font-size: 18px; margin: 4px 0 16px; }
+.detail-hero span {
+  font-size: 11px;
+  opacity: 0.72;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.detail-hero h3 {
+  font-size: 18px;
+  margin: 4px 0 16px;
+}
 .detail-hero .amount {
   font-family: var(--bs-font-monospace);
   font-size: 24px;
   font-weight: 700;
   margin: 0;
 }
-.detail-hero small { display: block; opacity: 0.75; margin-top: 4px; }
+.detail-hero small {
+  display: block;
+  opacity: 0.75;
+  margin-top: 4px;
+}
 
 .detail-section {
   border: 1px solid var(--asm-border);
@@ -190,15 +213,48 @@ const approvalNote = computed(() => {
   margin: 0 0 12px;
   color: var(--asm-fg-muted);
 }
-.detail-section dl { display: grid; grid-template-columns: 1fr 1fr; margin: 0; gap: 12px 16px; }
-.detail-section dt { font-size: 11px; color: var(--asm-fg-muted); font-weight: 400; }
-.detail-section dd { margin: 4px 0 0; font-weight: 600; }
+.detail-section dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+  gap: 12px 16px;
+}
+.detail-section dt {
+  font-size: 11px;
+  color: var(--asm-fg-muted);
+  font-weight: 400;
+}
+.detail-section dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+}
 
-.metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.metric-row > div { background: var(--asm-page-bg); padding: 8px; border-radius: var(--asm-radius-md); }
-.metric-row span { display: block; font-size: 11px; color: var(--asm-fg-muted); }
-.metric-row b { display: block; font-size: 13px; margin-top: 4px; font-variant-numeric: tabular-nums; }
-.metric-row small { display: block; font-size: 11px; color: var(--asm-primary); }
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.metric-row > div {
+  background: var(--asm-page-bg);
+  padding: 8px;
+  border-radius: var(--asm-radius-md);
+}
+.metric-row span {
+  display: block;
+  font-size: 11px;
+  color: var(--asm-fg-muted);
+}
+.metric-row b {
+  display: block;
+  font-size: 13px;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.metric-row small {
+  display: block;
+  font-size: 11px;
+  color: var(--asm-primary);
+}
 
 .detail-progress {
   height: 8px;
@@ -207,12 +263,33 @@ const approvalNote = computed(() => {
   overflow: hidden;
   margin-top: 12px;
 }
-.detail-progress > i { height: 100%; display: block; background: var(--asm-primary-soft); }
-.detail-progress em { height: 100%; display: block; background: var(--asm-primary); }
-.remaining { font-size: 11px; color: var(--asm-fg-muted); margin: 8px 0 0; }
+.detail-progress > i {
+  height: 100%;
+  display: block;
+  background: var(--asm-primary-soft);
+}
+.detail-progress em {
+  height: 100%;
+  display: block;
+  background: var(--asm-primary);
+}
+.remaining {
+  font-size: 11px;
+  color: var(--asm-fg-muted);
+  margin: 8px 0 0;
+}
 
-.timeline { list-style: none; margin: 0; padding: 0; }
-.timeline li { position: relative; padding: 0 0 16px 24px; font-size: 12px; font-weight: 600; }
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.timeline li {
+  position: relative;
+  padding: 0 0 16px 24px;
+  font-size: 12px;
+  font-weight: 600;
+}
 .timeline li:not(:last-child)::after {
   content: '';
   position: absolute;
@@ -257,7 +334,13 @@ const approvalNote = computed(() => {
 }
 
 @keyframes slideIn {
-  from { transform: translateX(25px); opacity: 0.75; }
-  to { transform: none; opacity: 1; }
+  from {
+    transform: translateX(25px);
+    opacity: 0.75;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
 }
 </style>

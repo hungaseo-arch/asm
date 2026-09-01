@@ -1,9 +1,7 @@
-<script setup lang="ts">
+<script setup>
 import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-
 const route = useRoute()
-
 onMounted(() => {
   console.error('404 Error: 존재하지 않는 경로 접근:', route.fullPath)
 })
@@ -28,6 +26,14 @@ onMounted(() => {
   background: var(--asm-page-bg);
   padding: 24px;
 }
-h1 { font-size: 56px; font-weight: 700; margin: 0 0 6px; color: var(--asm-primary); }
-.lead-text { color: var(--asm-fg-muted); margin: 0; }
+h1 {
+  font-size: 56px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--asm-primary);
+}
+.lead-text {
+  color: var(--asm-fg-muted);
+  margin: 0;
+}
 </style>

@@ -1,69 +1,77 @@
-<script setup lang="ts">
+<script setup>
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { X } from 'lucide-vue-next'
 import AsmDateInput from '@/components/common/AsmDateInput.vue'
+import * as yup from 'yup'
 import { groupAmountInput, parseAmountInput } from '@/utils/format'
-import type { Currency, NewPurchaseOrderInput, PurchaseType } from '@/types/purchase-po'
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
 import { useEscapeToClose } from '@/composables/useEscapeToClose'
-
-const props = defineProps<{ autoPoNo: string }>()
-const emit = defineEmits<{
-  (event: 'close'): void
-  (event: 'submit', input: NewPurchaseOrderInput): void
-}>()
-
+const props = defineProps({ autoPoNo: { type: String, required: true } })
+const emit = defineEmits(['close', 'submit'])
 useBodyScrollLock()
 useEscapeToClose(() => emit('close'))
-
 const supplier = ref('')
-const type = ref<PurchaseType>('Import')
-const currency = ref<Currency>('USD')
+const type = ref('Import')
+const currency = ref('USD')
 const amount = ref('')
 const targetDate = ref('')
-const errors = ref<Record<string, string>>({})
-const formEl = ref<HTMLFormElement | null>(null)
-
+const errors = ref({})
+const formEl = ref(null)
 // 가이드 7-5 — 모달이 열리면 첫 입력창에 포커스를 둡니다.
 onMounted(() => {
-  const fields = formEl.value?.querySelectorAll<HTMLInputElement>('.dialog-body input, .dialog-body select')
-  Array.from(fields ?? []).find((el) => !el.disabled)?.focus()
+  const fields = formEl.value?.querySelectorAll('.dialog-body input, .dialog-body select')
+  Array.from(fields ?? [])
+    .find((el) => !el.disabled)
+    ?.focus()
 })
-
 const errorCount = computed(() => Object.keys(errors.value).length)
-
 const basisNote = computed(() =>
   currency.value === 'IDR'
     ? 'Tax included · IDR 금액은 소수점을 표기하지 않습니다.'
     : 'DPP / Tax excluded · USD 금액은 소수점 둘째 자리까지 표기합니다.',
 )
-
 /** 구매 구분을 바꾸면 통화 기본값도 함께 맞춥니다. */
 function onTypeChange() {
   currency.value = type.value === 'Import' ? 'USD' : 'IDR'
 }
-
-function onAmountInput(event: Event) {
-  amount.value = groupAmountInput((event.target as HTMLInputElement).value)
+function onAmountInput(event) {
+  amount.value = groupAmountInput(event.target.value)
 }
+/** 신규 발주 입력 검증 스키마 (yup) */
+const schema = yup.object({
+  supplier: yup.string().trim().required('공급사는 필수 입력 항목입니다.'),
+  targetDate: yup
+    .string()
+    .required('목표일은 필수 입력 항목입니다.')
+    .matches(/^d{4}-d{2}-d{2}$/, '목표일은 YYYY-MM-DD 형식으로 입력하세요.'),
+  amount: yup
+    .number()
+    .typeError('0보다 큰 금액을 입력하세요.')
+    .positive('0보다 큰 금액을 입력하세요.')
+    .required('0보다 큰 금액을 입력하세요.'),
+})
 
 function submit() {
-  const next: Record<string, string> = {}
-  if (!supplier.value.trim()) next.supplier = '공급사는 필수 입력 항목입니다.'
-  if (!targetDate.value) next.targetDate = '목표일은 필수 입력 항목입니다.'
-
   const parsedAmount = parseAmountInput(amount.value)
-  if (!parsedAmount || parsedAmount <= 0) next.amount = '0보다 큰 금액을 입력하세요.'
-
+  const next = {}
+  try {
+    // 미입력 항목을 한 번에 모으기 위해 abortEarly: false 로 검증합니다.
+    schema.validateSync(
+      { supplier: supplier.value, targetDate: targetDate.value, amount: parsedAmount || undefined },
+      { abortEarly: false },
+    )
+  } catch (error) {
+    for (const item of error.inner ?? []) {
+      if (item.path && !next[item.path]) next[item.path] = item.message
+    }
+  }
   errors.value = next
   if (Object.keys(next).length) {
     // 미입력 항목을 한 번에 표시하고 첫 오류 항목으로 포커스를 옮깁니다 (이슈 25).
     void nextTick(() => {
-      formEl.value?.querySelector<HTMLElement>('.field.is-invalid :is(input, select)')?.focus()
+      formEl.value?.querySelector('.field.is-invalid :is(input, select)')?.focus()
     })
     return
   }
-
   emit('submit', {
     supplier: supplier.value.trim(),
     type: type.value,
@@ -76,7 +84,12 @@ function submit() {
 
 <template>
   <div class="asm-overlay justify-content-center align-items-center p-3">
-    <button type="button" class="asm-overlay__scrim" aria-label="닫기" @click="emit('close')"></button>
+    <button
+      type="button"
+      class="asm-overlay__scrim"
+      aria-label="닫기"
+      @click="emit('close')"
+    ></button>
 
     <form
       ref="formEl"
@@ -91,7 +104,12 @@ function submit() {
           <p class="asm-eyebrow mb-1">NEW PURCHASE ORDER</p>
           <h2 id="new-po-title">Create purchase PO</h2>
         </div>
-        <button type="button" class="asm-icon-btn is-borderless" aria-label="닫기" @click="emit('close')">
+        <button
+          type="button"
+          class="asm-icon-btn is-borderless"
+          aria-label="닫기"
+          @click="emit('close')"
+        >
           <X :size="19" />
         </button>
       </header>
@@ -193,13 +211,40 @@ function submit() {
   justify-content: space-between;
   align-items: flex-start;
 }
-.dialog > header h2 { margin: 0; font-size: 20px; font-weight: 600; }
-.dialog-body { padding: 24px; overflow-y: auto; }
-.field { display: block; margin-bottom: 16px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 0; }
-.req { color: var(--bs-danger); }
-.hint { display: block; font-size: 11px; color: var(--asm-fg-muted); margin-top: 4px; }
-.error-text { display: block; font-size: 11px; color: var(--asm-danger-fg); margin-top: 4px; }
+.dialog > header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+.dialog-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+.field {
+  display: block;
+  margin-bottom: 16px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 0;
+}
+.req {
+  color: var(--bs-danger);
+}
+.hint {
+  display: block;
+  font-size: 11px;
+  color: var(--asm-fg-muted);
+  margin-top: 4px;
+}
+.error-text {
+  display: block;
+  font-size: 11px;
+  color: var(--asm-danger-fg);
+  margin-top: 4px;
+}
 
 .field.is-invalid .form-control,
 .field.is-invalid .form-select {
@@ -214,10 +259,21 @@ function submit() {
   margin-bottom: 16px;
   border-radius: 0 var(--asm-radius-md) var(--asm-radius-md) 0;
 }
-.error-summary b { display: block; font-size: 12px; color: var(--asm-danger-fg); }
-.error-summary span { display: block; font-size: 11px; color: var(--asm-danger-fg); margin-top: 4px; }
+.error-summary b {
+  display: block;
+  font-size: 12px;
+  color: var(--asm-danger-fg);
+}
+.error-summary span {
+  display: block;
+  font-size: 11px;
+  color: var(--asm-danger-fg);
+  margin-top: 4px;
+}
 
-.amount-input { position: relative; }
+.amount-input {
+  position: relative;
+}
 .amount-input em {
   position: absolute;
   left: 12px;
@@ -229,7 +285,10 @@ function submit() {
   color: var(--asm-fg-muted);
   z-index: 2;
 }
-.amount-input .form-control { padding-left: 48px; font-family: var(--bs-font-monospace); }
+.amount-input .form-control {
+  padding-left: 48px;
+  font-family: var(--bs-font-monospace);
+}
 
 .basis-note {
   background: var(--asm-muted);
@@ -238,8 +297,16 @@ function submit() {
   padding: 12px;
   margin-top: 16px;
 }
-.basis-note b { display: block; font-size: 11px; }
-.basis-note span { display: block; font-size: 11px; color: var(--asm-fg-muted); margin-top: 4px; }
+.basis-note b {
+  display: block;
+  font-size: 11px;
+}
+.basis-note span {
+  display: block;
+  font-size: 11px;
+  color: var(--asm-fg-muted);
+  margin-top: 4px;
+}
 
 .dialog > footer {
   margin-top: auto;
@@ -253,7 +320,13 @@ function submit() {
 }
 
 @keyframes popIn {
-  from { transform: translateY(8px); opacity: 0.65; }
-  to { transform: none; opacity: 1; }
+  from {
+    transform: translateY(8px);
+    opacity: 0.65;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
 }
 </style>

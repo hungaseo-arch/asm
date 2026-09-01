@@ -1,14 +1,5 @@
-<script setup lang="ts">
+<script setup>
 import { computed, ref } from 'vue'
-import {
-  Boxes,
-  ChevronRight,
-  CircleDollarSign,
-  Hourglass,
-  Plus,
-  Printer,
-  TriangleAlert,
-} from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -18,15 +9,11 @@ import InventoryTable from '@/components/inventory/InventoryTable.vue'
 import { useInventoryStore } from '@/stores/inventory'
 import { formatAmount, formatDate, formatInt, formatQty } from '@/utils/format'
 import { AGED_STOCK_DAYS } from '@/types/inventory'
-
 const store = useInventoryStore()
 const { totalQty, totalValue, belowBufferCount, agedCount } = storeToRefs(store)
-
-const table = ref<InstanceType<typeof InventoryTable> | null>(null)
-
+const table = ref(null)
 /** 기준일 (As of / Per tanggal) — 서버 마감 시각 연동 전까지는 오늘 날짜 */
 const asOf = computed(() => formatDate(new Date().toISOString().slice(0, 10)))
-
 function printPage() {
   window.print()
 }
@@ -113,7 +100,9 @@ function printPage() {
   font-size: 12px;
   margin-bottom: 16px;
 }
-.breadcrumb-bar b { color: var(--asm-fg); }
+.breadcrumb-bar b {
+  color: var(--asm-fg);
+}
 
 .page-heading {
   display: flex;
@@ -130,8 +119,16 @@ function printPage() {
   margin: 0;
   font-weight: 700;
 }
-.page-sub { font-size: 12px; color: var(--asm-fg-muted); margin-top: 4px; }
-.page-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.page-sub {
+  font-size: 12px;
+  color: var(--asm-fg-muted);
+  margin-top: 4px;
+}
+.page-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
 .summary-grid {
   display: grid;
@@ -141,9 +138,14 @@ function printPage() {
 }
 
 @media (max-width: 1150px) {
-  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 @media (max-width: 767.98px) {
-  .page-heading { flex-direction: column; align-items: flex-start; }
+  .page-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

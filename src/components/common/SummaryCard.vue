@@ -1,16 +1,12 @@
-<script setup lang="ts">
-import type { Component } from 'vue'
-
-withDefaults(
-  defineProps<{
-    label: string
-    value: string
-    note: string
-    icon: Component
-    tone?: 'default' | 'warning' | 'success' | 'danger'
-  }>(),
-  { tone: 'default' },
-)
+<script setup>
+defineProps({
+  label: { type: String, required: true },
+  value: { type: String, required: true },
+  note: { type: String, default: '' },
+  icon: { type: [Object, Function], required: true },
+  /** 'default' | 'warning' | 'success' | 'danger' */
+  tone: { type: String, default: 'default' },
+})
 </script>
 
 <template>
@@ -35,14 +31,21 @@ withDefaults(
   min-height: 104px;
   height: 100%;
 }
-.label { color: var(--asm-fg-muted); font-size: 12px; font-weight: 600; }
+.label {
+  color: var(--asm-fg-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
 .value {
   font-size: 22px;
   line-height: 1.2;
   margin: 8px 0 4px;
   font-variant-numeric: tabular-nums;
 }
-.note { color: var(--asm-fg-muted); font-size: 11px; }
+.note {
+  color: var(--asm-fg-muted);
+  font-size: 11px;
+}
 .icon-box {
   width: 36px;
   height: 36px;
@@ -53,7 +56,16 @@ withDefaults(
   place-items: center;
   flex: none;
 }
-.tone-warning .icon-box { background: var(--asm-warning-bg); color: var(--asm-warning-fg); }
-.tone-success .icon-box { background: var(--asm-success-bg); color: var(--asm-success-fg); }
-.tone-danger .icon-box { background: var(--asm-danger-bg); color: var(--asm-danger-fg); }
+.tone-warning .icon-box {
+  background: var(--asm-warning-bg);
+  color: var(--asm-warning-fg);
+}
+.tone-success .icon-box {
+  background: var(--asm-success-bg);
+  color: var(--asm-success-fg);
+}
+.tone-danger .icon-box {
+  background: var(--asm-danger-bg);
+  color: var(--asm-danger-fg);
+}
 </style>

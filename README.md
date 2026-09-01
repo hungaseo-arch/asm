@@ -9,12 +9,15 @@ PT ASCENDO INTERNASIONAL — **ASM(Ascendo Management System)** 웹 클라이언
 
 | 항목 | 이전 (React) | 현재 (Vue) |
 |---|---|---|
-| 프레임워크 | React 19 | **Vue 3.5** (`<script setup>` + TypeScript) |
+| 프레임워크 | React 19 | **Vue 3.5** (`<script setup>` · JavaScript) |
 | 번들러 | rolldown-vite 7 | **Vite 6** |
+| HTTP | fetch | **axios** (단일 인스턴스 + JWT 인터셉터) |
+| 폼 검증 | zod | **yup** |
+| 엑셀 | 수기 CSV | **SheetJS(xlsx)** · 실행 시점 동적 로딩 |
 | 라우팅 | react-router-dom 6 | **vue-router 4** |
 | 상태관리 | useState / zustand | **Pinia 3** |
 | UI | shadcn/ui + Tailwind v4 | **Bootstrap 5.3 + ASM 디자인 토큰** |
-| 아이콘 | lucide-react | **lucide-vue-next** |
+| 아이콘 | lucide-react | **Font Awesome** (`@fortawesome/vue-fontawesome`) |
 | 토스트 | sonner | **vue-sonner** |
 | 인증 | better-auth/react | **better-auth/vue** |
 
@@ -28,7 +31,8 @@ PT ASCENDO INTERNASIONAL — **ASM(Ascendo Management System)** 웹 클라이언
 npm install
 cp .env.example .env      # API 주소 설정
 npm run dev               # http://localhost:3100
-npm run build             # 타입체크(vue-tsc) + 프로덕션 빌드 → dist/
+npm run build             # 프로덕션 빌드 → dist/
+npm run format            # prettier 정리
 npm run preview           # 빌드 결과 확인
 ```
 
@@ -42,10 +46,10 @@ npm run preview           # 빌드 결과 확인
 ```
 src/
 ├─ api/                      HTTP 계층 (작업지시서 §4)
-│  ├─ client.ts              axios 단일 인스턴스 — 트레일링 슬래시·Bearer·401 refresh 재시도
-│  ├─ api-base.ts            API base URL 결정 (빌드타임 > 런타임 > same-origin)
-│  ├─ api.ts · api-error.ts  레거시 fetch 헬퍼 + 서버 오류 정규화
-│  └─ auth.ts                Better Auth 클라이언트 + Bearer 토큰 저장
+│  ├─ client.js              axios 단일 인스턴스 — 트레일링 슬래시·Bearer·401 refresh 재시도
+│  ├─ api-base.js            API base URL 결정 (빌드타임 > 런타임 > same-origin)
+│  ├─ api.js · api-error.js  레거시 fetch 헬퍼 + 서버 오류 정규화
+│  └─ auth.js                Better Auth 클라이언트 + Bearer 토큰 저장
 ├─ assets/asm-theme.css      ASM 디자인 토큰 + Bootstrap 5.3 오버라이드 (단일 진실 원천)
 ├─ components/
 │  ├─ common/                AsmBadge · SummaryCard · SortableHeader · ListScreen · AsmDateInput
@@ -53,16 +57,17 @@ src/
 │  └─ inventory/             InventoryFilterPanel · InventoryTable
 ├─ composables/              useBodyScrollLock · useEscapeToClose · useExcelExport
 ├─ config/
-│  ├─ navigation.ts          상단/사이드 메뉴 정의 (개선의견서 목차 기준)
-│  └─ screens.ts             목록 화면 레지스트리 (28종 · 동적 import)
+│  ├─ navigation.js          상단/사이드 메뉴 정의 (개선의견서 목차 기준)
+│  └─ screens.js             목록 화면 레지스트리 (28종 · 동적 import)
 ├─ data/                     프로토타입 시드 데이터 (운영 전환 시 삭제)
-│  ├─ purchase-orders.ts · inventory.ts
+│  ├─ purchase-orders.js · inventory.js
 │  └─ screens/               목록 화면 28종 정의 + 예시 데이터
 ├─ layouts/                  DefaultLayout · AppTopbar · AppSidebar
+├─ plugins/icons.js          Font Awesome 전역 아이콘 등록 (이름 → 아이콘 매핑 단일 지점)
 ├─ router/index.ts           라우트 (실서버 경로명 사용 · 지시서 §5)
 ├─ stores/                   purchase-po · inventory · session (Pinia)
-├─ types/                    purchase-po.ts · inventory.ts · list-screen.ts (도메인 타입)
-├─ utils/format.ts           사내 숫자 표기 표준 (아래 4항)
+├─ types/                    purchase-po.js · inventory.js · list-screen.js (상태·배지 상수)
+├─ utils/format.js           사내 숫자 표기 표준 (아래 4항)
 └─ views/                    라우트 단위 페이지 (PurchasePoPage · InventoryListPage · ListScreenPage · AuthPage · NotFoundPage)
 ```
 
@@ -143,7 +148,8 @@ src/
   `ListScreen` 하나가 검색·기간필터·정렬·페이징·합계·CSV 를 처리하고 화면별 컬럼·데이터만 `data/screens/` 에 둡니다
 - 레이아웃(상단바 · 접이식 사이드바 · 모바일 오프캔버스), 404, 로그인/가입/이메일 인증
 - API·인증 레이어, 숫자 표기 표준 모듈
-- 타입체크(`vue-tsc`) 및 프로덕션 빌드 통과, 데스크톱/모바일 렌더링 검증
+- 작업지시서(workOrder.md) §2~§7 정합 — JavaScript 전환 · axios 계층 · 실서버 경로 · SheetJS · yup · Font Awesome
+- 프로덕션 빌드 통과 (초기 청크 109 KB gzip · 기준 500 KB)
 
 **잔여 작업 (Next steps)**
 

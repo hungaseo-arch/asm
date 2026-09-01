@@ -1,20 +1,15 @@
-<script setup lang="ts">
+<script setup>
 import { useRoute, useRouter } from 'vue-router'
-import { Bell, Menu } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { APP_USER, topNav } from '@/config/navigation'
-
-defineEmits<{ (event: 'open-sidebar'): void }>()
-
+defineEmits(['open-sidebar'])
 const route = useRoute()
 const router = useRouter()
-
-const isActive = (item: { to?: string; match?: string[] }) => {
+const isActive = (item) => {
   const prefixes = item.match ?? (item.to ? [item.to] : [])
   return prefixes.some((prefix) => route.path.startsWith(prefix))
 }
-
-function openItem(item: { label: string; to?: string }) {
+function openItem(item) {
   if (item.to) {
     void router.push(item.to)
     return
@@ -97,11 +92,21 @@ function openItem(item: { label: string; to?: string }) {
   font-weight: 800;
   font-size: 16px;
 }
-.brand strong { font-size: 16px; letter-spacing: 0.04em; }
-.brand span { font-size: 10px; white-space: nowrap; }
+.brand strong {
+  font-size: 16px;
+  letter-spacing: 0.04em;
+}
+.brand span {
+  font-size: 10px;
+  white-space: nowrap;
+}
 
 /* 가이드 6-2 — 14px / weight 500 / 좌우 패딩 12px */
-.topnav { align-items: center; margin-left: 16px; gap: 4px; }
+.topnav {
+  align-items: center;
+  margin-left: 16px;
+  gap: 4px;
+}
 .topnav .nav-item {
   height: 36px;
   border: 0;
@@ -111,9 +116,14 @@ function openItem(item: { label: string; to?: string }) {
   color: var(--asm-fg-muted);
   font-size: 14px;
   font-weight: 500;
-  transition: background-color 0.15s, color 0.15s;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
-.topnav .nav-item:hover { color: var(--asm-primary); background: var(--asm-muted); }
+.topnav .nav-item:hover {
+  color: var(--asm-primary);
+  background: var(--asm-muted);
+}
 /* 활성 대분류는 네이비 배경 + 흰 글자 (가이드 6-2 · P1) */
 .topnav .nav-item.active,
 .topnav .nav-item.active:hover {
@@ -140,7 +150,12 @@ function openItem(item: { label: string; to?: string }) {
   right: 6px;
   border: 1px solid var(--asm-bg);
 }
-.profile { display: flex; align-items: center; gap: 8px; color: var(--asm-fg); }
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--asm-fg);
+}
 .profile .avatar {
   width: 32px;
   height: 32px;
@@ -152,11 +167,25 @@ function openItem(item: { label: string; to?: string }) {
   place-items: center;
   flex: none;
 }
-.profile b { display: block; font-size: 13px; }
-.profile small { display: block; font-size: 11px; color: var(--asm-fg-muted); }
+.profile b {
+  display: block;
+  font-size: 13px;
+}
+.profile small {
+  display: block;
+  font-size: 11px;
+  color: var(--asm-fg-muted);
+}
 
 @media (max-width: 991.98px) {
-  .brand { width: auto; border-right: 0; padding: 0 12px; }
-  .top-actions { padding: 0 16px; gap: 8px; }
+  .brand {
+    width: auto;
+    border-right: 0;
+    padding: 0 12px;
+  }
+  .top-actions {
+    padding: 0 16px;
+    gap: 8px;
+  }
 }
 </style>

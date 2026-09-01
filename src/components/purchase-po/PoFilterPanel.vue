@@ -1,13 +1,10 @@
-<script setup lang="ts">
-import { FilterX, Search, SlidersHorizontal } from 'lucide-vue-next'
+<script setup>
 import { storeToRefs } from 'pinia'
 import AsmDateInput from '@/components/common/AsmDateInput.vue'
 import { usePurchasePoStore } from '@/stores/purchase-po'
 import { PO_STATUSES, PURCHASE_TYPES, CURRENCIES } from '@/types/purchase-po'
-
 const store = usePurchasePoStore()
 const { search, status, type, currency, fromDate, toDate, filtered } = storeToRefs(store)
-
 /** 필터를 바꾸면 항상 1페이지로 되돌립니다. */
 function onFilterChange() {
   store.page = 1
@@ -45,12 +42,20 @@ function onFilterChange() {
 
       <label>
         <span class="form-label">PO date from</span>
-        <AsmDateInput v-model="fromDate" aria-label="PO date from" @update:model-value="onFilterChange" />
+        <AsmDateInput
+          v-model="fromDate"
+          aria-label="PO date from"
+          @update:model-value="onFilterChange"
+        />
       </label>
 
       <label>
         <span class="form-label">PO date to</span>
-        <AsmDateInput v-model="toDate" aria-label="PO date to" @update:model-value="onFilterChange" />
+        <AsmDateInput
+          v-model="toDate"
+          aria-label="PO date to"
+          @update:model-value="onFilterChange"
+        />
       </label>
 
       <label>
@@ -65,7 +70,9 @@ function onFilterChange() {
         <span class="form-label">Type</span>
         <select v-model="type" class="form-select" @change="onFilterChange">
           <option value="All">All</option>
-          <option v-for="option in PURCHASE_TYPES" :key="option" :value="option">{{ option }}</option>
+          <option v-for="option in PURCHASE_TYPES" :key="option" :value="option">
+            {{ option }}
+          </option>
         </select>
       </label>
 
@@ -81,14 +88,18 @@ function onFilterChange() {
 </template>
 
 <style scoped>
-.filter-panel { padding: 16px; }
+.filter-panel {
+  padding: 16px;
+}
 .panel-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
 }
-.panel-title b { font-size: 13px; }
+.panel-title b {
+  font-size: 13px;
+}
 .count-pill {
   font-size: 11px;
   color: var(--asm-fg-muted);
@@ -108,14 +119,20 @@ function onFilterChange() {
   text-decoration: none;
   border-radius: var(--asm-radius-md);
 }
-.text-button:hover { background: var(--asm-muted); }
+.text-button:hover {
+  background: var(--asm-muted);
+}
 
 .filters {
   display: grid;
   grid-template-columns: minmax(208px, 1.7fr) repeat(5, minmax(120px, 1fr));
   gap: 12px;
 }
-.filters label { display: block; min-width: 0; margin: 0; }
+.filters label {
+  display: block;
+  min-width: 0;
+  margin: 0;
+}
 .field-icon {
   position: absolute;
   left: 12px;
@@ -126,11 +143,19 @@ function onFilterChange() {
 }
 
 @media (max-width: 1150px) {
-  .filters { grid-template-columns: repeat(3, 1fr); }
-  .search-field { grid-column: span 3; }
+  .filters {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .search-field {
+    grid-column: span 3;
+  }
 }
 @media (max-width: 767.98px) {
-  .filters { grid-template-columns: repeat(2, 1fr); }
-  .search-field { grid-column: span 2; }
+  .filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .search-field {
+    grid-column: span 2;
+  }
 }
 </style>

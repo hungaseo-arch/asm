@@ -1,7 +1,5 @@
-<script setup lang="ts">
+<script setup>
 import { computed } from 'vue'
-import { CalendarDays } from 'lucide-vue-next'
-
 /**
  * ISO 날짜 입력 (ISO date input / Input tanggal ISO)
  *
@@ -10,14 +8,13 @@ import { CalendarDays } from 'lucide-vue-next'
  * 언어 설정과 무관하게 YYYY-MM-DD 로 고정 표시되는 입력 컴포넌트를 사용합니다.
  * 디자인 가이드 8-2 의 날짜 표기(ISO 8601) 기준과도 동일합니다.
  */
-const props = withDefaults(
-  defineProps<{ modelValue: string; ariaLabel?: string; min?: string }>(),
-  { ariaLabel: undefined, min: undefined },
-)
-const emit = defineEmits<{ (event: 'update:modelValue', value: string): void }>()
-
+const props = defineProps({
+  modelValue: { type: String, default: '' },
+  ariaLabel: { type: String, default: undefined },
+  min: { type: String, default: undefined },
+})
+const emit = defineEmits(['update:modelValue'])
 const ISO_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-
 const isInvalid = computed(() => {
   const value = props.modelValue
   if (!value) return false
@@ -25,10 +22,9 @@ const isInvalid = computed(() => {
   if (props.min && value < props.min) return true
   return Number.isNaN(new Date(`${value}T00:00:00`).getTime())
 })
-
 /** 숫자만 받아 YYYY-MM-DD 형태로 하이픈을 자동 삽입합니다. */
-function onInput(event: Event) {
-  const digits = (event.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 8)
+function onInput(event) {
+  const digits = event.target.value.replace(/\D/g, '').slice(0, 8)
   const parts = [digits.slice(0, 4), digits.slice(4, 6), digits.slice(6, 8)].filter(Boolean)
   emit('update:modelValue', parts.join('-'))
 }

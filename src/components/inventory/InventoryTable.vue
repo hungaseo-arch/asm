@@ -1,19 +1,11 @@
-<script setup lang="ts">
-import { ChevronLeft, ChevronRight, Download } from 'lucide-vue-next'
+<script setup>
 import { storeToRefs } from 'pinia'
 import { useExcelExport } from '@/composables/useExcelExport'
 import AsmBadge from '@/components/common/AsmBadge.vue'
 import SortableHeader from '@/components/common/SortableHeader.vue'
 import { useInventoryStore } from '@/stores/inventory'
 import { formatAmount, formatInt } from '@/utils/format'
-import {
-  AGED_STOCK_DAYS,
-  availableOf,
-  statusTone,
-  STATUS_LABEL,
-  valueOf,
-} from '@/types/inventory'
-
+import { AGED_STOCK_DAYS, availableOf, statusTone, STATUS_LABEL, valueOf } from '@/types/inventory'
 const store = useInventoryStore()
 const {
   rows,
@@ -30,27 +22,47 @@ const {
   totalAvailable,
   totalValue,
 } = storeToRefs(store)
-
 const { exportRows } = useExcelExport()
-
 /** 현재 필터 결과를 엑셀로 내보냅니다 (지시서 §2 SheetJS · 실행 시점 동적 로딩). */
 function exportExcel() {
   const headers = [
-    'Item Code', 'Warehouse', 'Category', 'Brand', 'Size', 'Pattern', 'PR/TL',
-    'Stock', 'Reserved', 'Available', 'Unit Cost (USD)', 'Stock Value (USD)', 'Aging', 'Status',
+    'Item Code',
+    'Warehouse',
+    'Category',
+    'Brand',
+    'Size',
+    'Pattern',
+    'PR/TL',
+    'Stock',
+    'Reserved',
+    'Available',
+    'Unit Cost (USD)',
+    'Stock Value (USD)',
+    'Aging',
+    'Status',
   ]
   void exportRows(
     'inventory-list',
     headers,
     filtered.value.map((item) => [
-      item.code, item.wh, item.cat, item.brand, item.size, item.pattern, item.pr,
-      item.qty, item.rsv, availableOf(item), item.cost, valueOf(item),
-      item.aging, STATUS_LABEL[item.status],
+      item.code,
+      item.wh,
+      item.cat,
+      item.brand,
+      item.size,
+      item.pattern,
+      item.pr,
+      item.qty,
+      item.rsv,
+      availableOf(item),
+      item.cost,
+      valueOf(item),
+      item.aging,
+      STATUS_LABEL[item.status],
     ]),
     'Inventory List',
   )
 }
-
 defineExpose({ exportExcel })
 </script>
 
@@ -62,8 +74,14 @@ defineExpose({ exportExcel })
       <div class="d-flex align-items-center gap-2">
         <label class="rows-select mb-0">
           <span>Rows</span>
-          <select v-model.number="pageSize" class="form-select form-select-sm" @change="store.page = 1">
-            <option v-for="value in [10, 30, 50, 100]" :key="value" :value="value">{{ value }}</option>
+          <select
+            v-model.number="pageSize"
+            class="form-select form-select-sm"
+            @change="store.page = 1"
+          >
+            <option v-for="value in [10, 30, 50, 100]" :key="value" :value="value">
+              {{ value }}
+            </option>
           </select>
         </label>
         <button type="button" class="btn btn-outline-primary btn-sm" @click="exportExcel">
@@ -81,43 +99,65 @@ defineExpose({ exportExcel })
             <th scope="col" class="no-col">No</th>
             <SortableHeader
               class="col-key"
-              label="Item code" :active="sortKey === 'code'" :asc="sortAsc"
+              label="Item code"
+              :active="sortKey === 'code'"
+              :asc="sortAsc"
               @sort="store.toggleSort('code')"
             />
             <SortableHeader
-              label="Warehouse" :active="sortKey === 'wh'" :asc="sortAsc"
+              label="Warehouse"
+              :active="sortKey === 'wh'"
+              :asc="sortAsc"
               @sort="store.toggleSort('wh')"
             />
             <SortableHeader
-              label="Category" :active="sortKey === 'cat'" :asc="sortAsc"
+              label="Category"
+              :active="sortKey === 'cat'"
+              :asc="sortAsc"
               @sort="store.toggleSort('cat')"
             />
             <SortableHeader
-              label="Brand" :active="sortKey === 'brand'" :asc="sortAsc"
+              label="Brand"
+              :active="sortKey === 'brand'"
+              :asc="sortAsc"
               @sort="store.toggleSort('brand')"
             />
             <SortableHeader
-              label="Size" :active="sortKey === 'size'" :asc="sortAsc"
+              label="Size"
+              :active="sortKey === 'size'"
+              :asc="sortAsc"
               @sort="store.toggleSort('size')"
             />
             <th scope="col">Pattern</th>
             <th scope="col">PR / TL</th>
             <SortableHeader
-              label="Stock (EA)" align="right" :active="sortKey === 'qty'" :asc="sortAsc"
+              label="Stock (EA)"
+              align="right"
+              :active="sortKey === 'qty'"
+              :asc="sortAsc"
               @sort="store.toggleSort('qty')"
             />
             <th scope="col" class="text-end">Reserved</th>
             <th scope="col" class="text-end">Available</th>
             <SortableHeader
-              label="Unit cost" align="right" :active="sortKey === 'cost'" :asc="sortAsc"
+              label="Unit cost"
+              align="right"
+              :active="sortKey === 'cost'"
+              :asc="sortAsc"
               @sort="store.toggleSort('cost')"
             />
             <SortableHeader
-              label="Stock value" align="right" :active="sortKey === 'value'" :asc="sortAsc"
+              label="Stock value"
+              align="right"
+              :active="sortKey === 'value'"
+              :asc="sortAsc"
               @sort="store.toggleSort('value')"
             />
             <SortableHeader
-              label="Aging (days)" align="right" :active="sortKey === 'aging'" :asc="sortAsc"
+              label="Aging (days)"
+              align="right"
+              :active="sortKey === 'aging'"
+              :asc="sortAsc"
               @sort="store.toggleSort('aging')"
             />
             <th scope="col">Status</th>
@@ -126,12 +166,18 @@ defineExpose({ exportExcel })
         <tbody>
           <tr v-for="(item, index) in rows" :key="item.id">
             <td class="num no-col">{{ formatInt(rangeStart + index) }}</td>
-            <td class="col-key"><span class="item-code">{{ item.code }}</span></td>
+            <td class="col-key">
+              <span class="item-code">{{ item.code }}</span>
+            </td>
             <td>{{ item.wh }}</td>
-            <td><span class="cat-tag">{{ item.cat }}</span></td>
+            <td>
+              <span class="cat-tag">{{ item.cat }}</span>
+            </td>
             <td>{{ item.brand }}</td>
             <!-- 규격에는 콤마를 넣지 않습니다 (사내 표기 규칙) -->
-            <td><b>{{ item.size }}</b></td>
+            <td>
+              <b>{{ item.size }}</b>
+            </td>
             <td>{{ item.pattern }}</td>
             <td>{{ item.pr }}</td>
             <td class="num">{{ formatInt(item.qty) }}</td>
@@ -143,7 +189,9 @@ defineExpose({ exportExcel })
               {{ formatInt(item.aging) }}
             </td>
             <td>
-              <AsmBadge :tone="statusTone[item.status]" dot>{{ STATUS_LABEL[item.status] }}</AsmBadge>
+              <AsmBadge :tone="statusTone[item.status]" dot>{{
+                STATUS_LABEL[item.status]
+              }}</AsmBadge>
             </td>
           </tr>
           <tr v-if="!rows.length">
@@ -169,20 +217,29 @@ defineExpose({ exportExcel })
     <!-- 페이지네이션 (Pagination / Penomoran halaman) -->
     <div class="pagination-bar">
       <p class="mb-0">
-        Showing <b>{{ formatInt(rangeStart) }}</b>–<b>{{ formatInt(rangeEnd) }}</b> of
+        Showing <b>{{ formatInt(rangeStart) }}</b
+        >–<b>{{ formatInt(rangeEnd) }}</b> of
         <b>{{ formatInt(filtered.length) }}</b>
       </p>
       <div class="d-flex align-items-center gap-2">
         <button
-          type="button" class="asm-icon-btn is-sm" :disabled="safePage === 1"
-          aria-label="이전 페이지" @click="store.goToPage(safePage - 1)"
+          type="button"
+          class="asm-icon-btn is-sm"
+          :disabled="safePage === 1"
+          aria-label="이전 페이지"
+          @click="store.goToPage(safePage - 1)"
         >
           <ChevronLeft :size="17" />
         </button>
-        <span>Page <b>{{ safePage }}</b> of {{ pageCount }}</span>
+        <span
+          >Page <b>{{ safePage }}</b> of {{ pageCount }}</span
+        >
         <button
-          type="button" class="asm-icon-btn is-sm" :disabled="safePage === pageCount"
-          aria-label="다음 페이지" @click="store.goToPage(safePage + 1)"
+          type="button"
+          class="asm-icon-btn is-sm"
+          :disabled="safePage === pageCount"
+          aria-label="다음 페이지"
+          @click="store.goToPage(safePage + 1)"
         >
           <ChevronRight :size="17" />
         </button>
@@ -192,7 +249,9 @@ defineExpose({ exportExcel })
 </template>
 
 <style scoped>
-.table-panel { overflow: hidden; }
+.table-panel {
+  overflow: hidden;
+}
 .table-toolbar {
   min-height: 64px;
   padding: 12px 16px;
@@ -203,7 +262,10 @@ defineExpose({ exportExcel })
   gap: 16px;
   flex-wrap: wrap;
 }
-.table-toolbar h2 { font-size: 15px; margin: 0; }
+.table-toolbar h2 {
+  font-size: 15px;
+  margin: 0;
+}
 .rows-select {
   display: flex;
   align-items: center;
@@ -211,7 +273,9 @@ defineExpose({ exportExcel })
   font-size: 12px;
   color: var(--asm-fg-muted);
 }
-.rows-select select { width: auto; }
+.rows-select select {
+  width: auto;
+}
 
 .table-scroll {
   overflow: auto;
@@ -219,12 +283,22 @@ defineExpose({ exportExcel })
   min-height: 288px;
   overscroll-behavior: contain;
 }
-.table-scroll table { min-width: 1560px; }
+.table-scroll table {
+  min-width: 1560px;
+}
 
-.no-col { width: 56px; color: var(--asm-fg-muted); }
+.no-col {
+  width: 56px;
+  color: var(--asm-fg-muted);
+}
 
 /* 좌측 고정 열 — No + 품번. 가이드 8-2 · 개선의견서 이슈 23 */
-.table-scroll :is(th, td).no-col { position: sticky; left: 0; z-index: 3; background: var(--asm-bg); }
+.table-scroll :is(th, td).no-col {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--asm-bg);
+}
 .table-scroll :is(th, td).col-key {
   position: sticky;
   left: 56px;
@@ -233,8 +307,13 @@ defineExpose({ exportExcel })
   background: var(--asm-bg);
   box-shadow: 5px 0 7px -7px rgb(8 18 31 / 0.3);
 }
-.table-scroll thead :is(th.no-col, th.col-key) { z-index: 6; background: var(--asm-muted); }
-.table-scroll tbody tr:hover :is(td.no-col, td.col-key) { background: var(--asm-muted); }
+.table-scroll thead :is(th.no-col, th.col-key) {
+  z-index: 6;
+  background: var(--asm-muted);
+}
+.table-scroll tbody tr:hover :is(td.no-col, td.col-key) {
+  background: var(--asm-muted);
+}
 
 .cat-tag,
 .item-code {
@@ -246,7 +325,10 @@ defineExpose({ exportExcel })
   font-size: 11px;
   font-weight: 600;
 }
-.cat-tag { background: var(--asm-muted); color: var(--asm-fg-muted); }
+.cat-tag {
+  background: var(--asm-muted);
+  color: var(--asm-fg-muted);
+}
 .item-code {
   border: 1px solid var(--asm-border);
   background: var(--asm-surface-subtle);
@@ -255,7 +337,9 @@ defineExpose({ exportExcel })
 }
 
 /* 장기재고(365일 초과) 경과일 강조 */
-.is-aged { color: var(--asm-danger-fg); }
+.is-aged {
+  color: var(--asm-danger-fg);
+}
 
 /* 합계 행 — 스크롤 시 하단 고정 */
 tfoot td {
@@ -288,9 +372,13 @@ tfoot td {
 }
 
 @media (max-width: 1150px) {
-  .table-scroll { max-height: calc(100vh - 528px); }
+  .table-scroll {
+    max-height: calc(100vh - 528px);
+  }
 }
 @media (max-width: 991.98px) {
-  .table-scroll { max-height: none; }
+  .table-scroll {
+    max-height: none;
+  }
 }
 </style>

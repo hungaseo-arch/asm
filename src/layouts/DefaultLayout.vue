@@ -1,8 +1,7 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
 import AppTopbar from './AppTopbar.vue'
 import AppSidebar from './AppSidebar.vue'
-
 const sidebarOpen = ref(false)
 </script>
 
@@ -39,9 +38,15 @@ const sidebarOpen = ref(false)
   flex: 1;
   padding: 24px;
 }
-.asm-content-inner { max-width: 1200px; margin: 0 auto; }
+.asm-content-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
 
 @media (max-width: 991.98px) {
-  .asm-content { margin-left: 0; padding: 18px 16px; }
+  .asm-content {
+    margin-left: 0;
+    padding: 18px 16px;
+  }
 }
 </style>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 /**
  * 로그인 / 가입 / 이메일 인증 화면.
  *
@@ -19,12 +19,10 @@ import { authClient } from '@/api/auth'
 import { apiFetch } from '@/api/api'
 import { normalizeApiError, readResponseBody } from '@/api/api-error'
 import { useSessionStore } from '@/stores/session'
-
 const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
-
-const mode = ref<'signin' | 'signup'>('signin')
+const mode = ref('signin')
 const name = ref('')
 const email = ref('')
 const password = ref('')
@@ -33,8 +31,7 @@ const pendingVerificationEmail = ref('')
 const resendAvailableAt = ref(0)
 const now = ref(Date.now())
 const submitting = ref(false)
-
-let timer: number | undefined
+let timer
 function startCountdown() {
   window.clearInterval(timer)
   timer = window.setInterval(() => {
@@ -43,37 +40,34 @@ function startCountdown() {
   }, 1000)
 }
 onUnmounted(() => window.clearInterval(timer))
-
 const verificationEmail = computed(
   () =>
-    pendingVerificationEmail.value ||
-    (!session.isEmailVerified ? (session.user?.email ?? '') : ''),
+    pendingVerificationEmail.value || (!session.isEmailVerified ? (session.user?.email ?? '') : ''),
 )
 const resendWaitSeconds = computed(() =>
   Math.max(0, Math.ceil((resendAvailableAt.value - now.value) / 1000)),
 )
-
-const redirectTarget = computed(() => (route.query.redirect as string | undefined) ?? '/')
-
+const redirectTarget = computed(() => route.query.redirect ?? '/')
 async function onSubmit() {
   submitting.value = true
   try {
     const result =
       mode.value === 'signup'
-        ? await authClient.signUp.email({ name: name.value, email: email.value, password: password.value })
+        ? await authClient.signUp.email({
+            name: name.value,
+            email: email.value,
+            password: password.value,
+          })
         : await authClient.signIn.email({ email: email.value, password: password.value })
-
     if (result.error) {
       throw new Error(result.error.message ?? 'Authentication failed')
     }
-
     if (mode.value === 'signup') {
       await sendVerificationCode()
       pendingVerificationEmail.value = email.value
       toast.success('인증 코드를 발송했습니다')
       return
     }
-
     toast.success('로그인되었습니다')
     // (3) 라우터로 이동 — reload 금지
     void router.replace(redirectTarget.value)
@@ -83,14 +77,13 @@ async function onSubmit() {
     submitting.value = false
   }
 }
-
 async function sendVerificationCode() {
   const response = await apiFetch('/email-verification/send-code', { method: 'POST', auth: true })
   if (!response.ok) {
     const body = await readResponseBody(response)
     const retryAfterSeconds =
       body && typeof body === 'object' && 'data' in body
-        ? Number((body.data as { retryAfterSeconds?: unknown } | null)?.retryAfterSeconds ?? 0)
+        ? Number(body.data?.retryAfterSeconds ?? 0)
         : 0
     if (retryAfterSeconds > 0) {
       now.value = Date.now()
@@ -103,7 +96,6 @@ async function sendVerificationCode() {
   resendAvailableAt.value = Date.now() + 60 * 1000
   startCountdown()
 }
-
 async function onVerifyCode() {
   submitting.value = true
   try {
@@ -116,10 +108,8 @@ async function onVerifyCode() {
     if (!response.ok) {
       throw new Error(normalizeApiError(await readResponseBody(response)).message)
     }
-
     // (4) 화면을 떠나기 전에 세션 갱신
     await session.refetch()
-
     toast.success('이메일 인증이 완료되었습니다')
     void router.replace(redirectTarget.value)
   } catch (error) {
@@ -128,7 +118,6 @@ async function onVerifyCode() {
     submitting.value = false
   }
 }
-
 async function onResendCode() {
   submitting.value = true
   try {
@@ -157,7 +146,9 @@ async function onResendCode() {
       <div class="card-head">
         <div class="brand-mark">A</div>
         <h1>이메일 인증</h1>
-        <p><b>{{ verificationEmail }}</b> 으로 보낸 6자리 코드를 입력하세요.</p>
+        <p>
+          <b>{{ verificationEmail }}</b> 으로 보낸 6자리 코드를 입력하세요.
+        </p>
       </div>
       <form class="card-body-form" @submit.prevent="onVerifyCode">
         <label class="d-block mb-3">
@@ -198,14 +189,20 @@ async function onResendCode() {
 
       <div class="mode-tabs" role="tablist">
         <button
-          type="button" role="tab" :aria-selected="mode === 'signin'"
-          :class="{ active: mode === 'signin' }" @click="mode = 'signin'"
+          type="button"
+          role="tab"
+          :aria-selected="mode === 'signin'"
+          :class="{ active: mode === 'signin' }"
+          @click="mode = 'signin'"
         >
           로그인
         </button>
         <button
-          type="button" role="tab" :aria-selected="mode === 'signup'"
-          :class="{ active: mode === 'signup' }" @click="mode = 'signup'"
+          type="button"
+          role="tab"
+          :aria-selected="mode === 'signup'"
+          :class="{ active: mode === 'signup' }"
+          @click="mode = 'signup'"
         >
           가입
         </button>
@@ -223,9 +220,12 @@ async function onResendCode() {
         <label class="d-block mb-3">
           <span class="form-label">비밀번호 (Password / Kata sandi)</span>
           <input
-            v-model="password" type="password" class="form-control"
+            v-model="password"
+            type="password"
+            class="form-control"
             :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'"
-            minlength="8" required
+            minlength="8"
+            required
           />
         </label>
         <button class="btn btn-primary w-100" type="submit" :disabled="submitting">
@@ -244,9 +244,18 @@ async function onResendCode() {
   background: var(--asm-page-bg);
   padding: 24px 16px;
 }
-.auth-card { width: min(420px, 100%); overflow: hidden; }
-.asm-accent-line { height: var(--asm-accent-h); background: var(--asm-primary); }
-.card-head { padding: 24px 24px 12px; text-align: center; }
+.auth-card {
+  width: min(420px, 100%);
+  overflow: hidden;
+}
+.asm-accent-line {
+  height: var(--asm-accent-h);
+  background: var(--asm-primary);
+}
+.card-head {
+  padding: 24px 24px 12px;
+  text-align: center;
+}
 .brand-mark {
   width: 44px;
   height: 44px;
@@ -259,9 +268,20 @@ async function onResendCode() {
   font-weight: 800;
   font-size: 22px;
 }
-.card-head h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.04em; font-weight: 600; }
-.card-head p { font-size: 12px; color: var(--asm-fg-muted); margin: 0; }
-.card-body-form { padding: 8px 24px 24px; }
+.card-head h1 {
+  font-size: 20px;
+  margin: 0 0 4px;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.card-head p {
+  font-size: 12px;
+  color: var(--asm-fg-muted);
+  margin: 0;
+}
+.card-body-form {
+  padding: 8px 24px 24px;
+}
 
 .mode-tabs {
   display: grid;

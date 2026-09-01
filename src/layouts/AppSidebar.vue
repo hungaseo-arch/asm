@@ -1,30 +1,22 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronRight, LayoutDashboard, X } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
-import { APP_VERSION, navGroups, type NavGroup, type NavItem } from '@/config/navigation'
-
-defineProps<{ open: boolean }>()
-const emit = defineEmits<{ (event: 'close'): void }>()
-
+import { APP_VERSION, navGroups } from '@/config/navigation'
+defineProps({ open: { type: Boolean, default: false } })
+const emit = defineEmits(['close'])
 const route = useRoute()
 const router = useRouter()
-
 /** 사용자가 직접 토글한 그룹만 기록합니다. 미기록 그룹은 현재 화면 기준으로 펼칩니다. */
-const toggled = ref<Record<string, boolean>>({})
-
-const isActive = (item: NavItem) => Boolean(item.to && route.path.startsWith(item.to))
-
-function isOpen(group: NavGroup) {
+const toggled = ref({})
+const isActive = (item) => Boolean(item.to && route.path.startsWith(item.to))
+function isOpen(group) {
   return toggled.value[group.label] ?? group.items.some(isActive)
 }
-
-function toggleGroup(group: NavGroup) {
+function toggleGroup(group) {
   toggled.value = { ...toggled.value, [group.label]: !isOpen(group) }
 }
-
-function openItem(item: NavItem) {
+function openItem(item) {
   if (item.to) {
     void router.push(item.to)
     emit('close')
@@ -125,7 +117,9 @@ function openItem(item: NavItem) {
   align-items: center;
   padding: 0 8px 8px;
 }
-.nav-group { margin-top: 16px; }
+.nav-group {
+  margin-top: 16px;
+}
 .nav-group .group-head {
   display: flex;
   align-items: center;
@@ -139,13 +133,21 @@ function openItem(item: NavItem) {
   border-radius: var(--asm-radius-md);
   text-align: left;
 }
-.nav-group .group-head:hover { background: var(--asm-secondary); color: var(--asm-primary); }
+.nav-group .group-head:hover {
+  background: var(--asm-secondary);
+  color: var(--asm-primary);
+}
 .nav-group .group-head:focus-visible {
   outline: 3px solid rgb(0 64 133 / 0.2);
   outline-offset: 1px;
 }
-.caret { flex: none; transition: transform 0.15s; }
-.caret.is-open { transform: rotate(90deg); }
+.caret {
+  flex: none;
+  transition: transform 0.15s;
+}
+.caret.is-open {
+  transform: rotate(90deg);
+}
 .sub-item em {
   font-style: normal;
   font-size: 10px;
@@ -161,8 +163,16 @@ function openItem(item: NavItem) {
   padding: 16px 8px 0;
   color: var(--asm-fg-muted);
 }
-.sidebar-foot span { display: block; font-size: 12px; font-weight: 600; }
-.sidebar-foot small { display: block; font-size: 11px; margin-top: 4px; }
+.sidebar-foot span {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+.sidebar-foot small {
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
+}
 
 .sidebar-scrim {
   position: fixed;

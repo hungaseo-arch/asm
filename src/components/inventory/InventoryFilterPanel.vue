@@ -1,13 +1,10 @@
-<script setup lang="ts">
-import { FilterX, Ruler, Search, SlidersHorizontal } from 'lucide-vue-next'
+<script setup>
 import { storeToRefs } from 'pinia'
 import { useInventoryStore } from '@/stores/inventory'
 import { STATUS_LABEL, STOCK_STATUSES } from '@/types/inventory'
-
 const store = useInventoryStore()
 const { search, warehouse, category, brand, size, status, filtered } = storeToRefs(store)
 const { warehouseOptions, categoryOptions, brandOptions } = storeToRefs(store)
-
 /** 필터를 바꾸면 항상 1페이지로 되돌립니다. */
 function onFilterChange() {
   store.page = 1
@@ -47,7 +44,9 @@ function onFilterChange() {
         <span class="form-label">Warehouse / Gudang</span>
         <select v-model="warehouse" class="form-select" @change="onFilterChange">
           <option value="All">All</option>
-          <option v-for="option in warehouseOptions" :key="option" :value="option">{{ option }}</option>
+          <option v-for="option in warehouseOptions" :key="option" :value="option">
+            {{ option }}
+          </option>
         </select>
       </label>
 
@@ -55,7 +54,9 @@ function onFilterChange() {
         <span class="form-label">Category / Kategori</span>
         <select v-model="category" class="form-select" @change="onFilterChange">
           <option value="All">All</option>
-          <option v-for="option in categoryOptions" :key="option" :value="option">{{ option }}</option>
+          <option v-for="option in categoryOptions" :key="option" :value="option">
+            {{ option }}
+          </option>
         </select>
       </label>
 
@@ -96,14 +97,18 @@ function onFilterChange() {
 </template>
 
 <style scoped>
-.filter-panel { padding: 16px; }
+.filter-panel {
+  padding: 16px;
+}
 .panel-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
 }
-.panel-title b { font-size: 13px; }
+.panel-title b {
+  font-size: 13px;
+}
 .count-pill {
   font-size: 11px;
   color: var(--asm-fg-muted);
@@ -123,14 +128,20 @@ function onFilterChange() {
   text-decoration: none;
   border-radius: var(--asm-radius-md);
 }
-.text-button:hover { background: var(--asm-muted); }
+.text-button:hover {
+  background: var(--asm-muted);
+}
 
 .filters {
   display: grid;
   grid-template-columns: minmax(208px, 1.7fr) repeat(5, minmax(120px, 1fr));
   gap: 12px;
 }
-.filters label { display: block; min-width: 0; margin: 0; }
+.filters label {
+  display: block;
+  min-width: 0;
+  margin: 0;
+}
 .field-icon {
   position: absolute;
   left: 12px;
@@ -141,11 +152,19 @@ function onFilterChange() {
 }
 
 @media (max-width: 1150px) {
-  .filters { grid-template-columns: repeat(3, 1fr); }
-  .search-field { grid-column: span 3; }
+  .filters {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .search-field {
+    grid-column: span 3;
+  }
 }
 @media (max-width: 767.98px) {
-  .filters { grid-template-columns: repeat(2, 1fr); }
-  .search-field { grid-column: span 2; }
+  .filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .search-field {
+    grid-column: span 2;
+  }
 }
 </style>

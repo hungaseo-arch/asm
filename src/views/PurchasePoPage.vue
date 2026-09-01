@@ -1,13 +1,5 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
-import {
-  ChevronRight,
-  ClipboardCheck,
-  CircleDollarSign,
-  Factory,
-  Plus,
-  ShoppingCart,
-} from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -18,16 +10,12 @@ import PoDetailDrawer from '@/components/purchase-po/PoDetailDrawer.vue'
 import NewPoDialog from '@/components/purchase-po/NewPoDialog.vue'
 import { usePurchasePoStore } from '@/stores/purchase-po'
 import { formatIdrShort, formatInt } from '@/utils/format'
-import type { NewPurchaseOrderInput, PurchaseOrder } from '@/types/purchase-po'
-
 const store = usePurchasePoStore()
 const { filtered, pendingApprovalCount, confirmedIdrTotal, productionRiskCount, nextPoNo } =
   storeToRefs(store)
-
-const selected = ref<PurchaseOrder | null>(null)
+const selected = ref(null)
 const showNewDialog = ref(false)
-
-function createOrder(input: NewPurchaseOrderInput) {
+function createOrder(input) {
   const created = store.addOrder(input)
   showNewDialog.value = false
   toast.success(`${created.poNo} 임시저장(Draft)으로 생성되었습니다`)
@@ -108,7 +96,9 @@ function createOrder(input: NewPurchaseOrderInput) {
   font-size: 12px;
   margin-bottom: 16px;
 }
-.breadcrumb-bar b { color: var(--asm-fg); }
+.breadcrumb-bar b {
+  color: var(--asm-fg);
+}
 
 .page-heading {
   display: flex;
@@ -134,9 +124,14 @@ function createOrder(input: NewPurchaseOrderInput) {
 }
 
 @media (max-width: 1150px) {
-  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 @media (max-width: 767.98px) {
-  .page-heading { flex-direction: column; align-items: flex-start; }
+  .page-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

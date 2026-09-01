@@ -1,18 +1,14 @@
-<script setup lang="ts">
-import { ChevronsUpDown } from 'lucide-vue-next'
-
-withDefaults(
-  defineProps<{
-    label: string
-    active: boolean
-    asc: boolean
-    align?: 'left' | 'right' | 'center'
-    sticky?: 'first' | 'second'
-  }>(),
-  { align: 'left' },
-)
-
-defineEmits<{ (event: 'sort'): void }>()
+<script setup>
+defineProps({
+  label: { type: String, required: true },
+  active: { type: Boolean, default: false },
+  asc: { type: Boolean, default: true },
+  /** 'left' | 'right' | 'center' */
+  align: { type: String, default: 'left' },
+  /** 'first' | 'second' — 좌측 고정 열 */
+  sticky: { type: String, default: undefined },
+})
+defineEmits(['sort'])
 </script>
 
 <template>
@@ -59,5 +55,7 @@ defineEmits<{ (event: 'sort'): void }>()
   align-items: center;
   gap: 5px;
 }
-.sort-button.active { color: var(--asm-primary); }
+.sort-button.active {
+  color: var(--asm-primary);
+}
 </style>

@@ -1,9 +1,7 @@
-<script setup lang="ts">
-import type { BadgeTone } from '@/types/purchase-po'
-
-withDefaults(defineProps<{ tone?: BadgeTone; dot?: boolean }>(), {
-  tone: 'neutral',
-  dot: false,
+<script setup>
+defineProps({
+  tone: { type: String, default: 'neutral' },
+  dot: { type: Boolean, default: false },
 })
 </script>
 

@@ -1,17 +1,14 @@
-<script setup lang="ts">
+<script setup>
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import ListScreen from '@/components/common/ListScreen.vue'
 import { screenBySlug } from '@/config/screens'
-import type { ScreenDef } from '@/types/list-screen'
-
 const route = useRoute()
-const screen = ref<ScreenDef | null>(null)
-
+const screen = ref(null)
 /** 라우트 meta.screen 슬러그로 화면 정의를 지연 로딩합니다. */
 watch(
-  () => route.meta.screen as string | undefined,
+  () => route.meta.screen,
   async (slug) => {
     if (!slug) return
     screen.value = null

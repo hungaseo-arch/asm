@@ -247,6 +247,7 @@ function exportExcel() {
 }
 .rows-select select {
   width: auto;
+  min-width: 74px;
 }
 
 .table-scroll {

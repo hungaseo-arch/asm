@@ -84,8 +84,8 @@ function openItem(item) {
     </div>
 
     <div class="sidebar-foot">
-      <span>ASM</span>
-      <small>{{ APP_VERSION }}</small>
+      <span>PT ASCENDO INTERNASIONAL</span>
+      <small>ASM · {{ APP_VERSION }}</small>
     </div>
   </aside>
 </template>

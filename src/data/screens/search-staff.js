@@ -1,6 +1,6 @@
 /**
  * Search Staff — 직원 계정 관리
- * 역할(R0-A ~ R13 · NA · EA)과 부서 체계는 「ASM2 권한 가이드라인 v3.0」 2장(역할 정의)과
+ * 역할(R0-A ~ R13 · NA · EA)과 부서 체계는 「ASM 권한 가이드라인 v3.0」 2장(역할 정의)과
  * 5장(부서별 데이터 오너십)을 따릅니다. 구매 부서는 수입·구매(Impor · Pembelian)로
  * 통합 운영되므로 부서 코드는 IMPORT-PURCHASING 입니다.
  * DATA SCOPE 는 조건부 권한 C1(Row Level Security)의 적용값입니다.

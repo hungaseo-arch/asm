@@ -489,6 +489,7 @@ const primaryLabel = computed(() => {
 }
 .rows-select select {
   width: auto;
+  min-width: 74px;
 }
 
 .table-scroll {
@@ -527,6 +528,12 @@ const primaryLabel = computed(() => {
 }
 .table-scroll tbody tr:hover :is(td.no-col, td.col-key) {
   background: var(--asm-muted);
+}
+/* 합계 라벨은 가로 스크롤 중에도 좌측에 남습니다 */
+.table-scroll tfoot td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 5;
 }
 .cell-code {
   font-family: var(--bs-font-monospace);
@@ -571,7 +578,8 @@ const primaryLabel = computed(() => {
 tfoot td {
   position: sticky;
   bottom: 0;
-  z-index: 2;
+  /* 좌측 고정 열(z-index 3)보다 위에 그려야 합계가 가려지지 않습니다 */
+  z-index: 4;
   background: var(--asm-muted);
   color: var(--asm-fg);
   font-weight: 700;

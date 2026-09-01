@@ -1,6 +1,6 @@
 /**
  * Approval Matrix — 승인 매트릭스 10항목
- * 출처: 「ASM2 권한 가이드라인 v3.0」 6장. 승인 주체는 개인이 아닌 역할(Role) 기준이며,
+ * 출처: 「ASM 권한 가이드라인 v3.0」 6장. 승인 주체는 개인이 아닌 역할(Role) 기준이며,
  * SoD 금지 조합(7장)에 따라 1차·최종 승인자는 동일인이 될 수 없습니다.
  */
 export const approvalMatrixScreen = {

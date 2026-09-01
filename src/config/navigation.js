@@ -63,6 +63,9 @@ export const topNav = [
 /**
  * 좌측 사이드바 (Sidebar / Bilah sisi)
  * 메뉴 구성·명칭은 개선의견서(ASM 실서버 테스트 결과)의 목차를 따릅니다.
+ * 운영 하위메뉴는 25종 — Purchasing 9 · Sales 6 · Inventory 2 · Partners 2 ·
+ * Master Data 4 · Settings 2 (문서 정합성 리포트 A-5). Payment Plan 은 신설 요청 화면이라
+ * 25종에 포함하지 않고 NEW 배지로 구분합니다.
  * 라우트가 아직 없는 항목(Delivery Note (Warehouse) 등)은 안내 토스트만 표시합니다.
  */
 export const navGroups = [
@@ -123,10 +126,16 @@ export const navGroups = [
     label: 'VI. SETTINGS',
     items: [
       { label: 'Search Staff', icon: 'UserCog', to: '/search-employee' },
-      // 권한 가이드라인 v3.0 기준 화면 (3장 권한 매트릭스 · 6장 승인 매트릭스)
+      { label: 'Change Password', icon: 'Repeat' },
+    ],
+  },
+  {
+    // 운영 ASM 메뉴가 아니라 「ASM 권한 가이드라인 v3.0」을 화면으로 옮긴 참고 자료입니다.
+    // (문서 정합성 리포트 A-5 — 운영 하위메뉴는 25종으로 고정)
+    label: '참고 (문서 기준)',
+    items: [
       { label: 'Role / Permission', icon: 'ShieldCheck', to: '/role-permission' },
       { label: 'Approval Matrix', icon: 'Workflow', to: '/approval-matrix' },
-      { label: 'Change Password', icon: 'Repeat' },
     ],
   },
   {

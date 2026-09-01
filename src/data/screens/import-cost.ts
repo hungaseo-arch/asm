@@ -1,0 +1,254 @@
+import type { ScreenDef } from '@/types/list-screen'
+
+/**
+ * Import Cost — Import Cost · Biaya Impor · 수입 부대비용 정산
+ * 화면 시안(asm-mockup)에서 옮긴 예시 데이터입니다. 운영 전환 시 rows 를
+ * `GET /api/import-cost` 결과로 교체하면 나머지 로직은 그대로 동작합니다.
+ */
+export const importCostScreen: ScreenDef = {
+  "slug": "import-cost",
+  "group": "Purchasing",
+  "navLabel": "Import Cost",
+  "title": "Import Cost",
+  "subtitle": "Import Cost · Biaya Impor · 수입 부대비용 정산",
+  "cardTitle": "All Import Costs",
+  "searchPlaceholder": "Supplier, PO no, Shipment no, Customs no",
+  "primaryAction": "",
+  "searchFields": [
+    {
+      "label": "Keyword",
+      "key": "all"
+    }
+  ],
+  "columns": [
+    {
+      "key": "shp",
+      "label": "SHIPMENT NO.",
+      "align": "left",
+      "format": "code"
+    },
+    {
+      "key": "rc",
+      "label": "RECEIPT NO.",
+      "align": "left",
+      "format": "code"
+    },
+    {
+      "key": "pono",
+      "label": "PO NO.",
+      "align": "left",
+      "format": "code"
+    },
+    {
+      "key": "sup",
+      "label": "SUPPLIER",
+      "align": "left",
+      "format": "text",
+      "ellipsis": true
+    },
+    {
+      "key": "shq",
+      "label": "SHIPMENT QTY",
+      "align": "right",
+      "format": "int"
+    },
+    {
+      "key": "rcq",
+      "label": "RECEIPT QTY",
+      "align": "right",
+      "format": "int"
+    },
+    {
+      "key": "ramt",
+      "label": "RECEIPT AMOUNT",
+      "align": "right",
+      "format": "currency",
+      "currency": "USD"
+    },
+    {
+      "key": "camt",
+      "label": "COST AMOUNT",
+      "align": "right",
+      "format": "currency",
+      "currency": "IDR"
+    },
+    {
+      "key": "cst",
+      "label": "COST STATUS",
+      "align": "center",
+      "format": "badge"
+    },
+    {
+      "key": "rst",
+      "label": "RECEIPT STATUS",
+      "align": "center",
+      "format": "badge"
+    }
+  ],
+  "totalKeys": [
+    "shq",
+    "rcq",
+    "ramt",
+    "camt"
+  ],
+  "totalLabelSpan": 5,
+  "pageSize": 15,
+  "rows": [
+    {
+      "shp": "SHP-202608-100",
+      "rc": "RC-202607-200",
+      "pono": "DR-20260819-001",
+      "sup": "DONGYING RUNGOLD TYRE CO., LTD",
+      "shq": 200,
+      "rcq": 200,
+      "ramt": 70958,
+      "camt": 136430482,
+      "cst": "DRAFT",
+      "rst": "COMPLETED"
+    },
+    {
+      "shp": "SHP-202608-101",
+      "rc": "RC-202607-201",
+      "pono": "TT-20260902-002",
+      "sup": "TECHKING TIRES LIMITED",
+      "shq": 400,
+      "rcq": 400,
+      "ramt": 146611,
+      "camt": 54339782,
+      "cst": "COMPLETED",
+      "rst": "RECEIVED"
+    },
+    {
+      "shp": "SHP-202608-102",
+      "rc": "RC-202607-202",
+      "pono": "HA-20260813-003",
+      "sup": "HUBEI AULICE TYRE CO.,LTD",
+      "shq": 800,
+      "rcq": 800,
+      "ramt": 141122,
+      "camt": 169635980,
+      "cst": "PENDING",
+      "rst": "PARTIAL"
+    },
+    {
+      "shp": "SHP-202607-103",
+      "rc": "RC-202608-203",
+      "pono": "TT-20260719-004",
+      "sup": "TECHKING TIRES LIMITED",
+      "shq": 800,
+      "rcq": 800,
+      "ramt": 140552,
+      "camt": 122910452,
+      "cst": "DRAFT",
+      "rst": "COMPLETED"
+    },
+    {
+      "shp": "SHP-202608-104",
+      "rc": "RC-202608-204",
+      "pono": "HA-20260818-005",
+      "sup": "HUBEI AULICE TYRE CO.,LTD",
+      "shq": 800,
+      "rcq": 800,
+      "ramt": 140487,
+      "camt": 179883111,
+      "cst": "COMPLETED",
+      "rst": "RECEIVED"
+    },
+    {
+      "shp": "SHP-202607-105",
+      "rc": "RC-202608-205",
+      "pono": "HA-20260905-006",
+      "sup": "HUBEI AULICE TYRE CO.,LTD",
+      "shq": 400,
+      "rcq": 400,
+      "ramt": 66826,
+      "camt": 119088599,
+      "cst": "APPROVED",
+      "rst": "COMPLETED"
+    },
+    {
+      "shp": "SHP-202608-106",
+      "rc": "RC-202608-206",
+      "pono": "DR-20260705-007",
+      "sup": "DONGYING RUNGOLD TYRE CO., LTD",
+      "shq": 200,
+      "rcq": 200,
+      "ramt": 140080,
+      "camt": 115223966,
+      "cst": "COMPLETED",
+      "rst": "COMPLETED"
+    },
+    {
+      "shp": "SHP-202608-107",
+      "rc": "RC-202608-207",
+      "pono": "TT-20260907-008",
+      "sup": "TECHKING TIRES LIMITED",
+      "shq": 400,
+      "rcq": 400,
+      "ramt": 99691,
+      "camt": 208468666,
+      "cst": "DRAFT",
+      "rst": "RECEIVED"
+    },
+    {
+      "shp": "SHP-202608-108",
+      "rc": "RC-202607-208",
+      "pono": "DR-20260726-009",
+      "sup": "DONGYING RUNGOLD TYRE CO., LTD",
+      "shq": 800,
+      "rcq": 800,
+      "ramt": 135274,
+      "camt": 87288636,
+      "cst": "DRAFT",
+      "rst": "RECEIVED"
+    },
+    {
+      "shp": "SHP-202607-109",
+      "rc": "RC-202607-209",
+      "pono": "HA-20260809-001",
+      "sup": "HUBEI AULICE TYRE CO.,LTD",
+      "shq": 200,
+      "rcq": 200,
+      "ramt": 110613,
+      "camt": 122284148,
+      "cst": "DRAFT",
+      "rst": "RECEIVED"
+    },
+    {
+      "shp": "SHP-202608-110",
+      "rc": "RC-202608-210",
+      "pono": "DR-20260920-002",
+      "sup": "DONGYING RUNGOLD TYRE CO., LTD",
+      "shq": 200,
+      "rcq": 200,
+      "ramt": 67671,
+      "camt": 72156656,
+      "cst": "DRAFT",
+      "rst": "COMPLETED"
+    },
+    {
+      "shp": "SHP-202608-111",
+      "rc": "RC-202607-211",
+      "pono": "HA-20260715-003",
+      "sup": "HUBEI AULICE TYRE CO.,LTD",
+      "shq": 400,
+      "rcq": 400,
+      "ramt": 90188,
+      "camt": 207553670,
+      "cst": "APPROVED",
+      "rst": "PARTIAL"
+    },
+    {
+      "shp": "SHP-202608-112",
+      "rc": "RC-202607-212",
+      "pono": "TT-20260920-004",
+      "sup": "TECHKING TIRES LIMITED",
+      "shq": 200,
+      "rcq": 200,
+      "ramt": 142154,
+      "camt": 102620252,
+      "cst": "COMPLETED",
+      "rst": "PARTIAL"
+    }
+  ]
+}

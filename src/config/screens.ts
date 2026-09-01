@@ -15,6 +15,25 @@ export type ScreenRoute = {
 }
 
 export const screenRoutes: ScreenRoute[] = [
+  // ── Purchasing ──────────────────────────────────────────────────────────
+  // Purchase PO 는 전용 화면(/purchase-po)이 있어 여기에 넣지 않습니다.
+  { slug: 'ppc', path: '/purchasing/ppc', title: 'PPC',
+    load: () => import('@/data/screens/ppc').then((m) => m.ppcScreen) },
+  { slug: 'shipment', path: '/purchasing/shipment', title: 'Shipment',
+    load: () => import('@/data/screens/shipment').then((m) => m.shipmentScreen) },
+  { slug: 'customs', path: '/purchasing/customs', title: 'Customs',
+    load: () => import('@/data/screens/customs').then((m) => m.customsScreen) },
+  { slug: 'receipts', path: '/purchasing/receipts', title: 'Receipt',
+    load: () => import('@/data/screens/receipts').then((m) => m.receiptsScreen) },
+  { slug: 'receipts-wh', path: '/purchasing/receipts-wh', title: 'Receipt(WH)',
+    load: () => import('@/data/screens/receipts-wh').then((m) => m.receiptsWhScreen) },
+  { slug: 'import-cost', path: '/purchasing/import-cost', title: 'Import Cost',
+    load: () => import('@/data/screens/import-cost').then((m) => m.importCostScreen) },
+  { slug: 'vendor-return', path: '/purchasing/vendor-return', title: 'Vendor Return',
+    load: () => import('@/data/screens/vendor-return').then((m) => m.vendorReturnScreen) },
+  { slug: 'credit-note', path: '/purchasing/credit-note', title: 'Credit Note',
+    load: () => import('@/data/screens/credit-note').then((m) => m.creditNoteScreen) },
+
   // ── Sales ───────────────────────────────────────────────────────────────
   { slug: 'quotation', path: '/sales/quotation', title: 'Quotation',
     load: () => import('@/data/screens/quotation').then((m) => m.quotationScreen) },
@@ -36,6 +55,12 @@ export const screenRoutes: ScreenRoute[] = [
     load: () => import('@/data/screens/stock-transfer').then((m) => m.stockTransferScreen) },
   { slug: 'stock-opname', path: '/inventory/stock-opname', title: 'Stock Opname',
     load: () => import('@/data/screens/stock-opname').then((m) => m.stockOpnameScreen) },
+
+  // ── Partners ────────────────────────────────────────────────────────────
+  { slug: 'customer', path: '/partners/customer', title: 'Customers',
+    load: () => import('@/data/screens/customer').then((m) => m.customerScreen) },
+  { slug: 'vendor', path: '/partners/vendor', title: 'Suppliers',
+    load: () => import('@/data/screens/vendor').then((m) => m.vendorScreen) },
 
   // ── Master Data ─────────────────────────────────────────────────────────
   { slug: 'item', path: '/master/item', title: 'Item',

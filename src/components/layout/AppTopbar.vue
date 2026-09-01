@@ -14,9 +14,9 @@ const session = useSessionStore()
 
 const displayName = computed(() => session.user?.name ?? session.user?.email ?? 'Andi Pratama')
 
-const isActive = (item: { to?: string; match?: string }) => {
-  const prefix = item.match ?? item.to
-  return Boolean(prefix && route.path.startsWith(prefix))
+const isActive = (item: { to?: string; match?: string[] }) => {
+  const prefixes = item.match ?? (item.to ? [item.to] : [])
+  return prefixes.some((prefix) => route.path.startsWith(prefix))
 }
 
 function openItem(item: { label: string; to?: string }) {

@@ -45,13 +45,13 @@ export type NavGroup = {
  * `match` 는 활성 표시 판정용 경로 접두사입니다 (하위 화면에서도 대분류가 켜지도록).
  */
 export const topNav = [
-  { label: 'Purchasing', to: '/purchase-po', match: '/purchase-po' },
-  { label: 'Sales', to: '/sales/quotation', match: '/sales' },
-  { label: 'Inventory', to: '/inventory-list', match: '/inventory' },
-  { label: 'Partners' },
-  { label: 'Master Data', to: '/master/item', match: '/master' },
-  { label: 'Settings', to: '/settings/user', match: '/settings' },
-] satisfies Array<{ label: string; to?: string; match?: string }>
+  { label: 'Purchasing', to: '/purchase-po', match: ['/purchase-po', '/purchasing'] },
+  { label: 'Sales', to: '/sales/quotation', match: ['/sales'] },
+  { label: 'Inventory', to: '/inventory-list', match: ['/inventory'] },
+  { label: 'Partners', to: '/partners/customer', match: ['/partners'] },
+  { label: 'Master Data', to: '/master/item', match: ['/master'] },
+  { label: 'Settings', to: '/settings/user', match: ['/settings'] },
+] satisfies Array<{ label: string; to?: string; match?: string[] }>
 
 /**
  * 좌측 사이드바 (Sidebar / Bilah sisi)
@@ -62,14 +62,14 @@ export const navGroups: NavGroup[] = [
     label: 'I. PURCHASING',
     items: [
       { label: 'Purchase PO', icon: ShoppingCart, to: '/purchase-po' },
-      { label: 'PPC (Production Plan)', icon: Factory },
-      { label: 'Shipment', icon: Ship },
-      { label: 'Customs', icon: ClipboardCheck },
-      { label: 'Receipt', icon: PackageCheck },
-      { label: 'Receipt (WH)', icon: Warehouse },
-      { label: 'Import Cost', icon: FileText },
-      { label: 'Vendor Return', icon: Undo2 },
-      { label: 'Credit Note', icon: ReceiptText },
+      { label: 'PPC', icon: Factory, to: '/purchasing/ppc' },
+      { label: 'Shipment', icon: Ship, to: '/purchasing/shipment' },
+      { label: 'Customs', icon: ClipboardCheck, to: '/purchasing/customs' },
+      { label: 'Receipt', icon: PackageCheck, to: '/purchasing/receipts' },
+      { label: 'Receipt(WH)', icon: Warehouse, to: '/purchasing/receipts-wh' },
+      { label: 'Import Cost', icon: FileText, to: '/purchasing/import-cost' },
+      { label: 'Vendor Return', icon: Undo2, to: '/purchasing/vendor-return' },
+      { label: 'Credit Note', icon: ReceiptText, to: '/purchasing/credit-note' },
     ],
   },
   {
@@ -96,9 +96,8 @@ export const navGroups: NavGroup[] = [
   {
     label: 'IV. PARTNERS',
     items: [
-      { label: 'Customer', icon: Users },
-      { label: 'Vendor', icon: Building2 },
-      { label: 'Forwarder', icon: Ship },
+      { label: 'Customers', icon: Users, to: '/partners/customer' },
+      { label: 'Suppliers', icon: Building2, to: '/partners/vendor' },
     ],
   },
   {

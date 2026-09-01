@@ -50,11 +50,11 @@ src/
 ├─ composables/              useBodyScrollLock · useEscapeToClose
 ├─ config/
 │  ├─ navigation.ts          상단/사이드 메뉴 정의 (운영 ASM 6개 대분류)
-│  └─ screens.ts             목록 화면 레지스트리 (시안 15종 · 동적 import)
+│  └─ screens.ts             목록 화면 레지스트리 (시안 25종 · 동적 import)
 ├─ data/                     프로토타입 시드 데이터 (운영 전환 시 삭제)
 │  ├─ purchase-orders.ts
 │  ├─ inventory.ts
-│  └─ screens/               화면 시안(asm-mockup) 15종 정의 + 예시 데이터
+│  └─ screens/               화면 시안(asm-mockup) 25종 정의 + 예시 데이터
 ├─ lib/
 │  ├─ api-base.ts            API base URL 결정 (빌드타임 > 런타임 > same-origin)
 │  ├─ api.ts                 apiFetch / apiGet / apiSend / OAuth 토큰 동기화
@@ -135,7 +135,7 @@ src/
 
 - Purchase PO 화면 전체 (요약 카드 · 필터 · 정렬/페이징 테이블 · 상세 드로어 · 신규 등록 다이얼로그 · CSV 내보내기)
 - Inventory List 화면 (운영 ASM `asminventorylist.html` 복제 · KPI 4종 · 필터 · 정렬/페이징 테이블 + 합계 행 · CSV/Print)
-- 목록 화면 15종 (Sales 5 · Inventory 4 · Master Data 3 · Settings 3) — 화면 시안 `asm-mockup` 이식.
+- 목록 화면 25종 (Purchasing 8 · Sales 5 · Inventory 4 · Partners 2 · Master Data 3 · Settings 3) — 화면 시안 `asm-mockup` 이식.
   `ListScreen` 하나가 검색·정렬·페이징·합계·CSV 를 처리하고 화면별 컬럼·데이터만 `data/screens/` 에 둡니다
 - 레이아웃(상단바 · 접이식 사이드바 · 모바일 오프캔버스), 404, 로그인/가입/이메일 인증
 - API·인증 레이어, 숫자 표기 표준 모듈
@@ -146,7 +146,7 @@ src/
 1. **API 연동** — `stores/purchase-po.ts` 의 시드 데이터를 `GET /api/purchase-orders` 호출로 교체 (화면 코드 수정 불필요)
 2. 신규 PO 저장을 `POST /api/purchase-orders` 로 연결 (현재는 클라이언트 상태에만 반영)
 3. Inventory 데이터 연동 — `stores/inventory.ts` 시드를 `GET /api/inventory` 로 교체
-4. PPC · Shipment · Customs 등 나머지 메뉴 화면 (현재는 안내 토스트만 표시)
+4. 남은 메뉴 화면 — Delivery Note (WH) · Currency (현재는 안내 토스트만 표시)
 5. 서버 사이드 페이징/정렬 (데이터 1,000건 초과 시 필요)
 6. 로그인 필수화 여부 결정 → `meta.requiresAuth: true` 적용
 7. 단위 테스트(Vitest + @vue/test-utils) 도입 — 우선순위: `lib/format.ts`, `stores/*.ts`

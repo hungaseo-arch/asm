@@ -92,7 +92,11 @@ const totals = computed<Record<string, number>>(() => {
 const totalCells = computed(() => props.screen.columns.slice(props.screen.totalLabelSpan - 1))
 
 // ── 서식 (Formatting / Format) ────────────────────────────────────────────
-function display(column: ScreenColumn, value: string | number | undefined): string {
+function display(
+  column: ScreenColumn,
+  value: string | number | undefined,
+  row?: ScreenRow,
+): string {
   if (value === undefined || value === null || value === '') return '—'
   const numeric = Number(value)
   switch (column.format) {
@@ -106,8 +110,14 @@ function display(column: ScreenColumn, value: string | number | undefined): stri
       return formatPercent(numeric)
     case 'weight':
       return formatWeight(numeric)
-    case 'currency':
-      return formatAmount(column.currency ?? 'USD', numeric)
+    case 'currency': {
+      // 행마다 통화가 다른 화면(PPC·Receipt 등)은 같은 행의 통화 열을 씁니다.
+      const rowCurrency = column.currencyKey ? String(row?.[column.currencyKey] ?? '') : ''
+      const currency = (rowCurrency === 'IDR' || rowCurrency === 'USD' ? rowCurrency : null)
+        ?? column.currency
+        ?? 'USD'
+      return formatAmount(currency, numeric)
+    }
     case 'date':
       return formatDate(String(value))
     default:
@@ -211,8 +221,8 @@ const primaryLabel = computed(() => {
   </section>
 
   <!-- 검색 바 (Search / Pencarian) -->
-  <section class="asm-panel search-panel mb-3">
-    <label class="field-select">
+  <section class="asm-panel search-panel mb-3" :class="{ 'no-field': screen.searchFields.length <= 1 }">
+    <label v-if="screen.searchFields.length > 1" class="field-select">
       <span class="form-label">Search field</span>
       <select v-model="field" class="form-select" @change="page = 1">
         <option v-for="option in screen.searchFields" :key="option.key" :value="option.key">
@@ -295,9 +305,9 @@ const primaryLabel = computed(() => {
                 class="asm-ellipsis"
                 :title="String(row[column.key] ?? '')"
               >
-                {{ display(column, row[column.key]) }}
+                {{ display(column, row[column.key], row) }}
               </span>
-              <template v-else>{{ display(column, row[column.key]) }}</template>
+              <template v-else>{{ display(column, row[column.key], row) }}</template>
             </td>
           </tr>
           <tr v-if="!rows.length">
@@ -383,6 +393,7 @@ const primaryLabel = computed(() => {
   gap: 12px;
   align-items: end;
 }
+.search-panel.no-field { grid-template-columns: minmax(240px, 1fr) auto; }
 .search-panel label { display: block; min-width: 0; margin: 0; }
 .field-icon {
   position: absolute;

@@ -28,6 +28,8 @@ export type ScreenColumn = {
   align: 'left' | 'right' | 'center'
   format: CellFormat
   currency?: Currency
+  /** 통화가 행마다 다른 열 — 통화 코드를 담은 다른 열의 key (예: 'cur') */
+  currencyKey?: string
   ellipsis?: boolean
   width?: string
 }

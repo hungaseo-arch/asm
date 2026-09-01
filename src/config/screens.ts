@@ -17,15 +17,17 @@ export type ScreenRoute = {
 export const screenRoutes: ScreenRoute[] = [
   // ── Purchasing ──────────────────────────────────────────────────────────
   // Purchase PO 는 전용 화면(/purchase-po)이 있어 여기에 넣지 않습니다.
-  { slug: 'ppc', path: '/purchasing/ppc', title: 'PPC',
+  { slug: 'ppc', path: '/purchasing/ppc', title: 'PPC (Production Plan)',
     load: () => import('@/data/screens/ppc').then((m) => m.ppcScreen) },
+  { slug: 'payment-plan', path: '/purchasing/payment-plan', title: 'Payment Plan',
+    load: () => import('@/data/screens/payment-plan').then((m) => m.paymentPlanScreen) },
   { slug: 'shipment', path: '/purchasing/shipment', title: 'Shipment',
     load: () => import('@/data/screens/shipment').then((m) => m.shipmentScreen) },
   { slug: 'customs', path: '/purchasing/customs', title: 'Customs',
     load: () => import('@/data/screens/customs').then((m) => m.customsScreen) },
   { slug: 'receipts', path: '/purchasing/receipts', title: 'Receipt',
     load: () => import('@/data/screens/receipts').then((m) => m.receiptsScreen) },
-  { slug: 'receipts-wh', path: '/purchasing/receipts-wh', title: 'Receipt(WH)',
+  { slug: 'receipts-wh', path: '/purchasing/receipts-wh', title: 'Receipt (Warehouse)',
     load: () => import('@/data/screens/receipts-wh').then((m) => m.receiptsWhScreen) },
   { slug: 'import-cost', path: '/purchasing/import-cost', title: 'Import Cost',
     load: () => import('@/data/screens/import-cost').then((m) => m.importCostScreen) },

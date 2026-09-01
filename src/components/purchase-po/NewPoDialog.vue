@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
 import { X } from 'lucide-vue-next'
+import AsmDateInput from '@/components/common/AsmDateInput.vue'
 import { groupAmountInput, parseAmountInput } from '@/lib/format'
 import type { Currency, NewPurchaseOrderInput, PurchaseType } from '@/types/purchase-po'
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
@@ -21,7 +22,7 @@ const currency = ref<Currency>('USD')
 const amount = ref('')
 const targetDate = ref('')
 const errors = ref<Record<string, string>>({})
-const supplierInput = ref<HTMLInputElement | null>(null)
+const formEl = ref<HTMLFormElement | null>(null)
 
 const errorCount = computed(() => Object.keys(errors.value).length)
 
@@ -50,7 +51,10 @@ function submit() {
 
   errors.value = next
   if (Object.keys(next).length) {
-    void nextTick(() => supplierInput.value?.focus())
+    // 미입력 항목을 한 번에 표시하고 첫 오류 항목으로 포커스를 옮깁니다 (이슈 25).
+    void nextTick(() => {
+      formEl.value?.querySelector<HTMLElement>('.field.is-invalid :is(input, select)')?.focus()
+    })
     return
   }
 
@@ -68,7 +72,14 @@ function submit() {
   <div class="asm-overlay justify-content-center align-items-center p-3">
     <button type="button" class="asm-overlay__scrim" aria-label="닫기" @click="emit('close')"></button>
 
-    <form class="dialog" role="dialog" aria-modal="true" aria-labelledby="new-po-title" @submit.prevent="submit">
+    <form
+      ref="formEl"
+      class="dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="new-po-title"
+      @submit.prevent="submit"
+    >
       <header>
         <div>
           <p class="asm-eyebrow mb-1">NEW PURCHASE ORDER</p>
@@ -94,7 +105,6 @@ function submit() {
         <label class="field" :class="{ 'is-invalid': errors.supplier }">
           <span class="form-label">Supplier <b class="req">*</b></span>
           <input
-            ref="supplierInput"
             v-model="supplier"
             class="form-control"
             placeholder="공급사를 선택하거나 입력하세요"
@@ -136,7 +146,7 @@ function submit() {
           </label>
           <label class="field" :class="{ 'is-invalid': errors.targetDate }">
             <span class="form-label">Target date <b class="req">*</b></span>
-            <input v-model="targetDate" type="date" class="form-control" min="2026-09-01" />
+            <AsmDateInput v-model="targetDate" aria-label="Target date" min="2026-09-01" />
             <small v-if="errors.targetDate" class="error-text">{{ errors.targetDate }}</small>
           </label>
         </div>

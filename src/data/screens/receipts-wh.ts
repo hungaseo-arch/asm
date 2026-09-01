@@ -8,8 +8,8 @@ import type { ScreenDef } from '@/types/list-screen'
 export const receiptsWhScreen: ScreenDef = {
   "slug": "receipts-wh",
   "group": "Purchasing",
-  "navLabel": "Receipt(WH)",
-  "title": "Receipt (WH)",
+  "navLabel": "Receipt (Warehouse)",
+  "title": "Receipt (Warehouse)",
   "subtitle": "Warehouse Receipt Main · Penerimaan Gudang · 창고 입고 확정",
   "cardTitle": "All Warehouse Receipts",
   "searchPlaceholder": "PO no, Supplier, Warehouse",

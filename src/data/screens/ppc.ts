@@ -8,7 +8,7 @@ import type { ScreenDef } from '@/types/list-screen'
 export const ppcScreen: ScreenDef = {
   "slug": "ppc",
   "group": "Purchasing",
-  "navLabel": "PPC",
+  "navLabel": "PPC (Production Plan)",
   "title": "PPC",
   "subtitle": "PPC Main · Production Planning & Control · 공장 생산계획·진행 관리",
   "cardTitle": "All PPCs",

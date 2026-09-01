@@ -13,6 +13,7 @@ import {
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import AsmBadge from '@/components/common/AsmBadge.vue'
+import AsmDateInput from '@/components/common/AsmDateInput.vue'
 import SortableHeader from '@/components/common/SortableHeader.vue'
 import {
   formatAmount,
@@ -28,9 +29,14 @@ import { toneOf, type ScreenColumn, type ScreenDef, type ScreenRow } from '@/typ
 const props = defineProps<{ screen: ScreenDef }>()
 
 // ── 상태 (State / Status) ─────────────────────────────────────────────────
+const PAGE_SIZES = [10, 30, 50, 100]
+
 const keyword = ref('')
 const field = ref('all')
-const pageSize = ref(props.screen.pageSize)
+/** 기간 필터 (이슈 24) — 화면의 첫 날짜 열을 기준으로 조회합니다. */
+const fromDate = ref('')
+const toDate = ref('')
+const pageSize = ref(PAGE_SIZES.includes(props.screen.pageSize) ? props.screen.pageSize : 10)
 const page = ref(1)
 const sortKey = ref<string | null>(null)
 const sortAsc = ref(true)
@@ -41,22 +47,39 @@ watch(
   () => {
     keyword.value = ''
     field.value = 'all'
-    pageSize.value = props.screen.pageSize
+    fromDate.value = ''
+    toDate.value = ''
+    pageSize.value = PAGE_SIZES.includes(props.screen.pageSize) ? props.screen.pageSize : 10
     page.value = 1
     sortKey.value = null
     sortAsc.value = true
   },
 )
 
+/** 기간 필터 기준 열 — 날짜 열이 없는 화면(마스터 등)에서는 필터를 숨깁니다. */
+const dateColumn = computed(() => props.screen.columns.find((column) => column.format === 'date'))
+
 // ── 파생값 (Derived / Turunan) ────────────────────────────────────────────
 const filtered = computed<ScreenRow[]>(() => {
   const needle = keyword.value.trim().toLowerCase()
-  const result = needle
-    ? props.screen.rows.filter((row) => {
-        const values = field.value === 'all' ? Object.values(row) : [row[field.value]]
-        return values.some((value) => String(value ?? '').toLowerCase().includes(needle))
-      })
-    : props.screen.rows
+  const dateKey = dateColumn.value?.key
+  const from = fromDate.value
+  const to = toDate.value
+
+  const result = props.screen.rows.filter((row) => {
+    if (needle) {
+      const values = field.value === 'all' ? Object.values(row) : [row[field.value]]
+      if (!values.some((value) => String(value ?? '').toLowerCase().includes(needle))) return false
+    }
+    // ISO(YYYY-MM-DD) 문자열은 사전순 비교가 날짜순 비교와 같습니다.
+    if (dateKey && (from || to)) {
+      const value = String(row[dateKey] ?? '')
+      if (!value) return false
+      if (from && value < from) return false
+      if (to && value > to) return false
+    }
+    return true
+  })
 
   if (!sortKey.value) return result
   const key = sortKey.value
@@ -125,10 +148,12 @@ function display(
   }
 }
 
-const cellClass = (column: ScreenColumn) => [
+const cellClass = (column: ScreenColumn, index = -1) => [
   column.align === 'right' ? 'num' : '',
   column.align === 'center' ? 'text-center' : '',
   column.format === 'code' ? 'cell-code' : '',
+  // 가로 스크롤 시 문서번호·품명 열을 왼쪽에 고정합니다 (이슈 23).
+  index === 0 ? 'col-key' : '',
 ]
 
 // ── 액션 (Actions / Tindakan) ─────────────────────────────────────────────
@@ -149,6 +174,8 @@ function goToPage(next: number) {
 function resetSearch() {
   keyword.value = ''
   field.value = 'all'
+  fromDate.value = ''
+  toDate.value = ''
   page.value = 1
 }
 
@@ -245,6 +272,17 @@ const primaryLabel = computed(() => {
       </div>
     </label>
 
+    <template v-if="dateColumn">
+      <label>
+        <span class="form-label">{{ dateColumn.label }} from</span>
+        <AsmDateInput v-model="fromDate" :aria-label="`${dateColumn.label} from`" @update:model-value="page = 1" />
+      </label>
+      <label>
+        <span class="form-label">{{ dateColumn.label }} to</span>
+        <AsmDateInput v-model="toDate" :aria-label="`${dateColumn.label} to`" @update:model-value="page = 1" />
+      </label>
+    </template>
+
     <button type="button" class="btn btn-outline-primary reset-btn" @click="resetSearch">
       <FilterX :size="15" />
       Reset
@@ -262,7 +300,7 @@ const primaryLabel = computed(() => {
         <label class="rows-select mb-0">
           <span>Rows</span>
           <select v-model.number="pageSize" class="form-select form-select-sm" @change="page = 1">
-            <option v-for="value in [15, 30, 50, 100]" :key="value" :value="value">{{ value }}</option>
+            <option v-for="value in PAGE_SIZES" :key="value" :value="value">{{ value }}</option>
           </select>
         </label>
       </div>
@@ -274,8 +312,9 @@ const primaryLabel = computed(() => {
           <tr>
             <th scope="col" class="no-col">No</th>
             <SortableHeader
-              v-for="column in screen.columns"
+              v-for="(column, columnIndex) in screen.columns"
               :key="column.key"
+              :class="columnIndex === 0 ? 'col-key' : ''"
               :label="column.label"
               :align="column.align"
               :active="sortKey === column.key"
@@ -288,9 +327,9 @@ const primaryLabel = computed(() => {
           <tr v-for="(row, index) in rows" :key="`${screen.slug}-${rangeStart + index}`">
             <td class="num no-col">{{ formatInt(rangeStart + index) }}</td>
             <td
-              v-for="column in screen.columns"
+              v-for="(column, columnIndex) in screen.columns"
               :key="column.key"
-              :class="cellClass(column)"
+              :class="cellClass(column, columnIndex)"
               :style="column.width ? { width: column.width } : undefined"
             >
               <AsmBadge v-if="column.format === 'badge'" :tone="toneOf(String(row[column.key]))" dot>
@@ -389,11 +428,11 @@ const primaryLabel = computed(() => {
 .search-panel {
   padding: 16px;
   display: grid;
-  grid-template-columns: minmax(160px, 240px) minmax(240px, 1fr) auto;
+  grid-template-columns: minmax(150px, 200px) minmax(220px, 1fr) repeat(2, minmax(140px, 170px)) auto;
   gap: 12px;
   align-items: end;
 }
-.search-panel.no-field { grid-template-columns: minmax(240px, 1fr) auto; }
+.search-panel.no-field { grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(140px, 170px)) auto; }
 .search-panel label { display: block; min-width: 0; margin: 0; }
 .field-icon {
   position: absolute;
@@ -442,6 +481,19 @@ const primaryLabel = computed(() => {
 .table-scroll table { min-width: 1200px; }
 
 .no-col { width: 56px; color: var(--asm-fg-muted); }
+
+/* 좌측 고정 열 — No + 첫 열(문서번호·품명). 가이드 8-2 · 개선의견서 이슈 23 */
+.table-scroll :is(th, td).no-col { position: sticky; left: 0; z-index: 3; background: var(--asm-bg); }
+.table-scroll :is(th, td).col-key {
+  position: sticky;
+  left: 56px;
+  z-index: 3;
+  min-width: 168px;
+  background: var(--asm-bg);
+  box-shadow: 5px 0 7px -7px rgb(8 18 31 / 0.3);
+}
+.table-scroll thead :is(th.no-col, th.col-key) { z-index: 6; background: var(--asm-muted); }
+.table-scroll tbody tr:hover :is(td.no-col, td.col-key) { background: var(--asm-muted); }
 .cell-code { font-family: var(--bs-font-monospace); font-size: 12px; color: var(--asm-fg); }
 .asm-ellipsis { max-width: 260px; }
 

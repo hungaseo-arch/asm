@@ -44,17 +44,17 @@ src/
 ├─ assets/asm-theme.css      ASM 디자인 토큰 + Bootstrap 5.3 오버라이드 (단일 진실 원천)
 ├─ components/
 │  ├─ layout/                AppShell · AppTopbar · AppSidebar
-│  ├─ common/                AsmBadge · SummaryCard · SortableHeader · ListScreen
+│  ├─ common/                AsmBadge · SummaryCard · SortableHeader · ListScreen · AsmDateInput
 │  ├─ purchase-po/           PoFilterPanel · PoTable · PoDetailDrawer · NewPoDialog
 │  └─ inventory/             InventoryFilterPanel · InventoryTable
 ├─ composables/              useBodyScrollLock · useEscapeToClose
 ├─ config/
 │  ├─ navigation.ts          상단/사이드 메뉴 정의 (운영 ASM 6개 대분류)
-│  └─ screens.ts             목록 화면 레지스트리 (시안 25종 · 동적 import)
+│  └─ screens.ts             목록 화면 레지스트리 (26종 · 동적 import)
 ├─ data/                     프로토타입 시드 데이터 (운영 전환 시 삭제)
 │  ├─ purchase-orders.ts
 │  ├─ inventory.ts
-│  └─ screens/               화면 시안(asm-mockup) 25종 정의 + 예시 데이터
+│  └─ screens/               목록 화면 26종 정의 + 예시 데이터
 ├─ lib/
 │  ├─ api-base.ts            API base URL 결정 (빌드타임 > 런타임 > same-origin)
 │  ├─ api.ts                 apiFetch / apiGet / apiSend / OAuth 토큰 동기화
@@ -85,11 +85,13 @@ src/
 | `formatIdrFull` | **대외 문서용** 전체 자리수 + 단위 병기 | `IDR 1,250,000,000 (1.25 miliar)` |
 | `formatDecimal` | 통화코드가 열 제목에 있는 표의 소수 | `84.25` |
 | `formatSigned` | 증감 (양수에 + 표기) | `+120` · `-35` |
-| `formatDate` | dd MMM yyyy | `28 Aug 2026` |
+| `formatDate` | YYYY-MM-DD (ISO 8601) | `2026-08-28` |
 
 - 로케일은 **항상 `en-US`** 로 고정 — 인도네시아식 표기(`1.234,56`)는 사용하지 않습니다.
 - 견적서·인보이스·계약서 등 대외 발송 문서에는 `formatIdrFull()` 을 사용하십시오 (소수점 오독 방지 필수 규칙).
 - 연도·타이어 규격(1200R24)·문서번호에는 콤마를 넣지 않습니다.
+- 날짜는 **YYYY-MM-DD 고정** — 브라우저 언어 설정에 따라 표기가 흔들리지 않도록 화면 표시는 `formatDate()`,
+  입력은 `components/common/AsmDateInput.vue` 를 사용합니다 (디자인가이드 8-2 · 개선의견서 이슈 15).
 
 > ⚠️ 현재 운영 ASM 화면이 인도네시아식(`756.704.706`)으로 출력되는 건은 이 모듈로 전환하면 함께 해소됩니다.
 
@@ -135,7 +137,7 @@ src/
 
 - Purchase PO 화면 전체 (요약 카드 · 필터 · 정렬/페이징 테이블 · 상세 드로어 · 신규 등록 다이얼로그 · CSV 내보내기)
 - Inventory List 화면 (운영 ASM `asminventorylist.html` 복제 · KPI 4종 · 필터 · 정렬/페이징 테이블 + 합계 행 · CSV/Print)
-- 목록 화면 25종 (Purchasing 8 · Sales 5 · Inventory 4 · Partners 2 · Master Data 3 · Settings 3) — 화면 시안 `asm-mockup` 이식.
+- 목록 화면 26종 (Purchasing 9 · Sales 5 · Inventory 4 · Partners 2 · Master Data 3 · Settings 3) — 화면 시안 `asm-mockup` 이식 + Payment Plan 신설.
   `ListScreen` 하나가 검색·정렬·페이징·합계·CSV 를 처리하고 화면별 컬럼·데이터만 `data/screens/` 에 둡니다
 - 레이아웃(상단바 · 접이식 사이드바 · 모바일 오프캔버스), 404, 로그인/가입/이메일 인증
 - API·인증 레이어, 숫자 표기 표준 모듈

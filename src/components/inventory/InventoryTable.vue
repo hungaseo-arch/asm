@@ -38,12 +38,12 @@ function escapeCsv(value: string | number) {
 /** 현재 필터 결과를 CSV로 내보냅니다 (Excel 호환 · UTF-8 BOM 포함). */
 function exportCsv() {
   const headers = [
-    'Warehouse', 'Category', 'Brand', 'Size', 'Pattern', 'Item Code', 'PR/TL',
+    'Item Code', 'Warehouse', 'Category', 'Brand', 'Size', 'Pattern', 'PR/TL',
     'Stock', 'Reserved', 'Available', 'Unit Cost (USD)', 'Stock Value (USD)', 'Aging', 'Status',
   ]
   const lines = filtered.value.map((item) =>
     [
-      item.wh, item.cat, item.brand, item.size, item.pattern, item.code, item.pr,
+      item.code, item.wh, item.cat, item.brand, item.size, item.pattern, item.pr,
       item.qty, item.rsv, availableOf(item), item.cost.toFixed(2), valueOf(item).toFixed(2),
       item.aging, STATUS_LABEL[item.status],
     ]
@@ -91,6 +91,11 @@ defineExpose({ exportCsv })
           <tr>
             <th scope="col" class="no-col">No</th>
             <SortableHeader
+              class="col-key"
+              label="Item code" :active="sortKey === 'code'" :asc="sortAsc"
+              @sort="store.toggleSort('code')"
+            />
+            <SortableHeader
               label="Warehouse" :active="sortKey === 'wh'" :asc="sortAsc"
               @sort="store.toggleSort('wh')"
             />
@@ -107,10 +112,6 @@ defineExpose({ exportCsv })
               @sort="store.toggleSort('size')"
             />
             <th scope="col">Pattern</th>
-            <SortableHeader
-              label="Item code" :active="sortKey === 'code'" :asc="sortAsc"
-              @sort="store.toggleSort('code')"
-            />
             <th scope="col">PR / TL</th>
             <SortableHeader
               label="Stock (EA)" align="right" :active="sortKey === 'qty'" :asc="sortAsc"
@@ -136,13 +137,13 @@ defineExpose({ exportCsv })
         <tbody>
           <tr v-for="(item, index) in rows" :key="item.id">
             <td class="num no-col">{{ formatInt(rangeStart + index) }}</td>
+            <td class="col-key"><span class="item-code">{{ item.code }}</span></td>
             <td>{{ item.wh }}</td>
             <td><span class="cat-tag">{{ item.cat }}</span></td>
             <td>{{ item.brand }}</td>
             <!-- 규격에는 콤마를 넣지 않습니다 (사내 표기 규칙) -->
             <td><b>{{ item.size }}</b></td>
             <td>{{ item.pattern }}</td>
-            <td><span class="item-code">{{ item.code }}</span></td>
             <td>{{ item.pr }}</td>
             <td class="num">{{ formatInt(item.qty) }}</td>
             <td class="num">{{ formatInt(item.rsv) }}</td>
@@ -232,6 +233,19 @@ defineExpose({ exportCsv })
 .table-scroll table { min-width: 1560px; }
 
 .no-col { width: 56px; color: var(--asm-fg-muted); }
+
+/* 좌측 고정 열 — No + 품번. 가이드 8-2 · 개선의견서 이슈 23 */
+.table-scroll :is(th, td).no-col { position: sticky; left: 0; z-index: 3; background: var(--asm-bg); }
+.table-scroll :is(th, td).col-key {
+  position: sticky;
+  left: 56px;
+  z-index: 3;
+  min-width: 168px;
+  background: var(--asm-bg);
+  box-shadow: 5px 0 7px -7px rgb(8 18 31 / 0.3);
+}
+.table-scroll thead :is(th.no-col, th.col-key) { z-index: 6; background: var(--asm-muted); }
+.table-scroll tbody tr:hover :is(td.no-col, td.col-key) { background: var(--asm-muted); }
 
 .cat-tag,
 .item-code {

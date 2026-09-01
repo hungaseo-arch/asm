@@ -114,22 +114,18 @@ export function formatIdrFull(value: number): string {
   return `${full} (${formatIdrShort(value).replace('IDR ', '')})`
 }
 
-const MONTHS_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-] as const
-
 /**
- * 날짜 — dd MMM yyyy (예: 28 Aug 2026).
- * 월 약어는 브라우저 로케일에 따라 'Sept' 처럼 흔들리므로 고정 배열을 씁니다.
- * 연도에는 콤마를 쓰지 않습니다.
+ * 날짜 — YYYY-MM-DD (ISO 8601) 고정. 예) 2026-08-28
+ * 디자인 가이드 8-2 및 개선의견서 이슈 15 에 따라 브라우저 언어 설정과 무관하게
+ * 항상 동일한 순서로 표기합니다. 연도에는 콤마를 쓰지 않습니다.
  */
 export function formatDate(value: string): string {
   if (!value) return '-'
   const date = new Date(`${value}T00:00:00`)
   if (Number.isNaN(date.getTime())) return '-'
+  const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  return `${day} ${MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}`
+  return `${date.getFullYear()}-${month}-${day}`
 }
 
 /** 입력창용 — 타이핑 중 천 단위 콤마를 유지하며 소수점 2자리까지 허용 */

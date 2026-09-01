@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { CalendarDays, FilterX, Search, SlidersHorizontal } from 'lucide-vue-next'
+import { FilterX, Search, SlidersHorizontal } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
+import AsmDateInput from '@/components/common/AsmDateInput.vue'
 import { usePurchasePoStore } from '@/stores/purchase-po'
 import { PO_STATUSES, PURCHASE_TYPES, CURRENCIES } from '@/types/purchase-po'
 
@@ -44,18 +45,12 @@ function onFilterChange() {
 
       <label>
         <span class="form-label">PO date from</span>
-        <div class="position-relative">
-          <CalendarDays :size="15" class="field-icon" />
-          <input v-model="fromDate" type="date" class="form-control ps-5" @change="onFilterChange" />
-        </div>
+        <AsmDateInput v-model="fromDate" aria-label="PO date from" @update:model-value="onFilterChange" />
       </label>
 
       <label>
         <span class="form-label">PO date to</span>
-        <div class="position-relative">
-          <CalendarDays :size="15" class="field-icon" />
-          <input v-model="toDate" type="date" class="form-control ps-5" @change="onFilterChange" />
-        </div>
+        <AsmDateInput v-model="toDate" aria-label="PO date to" @update:model-value="onFilterChange" />
       </label>
 
       <label>

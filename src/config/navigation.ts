@@ -62,11 +62,12 @@ export const navGroups: NavGroup[] = [
     label: 'I. PURCHASING',
     items: [
       { label: 'Purchase PO', icon: ShoppingCart, to: '/purchase-po' },
-      { label: 'PPC', icon: Factory, to: '/purchasing/ppc' },
+      { label: 'PPC (Production Plan)', icon: Factory, to: '/purchasing/ppc' },
+      { label: 'Payment Plan', icon: CircleDollarSign, to: '/purchasing/payment-plan', badge: 'NEW' },
       { label: 'Shipment', icon: Ship, to: '/purchasing/shipment' },
       { label: 'Customs', icon: ClipboardCheck, to: '/purchasing/customs' },
       { label: 'Receipt', icon: PackageCheck, to: '/purchasing/receipts' },
-      { label: 'Receipt(WH)', icon: Warehouse, to: '/purchasing/receipts-wh' },
+      { label: 'Receipt (Warehouse)', icon: Warehouse, to: '/purchasing/receipts-wh' },
       { label: 'Import Cost', icon: FileText, to: '/purchasing/import-cost' },
       { label: 'Vendor Return', icon: Undo2, to: '/purchasing/vendor-return' },
       { label: 'Credit Note', icon: ReceiptText, to: '/purchasing/credit-note' },
@@ -80,7 +81,7 @@ export const navGroups: NavGroup[] = [
       { label: 'SO', icon: FileCheck, to: '/sales/so' },
       { label: 'Delivery Order', icon: Truck, to: '/sales/delivery-order' },
       { label: 'Delivery Note', icon: FileText, to: '/sales/delivery-note' },
-      { label: 'Delivery Note (WH)', icon: Warehouse },
+      { label: 'Delivery Note (Warehouse)', icon: Warehouse },
     ],
   },
   {

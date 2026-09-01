@@ -1,18 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Bell, ChevronDown, LogOut, Menu } from 'lucide-vue-next'
+import { Bell, Menu } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
-import { topNav } from '@/config/navigation'
-import { useSessionStore } from '@/stores/session'
+import { APP_USER, topNav } from '@/config/navigation'
 
 defineEmits<{ (event: 'open-sidebar'): void }>()
 
 const route = useRoute()
 const router = useRouter()
-const session = useSessionStore()
-
-const displayName = computed(() => session.user?.name ?? session.user?.email ?? 'Andi Pratama')
 
 const isActive = (item: { to?: string; match?: string[] }) => {
   const prefixes = item.match ?? (item.to ? [item.to] : [])
@@ -25,12 +20,6 @@ function openItem(item: { label: string; to?: string }) {
     return
   }
   toast.info(`${item.label} 워크스페이스는 현재 범위에 포함되지 않습니다`)
-}
-
-async function onSignOut() {
-  await session.signOut()
-  toast.success('로그아웃되었습니다')
-  void router.push('/auth')
 }
 </script>
 
@@ -74,27 +63,13 @@ async function onSignOut() {
         <i class="notif-dot" aria-hidden="true"></i>
       </button>
 
-      <div class="dropdown">
-        <button
-          type="button"
-          class="profile btn btn-link p-0 text-decoration-none"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-        >
-          <span class="avatar">{{ session.initials }}</span>
-          <span class="d-none d-md-block text-start lh-sm">
-            <b>{{ displayName }}</b>
-            <small>Purchasing</small>
-          </span>
-          <ChevronDown :size="15" />
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li>
-            <button class="dropdown-item d-flex align-items-center gap-2" type="button" @click="onSignOut">
-              <LogOut :size="15" /> 로그아웃
-            </button>
-          </li>
-        </ul>
+      <!-- 로그인 기능 비활성 — 표시 전용 사용자 (config/navigation.ts APP_USER) -->
+      <div class="profile">
+        <span class="avatar">{{ APP_USER.initials }}</span>
+        <span class="d-none d-md-block text-start lh-sm">
+          <b>{{ APP_USER.name }}</b>
+          <small>{{ APP_USER.role }}</small>
+        </span>
       </div>
     </div>
   </header>

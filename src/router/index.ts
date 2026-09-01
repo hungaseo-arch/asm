@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { screenRoutes } from '@/config/screens'
-import { useSessionStore } from '@/stores/session'
 
 /** 화면 시안에서 옮긴 목록 화면들 — 정의만 다르고 컴포넌트는 하나를 공유합니다. */
 const listScreenRoutes: RouteRecordRaw[] = screenRoutes.map((screen) => ({
@@ -35,10 +34,11 @@ const routes: RouteRecordRaw[] = [
   },
   ...listScreenRoutes,
   {
+    // 로그인 기능 비활성 — 백엔드 없이 화면만 제공합니다.
+    // 되살리려면 이 항목을 AuthPage 라우트로 되돌리고 아래 인증 가드를 복구하십시오.
+    // (AuthPage.vue · stores/session.ts · lib/auth.ts 는 그대로 두었습니다)
     path: '/auth',
-    name: 'auth',
-    component: () => import('@/pages/AuthPage.vue'),
-    meta: { guestOnly: true, title: '로그인' },
+    redirect: '/',
   },
   {
     path: '/:pathMatch(.*)*',
@@ -53,26 +53,6 @@ export const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior: () => ({ top: 0 }),
-})
-
-router.beforeEach(async (to) => {
-  const session = useSessionStore()
-
-  if (to.meta.requiresAuth || to.meta.guestOnly) {
-    // 세션 확정 전에 판정하면 로그인 직후 화면이 되돌아갑니다.
-    await session.ensureResolved()
-  }
-
-  if (to.meta.requiresAuth && !session.isAuthenticated) {
-    return { name: 'auth', query: { redirect: to.fullPath }, replace: true }
-  }
-
-  // 이미 로그인 + 이메일 인증까지 끝난 사용자는 로그인 화면에 머물지 않습니다.
-  if (to.meta.guestOnly && session.isAuthenticated && session.isEmailVerified) {
-    return { path: '/', replace: true }
-  }
-
-  return true
 })
 
 router.afterEach((to) => {

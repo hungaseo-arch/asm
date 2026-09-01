@@ -92,7 +92,7 @@ function openItem(item: NavItem) {
     </div>
 
     <div class="sidebar-foot">
-      <span>ASM Production</span>
+      <span>ASM</span>
       <small>{{ APP_VERSION }}</small>
     </div>
   </aside>

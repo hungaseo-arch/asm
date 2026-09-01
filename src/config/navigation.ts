@@ -119,4 +119,10 @@ export const navGroups: NavGroup[] = [
   },
 ]
 
+/**
+ * 상단바 표시용 사용자 (Display user / Pengguna tampilan)
+ * 로그인 기능이 꺼져 있어 세션 대신 이 값을 표시합니다.
+ */
+export const APP_USER = { name: 'Seo Hunga', initials: 'SH', role: 'General Manager' }
+
 export const APP_VERSION = 'v1.0 · 01 Sep 2026'

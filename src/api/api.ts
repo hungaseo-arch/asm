@@ -1,6 +1,6 @@
-import { apiUrl } from '@/lib/api-base'
-import { notifyApiError } from '@/lib/api-error'
-import { getAuthToken, setAuthToken } from '@/lib/auth'
+import { apiUrl } from '@/api/api-base'
+import { notifyApiError } from '@/api/api-error'
+import { getAuthToken, setAuthToken } from '@/api/auth'
 
 // 서버(apps/server)와 공유하는 응답 계약 — packages/shared/src/http.ts 와 동일
 export type ApiSuccess<T> = { ok: true; data: T }

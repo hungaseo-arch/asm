@@ -15,9 +15,9 @@
 import { computed, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { authClient } from '@/lib/auth'
-import { apiFetch } from '@/lib/api'
-import { normalizeApiError, readResponseBody } from '@/lib/api-error'
+import { authClient } from '@/api/auth'
+import { apiFetch } from '@/api/api'
+import { normalizeApiError, readResponseBody } from '@/api/api-error'
 import { useSessionStore } from '@/stores/session'
 
 const route = useRoute()

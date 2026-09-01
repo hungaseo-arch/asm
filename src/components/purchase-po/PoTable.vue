@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Download, MoreHorizontal } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
-import { toast } from 'vue-sonner'
+import { useExcelExport } from '@/composables/useExcelExport'
 import AsmBadge from '@/components/common/AsmBadge.vue'
 import SortableHeader from '@/components/common/SortableHeader.vue'
 import { usePurchasePoStore } from '@/stores/purchase-po'
-import { formatAmount, formatDate, formatInt, formatPercent } from '@/lib/format'
+import { formatAmount, formatDate, formatInt, formatPercent } from '@/utils/format'
 import { statusTone, type PurchaseOrder } from '@/types/purchase-po'
 
 const emit = defineEmits<{ (event: 'select', order: PurchaseOrder): void }>()
@@ -16,34 +16,23 @@ const { rows, filtered, pageSize, sortKey, sortAsc, safePage, pageCount, rangeSt
 
 const percentOf = (part: number, total: number) => (total ? (part / total) * 100 : 0)
 
-function escapeCsv(value: string | number) {
-  return `"${String(value).split('"').join('""')}"`
-}
+const { exportRows } = useExcelExport()
 
-/** 현재 필터 결과를 CSV로 내보냅니다 (Excel 호환 · UTF-8 BOM 포함). */
-function exportCsv() {
+/** 현재 필터 결과를 엑셀로 내보냅니다 (지시서 §2 SheetJS · 실행 시점 동적 로딩). */
+function exportExcel() {
   const headers = [
     'PO No.', 'Supplier', 'Type', 'PO Date', 'Target Date', 'Currency', 'Amount',
     'Tax Basis', 'Allocated', 'Completed', 'Total Qty', 'Status',
   ]
-  const lines = filtered.value.map((order) =>
-    [
+  void exportRows(
+    'purchase-po',
+    headers,
+    filtered.value.map((order) => [
       order.poNo, order.supplier, order.type, order.poDate, order.targetDate, order.currency,
       order.amount, order.taxBasis, order.allocated, order.completed, order.totalQty, order.status,
-    ]
-      .map(escapeCsv)
-      .join(','),
+    ]),
+    'Purchase PO',
   )
-
-  const csv = [headers.map(escapeCsv).join(','), ...lines].join('\n')
-  const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = `purchase-po-${new Date().toISOString().slice(0, 10)}.csv`
-  anchor.click()
-  URL.revokeObjectURL(url)
-  toast.success(`${formatInt(filtered.value.length)}건의 발주가 내보내졌습니다`)
 }
 </script>
 
@@ -59,9 +48,9 @@ function exportCsv() {
             <option v-for="value in [10, 30, 50, 100]" :key="value" :value="value">{{ value }}</option>
           </select>
         </label>
-        <button type="button" class="btn btn-outline-primary btn-sm" @click="exportCsv">
+        <button type="button" class="btn btn-outline-primary btn-sm" @click="exportExcel">
           <Download :size="16" />
-          Export CSV
+          Export Excel
         </button>
       </div>
     </div>

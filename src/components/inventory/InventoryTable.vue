@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight, Download } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
-import { toast } from 'vue-sonner'
+import { useExcelExport } from '@/composables/useExcelExport'
 import AsmBadge from '@/components/common/AsmBadge.vue'
 import SortableHeader from '@/components/common/SortableHeader.vue'
 import { useInventoryStore } from '@/stores/inventory'
-import { formatAmount, formatInt } from '@/lib/format'
+import { formatAmount, formatInt } from '@/utils/format'
 import {
   AGED_STOCK_DAYS,
   availableOf,
@@ -31,38 +31,27 @@ const {
   totalValue,
 } = storeToRefs(store)
 
-function escapeCsv(value: string | number) {
-  return `"${String(value).split('"').join('""')}"`
-}
+const { exportRows } = useExcelExport()
 
-/** 현재 필터 결과를 CSV로 내보냅니다 (Excel 호환 · UTF-8 BOM 포함). */
-function exportCsv() {
+/** 현재 필터 결과를 엑셀로 내보냅니다 (지시서 §2 SheetJS · 실행 시점 동적 로딩). */
+function exportExcel() {
   const headers = [
     'Item Code', 'Warehouse', 'Category', 'Brand', 'Size', 'Pattern', 'PR/TL',
     'Stock', 'Reserved', 'Available', 'Unit Cost (USD)', 'Stock Value (USD)', 'Aging', 'Status',
   ]
-  const lines = filtered.value.map((item) =>
-    [
+  void exportRows(
+    'inventory-list',
+    headers,
+    filtered.value.map((item) => [
       item.code, item.wh, item.cat, item.brand, item.size, item.pattern, item.pr,
-      item.qty, item.rsv, availableOf(item), item.cost.toFixed(2), valueOf(item).toFixed(2),
+      item.qty, item.rsv, availableOf(item), item.cost, valueOf(item),
       item.aging, STATUS_LABEL[item.status],
-    ]
-      .map(escapeCsv)
-      .join(','),
+    ]),
+    'Inventory List',
   )
-
-  const csv = [headers.map(escapeCsv).join(','), ...lines].join('\n')
-  const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = `inventory-list-${new Date().toISOString().slice(0, 10)}.csv`
-  anchor.click()
-  URL.revokeObjectURL(url)
-  toast.success(`${formatInt(filtered.value.length)}건의 재고가 내보내졌습니다`)
 }
 
-defineExpose({ exportCsv })
+defineExpose({ exportExcel })
 </script>
 
 <template>
@@ -77,9 +66,9 @@ defineExpose({ exportCsv })
             <option v-for="value in [10, 30, 50, 100]" :key="value" :value="value">{{ value }}</option>
           </select>
         </label>
-        <button type="button" class="btn btn-outline-primary btn-sm" @click="exportCsv">
+        <button type="button" class="btn btn-outline-primary btn-sm" @click="exportExcel">
           <Download :size="16" />
-          Export CSV
+          Export Excel
         </button>
       </div>
     </div>

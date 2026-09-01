@@ -9,7 +9,7 @@ import '@/assets/asm-theme.css'
 
 import App from './App.vue'
 import router from './router'
-import { syncAuthTokenFromUrl } from '@/lib/api'
+import { syncAuthTokenFromUrl } from '@/api/api'
 
 async function bootstrap() {
   // OAuth 리다이렉트로 돌아온 login_token 을 세션 토큰으로 승격시킨 뒤 마운트합니다.

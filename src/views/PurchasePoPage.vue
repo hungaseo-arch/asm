@@ -10,14 +10,14 @@ import {
 } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { toast } from 'vue-sonner'
-import AppShell from '@/components/layout/AppShell.vue'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import SummaryCard from '@/components/common/SummaryCard.vue'
 import PoFilterPanel from '@/components/purchase-po/PoFilterPanel.vue'
 import PoTable from '@/components/purchase-po/PoTable.vue'
 import PoDetailDrawer from '@/components/purchase-po/PoDetailDrawer.vue'
 import NewPoDialog from '@/components/purchase-po/NewPoDialog.vue'
 import { usePurchasePoStore } from '@/stores/purchase-po'
-import { formatIdrShort, formatInt } from '@/lib/format'
+import { formatIdrShort, formatInt } from '@/utils/format'
 import type { NewPurchaseOrderInput, PurchaseOrder } from '@/types/purchase-po'
 
 const store = usePurchasePoStore()
@@ -35,7 +35,7 @@ function createOrder(input: NewPurchaseOrderInput) {
 </script>
 
 <template>
-  <AppShell>
+  <DefaultLayout>
     <!-- 경로 (Breadcrumb) -->
     <nav class="breadcrumb-bar" aria-label="breadcrumb">
       <span>Purchasing</span>
@@ -96,7 +96,7 @@ function createOrder(input: NewPurchaseOrderInput) {
       @close="showNewDialog = false"
       @submit="createOrder"
     />
-  </AppShell>
+  </DefaultLayout>
 </template>
 
 <style scoped>

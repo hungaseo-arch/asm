@@ -1,4 +1,4 @@
-import type { Currency } from '@/lib/format'
+import type { Currency } from '@/utils/format'
 
 export type { Currency }
 

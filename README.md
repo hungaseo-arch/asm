@@ -41,30 +41,29 @@ npm run preview           # 빌드 결과 확인
 
 ```
 src/
+├─ api/                      HTTP 계층 (작업지시서 §4)
+│  ├─ client.ts              axios 단일 인스턴스 — 트레일링 슬래시·Bearer·401 refresh 재시도
+│  ├─ api-base.ts            API base URL 결정 (빌드타임 > 런타임 > same-origin)
+│  ├─ api.ts · api-error.ts  레거시 fetch 헬퍼 + 서버 오류 정규화
+│  └─ auth.ts                Better Auth 클라이언트 + Bearer 토큰 저장
 ├─ assets/asm-theme.css      ASM 디자인 토큰 + Bootstrap 5.3 오버라이드 (단일 진실 원천)
 ├─ components/
-│  ├─ layout/                AppShell · AppTopbar · AppSidebar
 │  ├─ common/                AsmBadge · SummaryCard · SortableHeader · ListScreen · AsmDateInput
 │  ├─ purchase-po/           PoFilterPanel · PoTable · PoDetailDrawer · NewPoDialog
 │  └─ inventory/             InventoryFilterPanel · InventoryTable
-├─ composables/              useBodyScrollLock · useEscapeToClose
+├─ composables/              useBodyScrollLock · useEscapeToClose · useExcelExport
 ├─ config/
-│  ├─ navigation.ts          상단/사이드 메뉴 정의 (운영 ASM 6개 대분류)
+│  ├─ navigation.ts          상단/사이드 메뉴 정의 (개선의견서 목차 기준)
 │  └─ screens.ts             목록 화면 레지스트리 (28종 · 동적 import)
 ├─ data/                     프로토타입 시드 데이터 (운영 전환 시 삭제)
-│  ├─ purchase-orders.ts
-│  ├─ inventory.ts
+│  ├─ purchase-orders.ts · inventory.ts
 │  └─ screens/               목록 화면 28종 정의 + 예시 데이터
-├─ lib/
-│  ├─ api-base.ts            API base URL 결정 (빌드타임 > 런타임 > same-origin)
-│  ├─ api.ts                 apiFetch / apiGet / apiSend / OAuth 토큰 동기화
-│  ├─ api-error.ts           서버 오류 정규화 + 토스트
-│  ├─ auth.ts                Better Auth 클라이언트 + Bearer 토큰 저장
-│  └─ format.ts              사내 숫자 표기 표준 (아래 4항)
-├─ pages/                    PurchasePoPage · InventoryListPage · ListScreenPage · AuthPage · NotFoundPage
-├─ router/index.ts           라우트 + 인증 가드
+├─ layouts/                  DefaultLayout · AppTopbar · AppSidebar
+├─ router/index.ts           라우트 (실서버 경로명 사용 · 지시서 §5)
 ├─ stores/                   purchase-po · inventory · session (Pinia)
-└─ types/                    purchase-po.ts · inventory.ts · list-screen.ts (도메인 타입)
+├─ types/                    purchase-po.ts · inventory.ts · list-screen.ts (도메인 타입)
+├─ utils/format.ts           사내 숫자 표기 표준 (아래 4항)
+└─ views/                    라우트 단위 페이지 (PurchasePoPage · InventoryListPage · ListScreenPage · AuthPage · NotFoundPage)
 ```
 
 ---
@@ -79,8 +78,8 @@ src/
 | `formatQty` | 수량 (항상 정수) | `1,200 EA` |
 | `formatPercent` | 퍼센트 (소수점 1자리 고정) | `12.5%` · `3.0%` |
 | `formatWeight` | 중량 (소수점 1자리) | `62.5 kg` |
-| `formatUnitPrice` | 구매단가 (소수점 2자리) | `USD 84.25/EA` |
-| `formatAmount` | 금액 (IDR 정수 / USD 2자리) | `IDR 185,000,000` |
+| `formatUnitPrice` = `formatPrice` | 구매단가 (소수점 2자리) | `USD 84.25/EA` |
+| `formatAmount` = `formatCurrency` | 금액 (IDR 정수 / USD 2자리) | `IDR 185,000,000` |
 | `formatIdrShort` | 사내 요약용 단위 표기 | `IDR 1.25 miliar` |
 | `formatIdrFull` | **대외 문서용** 전체 자리수 + 단위 병기 | `IDR 1,250,000,000 (1.25 miliar)` |
 | `formatDecimal` | 통화코드가 열 제목에 있는 표의 소수 | `84.25` |

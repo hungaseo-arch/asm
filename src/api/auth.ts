@@ -1,7 +1,7 @@
 import { createAuthClient } from 'better-auth/vue'
 import { usernameClient } from 'better-auth/client/plugins'
-import { notifyApiError } from '@/lib/api-error'
-import { authUrl } from '@/lib/api-base'
+import { notifyApiError } from '@/api/api-error'
+import { authUrl } from '@/api/api-base'
 
 const AUTH_TOKEN_KEY = 'better-auth-token'
 

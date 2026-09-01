@@ -128,6 +128,16 @@ export function formatDate(value: string): string {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
+/* ── 작업지시서 §7 표준 함수명 별칭 ─────────────────────────────────────────
+   지시서는 formatQty · formatPrice · formatPercent · formatWeight · formatCurrency 를
+   표준 이름으로 규정합니다. 기존 호출부 호환을 위해 원래 이름도 함께 유지합니다. */
+
+/** 단가 — 통화코드 + 소수점 2자리. 예) USD 84.25/EA (= formatUnitPrice) */
+export const formatPrice = formatUnitPrice
+
+/** 금액 — 통화코드 선행. 예) IDR 185,000,000 · USD 108,800.00 (= formatAmount) */
+export const formatCurrency = formatAmount
+
 /** 입력창용 — 타이핑 중 천 단위 콤마를 유지하며 소수점 2자리까지 허용 */
 export function groupAmountInput(raw: string): string {
   const digits = raw.replace(/[^\d.]/g, '')

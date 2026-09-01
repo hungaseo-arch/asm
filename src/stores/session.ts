@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { defineStore } from 'pinia'
-import { authClient, clearAuthToken } from '@/lib/auth'
+import { authClient, clearAuthToken } from '@/api/auth'
 
 /**
  * 세션 단일 진입점 (Single session source / Sumber sesi tunggal).

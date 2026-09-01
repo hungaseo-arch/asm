@@ -11,12 +11,12 @@ import {
 } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { toast } from 'vue-sonner'
-import AppShell from '@/components/layout/AppShell.vue'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import SummaryCard from '@/components/common/SummaryCard.vue'
 import InventoryFilterPanel from '@/components/inventory/InventoryFilterPanel.vue'
 import InventoryTable from '@/components/inventory/InventoryTable.vue'
 import { useInventoryStore } from '@/stores/inventory'
-import { formatAmount, formatDate, formatInt, formatQty } from '@/lib/format'
+import { formatAmount, formatDate, formatInt, formatQty } from '@/utils/format'
 import { AGED_STOCK_DAYS } from '@/types/inventory'
 
 const store = useInventoryStore()
@@ -33,7 +33,7 @@ function printPage() {
 </script>
 
 <template>
-  <AppShell>
+  <DefaultLayout>
     <!-- 경로 (Breadcrumb) -->
     <nav class="breadcrumb-bar" aria-label="breadcrumb">
       <span>Inventory</span>
@@ -53,7 +53,7 @@ function printPage() {
           <Printer :size="16" />
           Print
         </button>
-        <button type="button" class="btn btn-secondary" @click="table?.exportCsv()">
+        <button type="button" class="btn btn-secondary" @click="table?.exportExcel()">
           <Boxes :size="16" />
           Excel
         </button>
@@ -101,7 +101,7 @@ function printPage() {
 
     <InventoryFilterPanel />
     <InventoryTable ref="table" />
-  </AppShell>
+  </DefaultLayout>
 </template>
 
 <style scoped>

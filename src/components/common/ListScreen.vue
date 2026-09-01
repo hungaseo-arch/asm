@@ -12,6 +12,7 @@ import {
   Search,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { useExcelExport } from '@/composables/useExcelExport'
 import AsmBadge from '@/components/common/AsmBadge.vue'
 import AsmDateInput from '@/components/common/AsmDateInput.vue'
 import SortableHeader from '@/components/common/SortableHeader.vue'
@@ -23,7 +24,7 @@ import {
   formatPercent,
   formatSigned,
   formatWeight,
-} from '@/lib/format'
+} from '@/utils/format'
 import {
   ACCESS_LEVEL,
   toneOf,
@@ -185,26 +186,16 @@ function resetSearch() {
   page.value = 1
 }
 
-function escapeCsv(value: string | number) {
-  return `"${String(value ?? '').split('"').join('""')}"`
-}
+const { exportRows } = useExcelExport()
 
-/** 검색 결과를 CSV로 내보냅니다 (Excel 호환 · UTF-8 BOM 포함). */
-function exportCsv() {
-  const headers = props.screen.columns.map((column) => escapeCsv(column.label)).join(',')
-  const lines = filtered.value.map((row) =>
-    props.screen.columns.map((column) => escapeCsv(row[column.key] ?? '')).join(','),
+/** 검색 결과를 엑셀로 내보냅니다 (지시서 §2 SheetJS · 실행 시점 동적 로딩). */
+function exportExcel() {
+  void exportRows(
+    props.screen.slug,
+    props.screen.columns.map((column) => column.label),
+    filtered.value.map((row) => props.screen.columns.map((column) => row[column.key] ?? '')),
+    props.screen.cardTitle,
   )
-  const blob = new Blob([`﻿${[headers, ...lines].join('\n')}`], {
-    type: 'text/csv;charset=utf-8',
-  })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = `${props.screen.slug}-${new Date().toISOString().slice(0, 10)}.csv`
-  anchor.click()
-  URL.revokeObjectURL(url)
-  toast.success(`${formatInt(filtered.value.length)}건이 내보내졌습니다`)
 }
 
 function printPage() {
@@ -238,7 +229,7 @@ const primaryLabel = computed(() => {
         <Printer :size="16" />
         Print
       </button>
-      <button type="button" class="btn btn-secondary" @click="exportCsv">
+      <button type="button" class="btn btn-secondary" @click="exportExcel">
         <Download :size="16" />
         Excel
       </button>

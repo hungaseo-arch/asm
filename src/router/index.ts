@@ -5,31 +5,32 @@ import { screenRoutes } from '@/config/screens'
 const listScreenRoutes: RouteRecordRaw[] = screenRoutes.map((screen) => ({
   path: screen.path,
   name: screen.slug,
-  component: () => import('@/pages/ListScreenPage.vue'),
+  component: () => import('@/views/ListScreenPage.vue'),
   meta: { requiresAuth: false, title: screen.title, screen: screen.slug },
 }))
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/purchase-po',
+    redirect: '/vendor-po',
   },
   {
-    path: '/purchase-po',
-    name: 'purchase-po',
-    component: () => import('@/pages/PurchasePoPage.vue'),
+    // 작업지시서 §5 — 실서버 경로명(/vendor-po) 사용
+    path: '/vendor-po',
+    name: 'vendor-po',
+    component: () => import('@/views/PurchasePoPage.vue'),
     // meta.requiresAuth 를 true 로 바꾸면 로그인 필수 화면이 됩니다.
     meta: { requiresAuth: false, title: 'Purchase PO' },
   },
   {
-    // 이전 React 클라이언트의 경로 호환
-    path: '/vendor-po',
-    redirect: '/purchase-po',
+    // 이전 경로 호환 (그룹형 경로 → 실서버 경로)
+    path: '/purchase-po',
+    redirect: '/vendor-po',
   },
   {
     path: '/inventory-list',
     name: 'inventory-list',
-    component: () => import('@/pages/InventoryListPage.vue'),
+    component: () => import('@/views/InventoryListPage.vue'),
     meta: { requiresAuth: false, title: 'Inventory List' },
   },
   ...listScreenRoutes,
@@ -43,7 +44,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    component: () => import('@/pages/NotFoundPage.vue'),
+    component: () => import('@/views/NotFoundPage.vue'),
     meta: { title: '404' },
   },
 ]

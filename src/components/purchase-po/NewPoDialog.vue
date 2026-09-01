@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { X } from 'lucide-vue-next'
 import AsmDateInput from '@/components/common/AsmDateInput.vue'
-import { groupAmountInput, parseAmountInput } from '@/lib/format'
+import { groupAmountInput, parseAmountInput } from '@/utils/format'
 import type { Currency, NewPurchaseOrderInput, PurchaseType } from '@/types/purchase-po'
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
 import { useEscapeToClose } from '@/composables/useEscapeToClose'

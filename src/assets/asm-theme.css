@@ -23,7 +23,8 @@
   --asm-fg: #08121f;
   --asm-fg-muted: #5c646f;
   --asm-bg: #ffffff;
-  --asm-page-bg: #f6f8fa;
+  /* 가이드 6-1 — 본문 영역 배경은 흰색. 패널은 1px 테두리(가이드 5-3)로 구분합니다. */
+  --asm-page-bg: #ffffff;
   --asm-muted: #eef2f7;
   --asm-secondary: #eaeff5;
   --asm-border: #d3d8de;
@@ -78,7 +79,7 @@
   --bs-link-hover-color: #00306e;
   --bs-body-color: #08121f;
   --bs-body-color-rgb: 8, 18, 31;
-  --bs-body-bg: #f6f8fa;
+  --bs-body-bg: #ffffff;
   --bs-secondary-color: #5c646f;
   --bs-secondary-bg: #eaeff5;
   --bs-tertiary-bg: #eef2f7;
@@ -262,6 +263,7 @@ thead .asm-sticky-col { z-index: 6 !important; background: var(--asm-muted) !imp
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
+  text-transform: uppercase; /* 가이드 7-4 — DRAFT · CONFIRMED 등 대문자 표기 */
   white-space: nowrap;
 }
 .asm-badge > .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.75; }

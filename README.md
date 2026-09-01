@@ -108,6 +108,7 @@ src/
 | `--asm-fg` / `--asm-fg-muted` | `#08121F` / `#5C646F` | 본문 / 보조 텍스트 |
 | `--asm-border` | `#D3D8DE` | 테두리 · 구분선 |
 | `--asm-sidebar` / `--asm-sidebar-active` | `#F2F5F9` / `#DEE5EF` | 사이드바 |
+| `--asm-page-bg` | `#FFFFFF` | 본문 영역 배경 (가이드 6-1) |
 | 상태 배지 | info/success/warning/danger/neutral 5종 | `.asm-badge--*` |
 
 출처: `ASM_디자인가이드_삼탄TMS기준_v1.0.html` (삼탄 TMS 기준). 다크 모드는 1차 적용 범위에서 제외했으나 변수 구조는 확장 가능하게 유지했습니다.

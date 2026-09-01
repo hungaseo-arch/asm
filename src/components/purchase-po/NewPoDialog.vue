@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { X } from 'lucide-vue-next'
 import AsmDateInput from '@/components/common/AsmDateInput.vue'
 import { groupAmountInput, parseAmountInput } from '@/lib/format'
@@ -23,6 +23,12 @@ const amount = ref('')
 const targetDate = ref('')
 const errors = ref<Record<string, string>>({})
 const formEl = ref<HTMLFormElement | null>(null)
+
+// 가이드 7-5 — 모달이 열리면 첫 입력창에 포커스를 둡니다.
+onMounted(() => {
+  const fields = formEl.value?.querySelectorAll<HTMLInputElement>('.dialog-body input, .dialog-body select')
+  Array.from(fields ?? []).find((el) => !el.disabled)?.focus()
+})
 
 const errorCount = computed(() => Object.keys(errors.value).length)
 

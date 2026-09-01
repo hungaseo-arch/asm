@@ -3,7 +3,7 @@ defineProps({
   label: { type: String, required: true },
   value: { type: String, required: true },
   note: { type: String, default: '' },
-  icon: { type: [Object, Function], required: true },
+  icon: { type: [String, Object, Function], required: true },
   /** 'default' | 'warning' | 'success' | 'danger' */
   tone: { type: String, default: 'default' },
 })

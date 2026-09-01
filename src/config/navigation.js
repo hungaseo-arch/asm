@@ -1,4 +1,9 @@
 /**
+ * 아이콘은 plugins/icons.js 에서 전역 등록한 컴포넌트 '이름'으로 지정합니다
+ * (Font Awesome 전환 후 값 import 가 필요 없어졌습니다).
+ */
+
+/**
  * 상단 메뉴 (Top navigation / Navigasi atas)
  * `match` 는 활성 표시 판정용 경로 접두사입니다 (하위 화면에서도 대분류가 켜지도록).
  */
@@ -64,36 +69,36 @@ export const navGroups = [
   {
     label: 'I. PURCHASING',
     items: [
-      { label: 'Purchase PO', icon: ShoppingCart, to: '/vendor-po' },
-      { label: 'PPC (Production Plan)', icon: Factory, to: '/ppc' },
-      { label: 'Payment Plan', icon: CircleDollarSign, to: '/payment-plan', badge: 'NEW' },
-      { label: 'Shipment', icon: Ship, to: '/shipment' },
-      { label: 'Customs', icon: ClipboardCheck, to: '/customs' },
-      { label: 'Receipt', icon: PackageCheck, to: '/receipts' },
-      { label: 'Receipt (Warehouse)', icon: Warehouse, to: '/receipts-wh' },
-      { label: 'Import Cost', icon: FileText, to: '/import-cost' },
-      { label: 'Vendor Return', icon: Undo2, to: '/vendor-return' },
-      { label: 'Credit Note', icon: ReceiptText, to: '/credit-note' },
+      { label: 'Purchase PO', icon: 'ShoppingCart', to: '/vendor-po' },
+      { label: 'PPC (Production Plan)', icon: 'Factory', to: '/ppc' },
+      { label: 'Payment Plan', icon: 'CircleDollarSign', to: '/payment-plan', badge: 'NEW' },
+      { label: 'Shipment', icon: 'Ship', to: '/shipment' },
+      { label: 'Customs', icon: 'ClipboardCheck', to: '/customs' },
+      { label: 'Receipt', icon: 'PackageCheck', to: '/receipts' },
+      { label: 'Receipt (Warehouse)', icon: 'Warehouse', to: '/receipts-wh' },
+      { label: 'Import Cost', icon: 'FileText', to: '/import-cost' },
+      { label: 'Vendor Return', icon: 'Undo2', to: '/vendor-return' },
+      { label: 'Credit Note', icon: 'ReceiptText', to: '/credit-note' },
     ],
   },
   {
     label: 'II. SALES',
     items: [
-      { label: 'Quotation', icon: FileSpreadsheet, to: '/quotation' },
-      { label: 'Customer PO', icon: ClipboardList, to: '/customer-po' },
-      { label: 'SO', icon: FileCheck, to: '/sales-order' },
-      { label: 'Delivery Order', icon: Truck, to: '/delivery-order' },
-      { label: 'Delivery Note', icon: FileText, to: '/delivery-note' },
-      { label: 'Delivery Note (Warehouse)', icon: Warehouse },
+      { label: 'Quotation', icon: 'FileSpreadsheet', to: '/quotation' },
+      { label: 'Customer PO', icon: 'ClipboardList', to: '/customer-po' },
+      { label: 'SO', icon: 'FileCheck', to: '/sales-order' },
+      { label: 'Delivery Order', icon: 'Truck', to: '/delivery-order' },
+      { label: 'Delivery Note', icon: 'FileText', to: '/delivery-note' },
+      { label: 'Delivery Note (Warehouse)', icon: 'Warehouse' },
     ],
   },
   {
     label: 'III. INVENTORY',
     items: [
-      { label: 'Inventory List', icon: Boxes, to: '/inventory-list' },
+      { label: 'Inventory List', icon: 'Boxes', to: '/inventory-list' },
       {
         label: 'Inventory Monthly Closing',
-        icon: ClipboardCheck,
+        icon: 'ClipboardCheck',
         to: '/inventory-monthly-closing',
       },
     ],
@@ -101,38 +106,38 @@ export const navGroups = [
   {
     label: 'IV. PARTNERS',
     items: [
-      { label: 'Customers', icon: Users, to: '/customer' },
-      { label: 'Suppliers', icon: Building2, to: '/vendor' },
+      { label: 'Customers', icon: 'Users', to: '/customer' },
+      { label: 'Suppliers', icon: 'Building2', to: '/vendor' },
     ],
   },
   {
     label: 'V. MASTER DATA',
     items: [
-      { label: 'Products', icon: Package, to: '/product' },
-      { label: 'Warehouses', icon: Warehouse, to: '/warehouse' },
-      { label: 'Monthly Closed Data List', icon: FileSpreadsheet, to: '/monthly-closed-data' },
-      { label: 'Upload Monthly Closing Data', icon: Repeat },
+      { label: 'Products', icon: 'Package', to: '/product' },
+      { label: 'Warehouses', icon: 'Warehouse', to: '/warehouse' },
+      { label: 'Monthly Closed Data List', icon: 'FileSpreadsheet', to: '/monthly-closed-data' },
+      { label: 'Upload Monthly Closing Data', icon: 'Repeat' },
     ],
   },
   {
     label: 'VI. SETTINGS',
     items: [
-      { label: 'Search Staff', icon: UserCog, to: '/search-employee' },
+      { label: 'Search Staff', icon: 'UserCog', to: '/search-employee' },
       // 권한 가이드라인 v3.0 기준 화면 (3장 권한 매트릭스 · 6장 승인 매트릭스)
-      { label: 'Role / Permission', icon: ShieldCheck, to: '/role-permission' },
-      { label: 'Approval Matrix', icon: Workflow, to: '/approval-matrix' },
-      { label: 'Change Password', icon: Repeat },
+      { label: 'Role / Permission', icon: 'ShieldCheck', to: '/role-permission' },
+      { label: 'Approval Matrix', icon: 'Workflow', to: '/approval-matrix' },
+      { label: 'Change Password', icon: 'Repeat' },
     ],
   },
   {
     // 운영 ASM 메뉴에는 없는 시안(Mock-up) 화면입니다. 불필요하면 이 그룹만 지우면 됩니다.
     label: 'MOCK-UP (시안)',
     items: [
-      { label: 'Stock Movement', icon: ArrowLeftRight, to: '/stock-movement' },
-      { label: 'Stock Adjustment', icon: SlidersHorizontal, to: '/inventory-adjust' },
-      { label: 'Stock Transfer', icon: Repeat, to: '/stock-transfer' },
-      { label: 'Stock Opname', icon: ClipboardCheck, to: '/stock-opname' },
-      { label: 'Brand / Pattern', icon: Tag, to: '/brand-pattern' },
+      { label: 'Stock Movement', icon: 'ArrowLeftRight', to: '/stock-movement' },
+      { label: 'Stock Adjustment', icon: 'SlidersHorizontal', to: '/inventory-adjust' },
+      { label: 'Stock Transfer', icon: 'Repeat', to: '/stock-transfer' },
+      { label: 'Stock Opname', icon: 'ClipboardCheck', to: '/stock-opname' },
+      { label: 'Brand / Pattern', icon: 'Tag', to: '/brand-pattern' },
     ],
   },
 ]

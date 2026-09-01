@@ -61,28 +61,28 @@ function printPage() {
         label="Total stock qty"
         :value="formatQty(totalQty)"
         note="All warehouses"
-        :icon="Boxes"
+        icon="Boxes"
       />
       <SummaryCard
         label="Stock value"
         :value="formatAmount('USD', totalValue)"
         note="CIF cost basis"
         tone="success"
-        :icon="CircleDollarSign"
+        icon="CircleDollarSign"
       />
       <SummaryCard
         label="Below buffer"
         :value="`${formatInt(belowBufferCount)} SKU`"
         note="Reorder review required"
         tone="warning"
-        :icon="TriangleAlert"
+        icon="TriangleAlert"
       />
       <SummaryCard
         label="Aged stock"
         :value="`${formatInt(agedCount)} SKU`"
         :note="`Over ${formatInt(AGED_STOCK_DAYS)} days`"
         tone="danger"
-        :icon="Hourglass"
+        icon="Hourglass"
       />
     </section>
 

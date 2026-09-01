@@ -49,28 +49,28 @@ function createOrder(input) {
         label="Total purchase POs"
         :value="formatInt(filtered.length)"
         note="Current filtered result"
-        :icon="ShoppingCart"
+        icon="ShoppingCart"
       />
       <SummaryCard
         label="Pending approval"
         :value="formatInt(pendingApprovalCount)"
         note="Manager action required"
         tone="warning"
-        :icon="ClipboardCheck"
+        icon="ClipboardCheck"
       />
       <SummaryCard
         label="Confirmed IDR value"
         :value="formatIdrShort(confirmedIdrTotal)"
         note="Tax basis shown per PO"
         tone="success"
-        :icon="CircleDollarSign"
+        icon="CircleDollarSign"
       />
       <SummaryCard
         label="Production risk"
         :value="formatInt(productionRiskCount)"
         note="Below 50.0% completion"
         tone="danger"
-        :icon="Factory"
+        icon="Factory"
       />
     </section>
 

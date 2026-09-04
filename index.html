@@ -4,18 +4,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- %BASE_URL% 은 vite 의 base 로 치환됩니다 (GitHub Pages 하위 경로 배포 대응) -->
-    <link rel="icon" href="%BASE_URL%favicon.ico" />
+    <!--
+      %BASE_URL% 은 vite 의 base 로 치환됩니다 (GitHub Pages 하위 경로 배포 대응).
+      탭 아이콘은 ASCENDO 심볼(가이드 원본에서 추출한 PNG)을 씁니다 — favicon.ico 도
+      같은 이미지로 맞춰, 링크를 읽지 않고 /favicon.ico 를 바로 찾는 경로까지 덮습니다.
+    -->
+    <link rel="icon" type="image/png" href="%BASE_URL%img/ascendo-symbol.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%img/ascendo-symbol.png" />
 
     <!--
-      디자인 가이드 4-1 — 본문 Inter + Noto Sans KR, 숫자·코드 JetBrains Mono.
-      asm-theme.css 의 --bs-body-font-family / --bs-font-monospace 가 이 패밀리를 참조합니다.
+      디자인 가이드 5-1 (ASCENDO BI 기준) — BI 지정 서체 계열(Noto Sans KR/Noto Sans)만 사용.
+      BI 는 숫자·코드에도 별도 mono 폰트를 추가하지 않고 tabular-nums 로만 정렬합니다
+      (asm-theme.css 의 --bs-font-monospace 는 본문과 동일 패밀리를 가리킵니다).
+      AsuraDB 기준(Pretendard)과는 동시에 적용하지 않습니다 — 가이드 §1 참고.
     -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Sans:wght@300;400;500;700&display=swap"
     />
 
     <title>ASM · Ascendo Management System</title>

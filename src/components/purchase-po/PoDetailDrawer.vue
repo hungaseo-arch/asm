@@ -146,7 +146,7 @@ const approvalNote = computed(() => {
   position: relative;
   width: min(520px, 100%);
   height: 100%;
-  background: var(--asm-bg);
+  background: var(--asm-card);
   box-shadow: var(--asm-shadow-lg);
   display: flex;
   flex-direction: column;
@@ -235,7 +235,7 @@ const approvalNote = computed(() => {
   gap: 8px;
 }
 .metric-row > div {
-  background: var(--asm-page-bg);
+  background: var(--asm-muted-30);
   padding: 8px;
   border-radius: var(--asm-radius-md);
 }
@@ -263,10 +263,14 @@ const approvalNote = computed(() => {
   overflow: hidden;
   margin-top: 12px;
 }
+/*
+ * 배정 구간 — 채움(primary)과 트랙(border-subtle) 사이의 중간 톤.
+ * primary-soft 는 트랙과 명도가 붙어 구분이 되지 않으므로 primary 40% 를 씁니다.
+ */
 .detail-progress > i {
   height: 100%;
   display: block;
-  background: var(--asm-primary-soft);
+  background: var(--asm-primary-40);
 }
 .detail-progress em {
   height: 100%;
@@ -306,13 +310,13 @@ const approvalNote = computed(() => {
   width: 12px;
   height: 12px;
   border: 2px solid var(--asm-border-strong);
-  background: var(--asm-bg);
+  background: var(--asm-card);
   border-radius: 50%;
 }
 .timeline li.done > i {
   border-color: var(--asm-primary);
   background: var(--asm-primary);
-  box-shadow: inset 0 0 0 2px var(--asm-bg);
+  box-shadow: inset 0 0 0 2px var(--asm-card);
 }
 .timeline li span {
   display: block;
@@ -330,7 +334,7 @@ const approvalNote = computed(() => {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  background: var(--asm-bg);
+  background: var(--asm-card);
 }
 
 @keyframes slideIn {

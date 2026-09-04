@@ -63,8 +63,8 @@ function onInput(event) {
   font-family: var(--bs-font-monospace);
   font-variant-numeric: tabular-nums;
 }
+/* 가이드 7-2 오류 — 테두리 danger-border. 별도 링은 쓰지 않습니다. */
 .date-input.is-invalid {
-  border-color: var(--bs-danger);
-  box-shadow: 0 0 0 2px rgb(201 0 25 / 0.09);
+  border-color: var(--asm-danger-border);
 }
 </style>

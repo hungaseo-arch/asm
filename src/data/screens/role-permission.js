@@ -19,37 +19,37 @@ export const rolePermissionScreen = {
       key: 'all',
     },
     {
-      label: 'ROLE',
+      label: 'Role',
       key: 'code',
     },
     {
-      label: 'ROLE NAME',
+      label: 'Role Name',
       key: 'name',
     },
   ],
   columns: [
     {
       key: 'code',
-      label: 'ROLE',
+      label: 'Role',
       align: 'left',
       format: 'code',
     },
     {
       key: 'name',
-      label: 'ROLE NAME',
+      label: 'Role Name',
       align: 'left',
       format: 'text',
       ellipsis: true,
     },
     {
       key: 'scope',
-      label: 'DATA SCOPE',
+      label: 'Data Scope',
       align: 'left',
       format: 'text',
     },
     {
       key: 'cnt',
-      label: 'USERS',
+      label: 'Users',
       align: 'center',
       format: 'text',
     },

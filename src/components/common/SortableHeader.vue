@@ -40,9 +40,10 @@ defineEmits(['sort'])
 </template>
 
 <style scoped>
+/* 헤더 높이 36px = 상하 패딩 10px + 본문 16px (가이드 8-1) */
 .sort-button {
   width: 100%;
-  height: 40px;
+  line-height: 16px;
   padding: 0;
   border: 0;
   background: transparent;

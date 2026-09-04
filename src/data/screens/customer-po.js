@@ -18,19 +18,19 @@ export const customerPoScreen = {
       key: 'all',
     },
     {
-      label: 'PO NO.',
+      label: 'PO No.',
       key: 'no',
     },
     {
-      label: 'PO DATE',
+      label: 'PO Date',
       key: 'dt',
     },
     {
-      label: 'CUSTOMER',
+      label: 'Customer',
       key: 'cust',
     },
     {
-      label: 'QUOTE NO.',
+      label: 'Quote No.',
       key: 'qno',
     },
     {
@@ -38,51 +38,52 @@ export const customerPoScreen = {
       key: 'qty',
     },
     {
-      label: 'AMOUNT',
+      label: 'Amount',
       key: 'amt',
     },
     {
-      label: 'PAYMENT',
+      label: 'Payment',
       key: 'pay',
     },
     {
-      label: 'REQ DELIV. DATE',
+      label: 'Req Deliv. Date',
       key: 'req',
     },
     {
-      label: 'SALES REP',
+      label: 'Sales Rep',
       key: 'rep',
     },
     {
-      label: 'STATUS',
+      label: 'Status',
       key: 'st',
     },
   ],
   columns: [
     {
       key: 'no',
-      label: 'PO NO.',
+      label: 'PO No.',
       align: 'left',
       format: 'code',
     },
     {
       key: 'dt',
-      label: 'PO DATE',
+      label: 'PO Date',
       align: 'center',
       format: 'date',
     },
     {
       key: 'cust',
-      label: 'CUSTOMER',
+      label: 'Customer',
       align: 'left',
       format: 'text',
       ellipsis: true,
     },
     {
       key: 'qno',
-      label: 'QUOTE NO.',
+      label: 'Quote No.',
       align: 'left',
       format: 'code',
+      hideInTable: true,
     },
     {
       key: 'qty',
@@ -92,32 +93,32 @@ export const customerPoScreen = {
     },
     {
       key: 'amt',
-      label: 'AMOUNT',
+      label: 'Amount',
       align: 'right',
       format: 'currency',
       currency: 'USD',
     },
     {
       key: 'pay',
-      label: 'PAYMENT',
+      label: 'Payment',
       align: 'center',
       format: 'text',
     },
     {
       key: 'req',
-      label: 'REQ DELIV. DATE',
+      label: 'Req Deliv. Date',
       align: 'center',
       format: 'date',
     },
     {
       key: 'rep',
-      label: 'SALES REP',
+      label: 'Sales Rep',
       align: 'center',
       format: 'text',
     },
     {
       key: 'st',
-      label: 'STATUS',
+      label: 'Status',
       align: 'center',
       format: 'badge',
     },

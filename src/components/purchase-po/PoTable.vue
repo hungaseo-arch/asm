@@ -94,7 +94,6 @@ function exportExcel() {
               :asc="sortAsc"
               @sort="store.toggleSort('supplier')"
             />
-            <th scope="col">Type</th>
             <SortableHeader
               label="PO date"
               :active="sortKey === 'poDate'"
@@ -102,7 +101,6 @@ function exportExcel() {
               @sort="store.toggleSort('poDate')"
             />
             <th scope="col">Target date</th>
-            <th scope="col">Currency</th>
             <SortableHeader
               label="Amount"
               align="right"
@@ -132,16 +130,8 @@ function exportExcel() {
               <b class="supplier-name asm-ellipsis" :title="order.supplier">{{ order.supplier }}</b>
               <small class="buyer-name asm-ellipsis" :title="order.buyer">{{ order.buyer }}</small>
             </td>
-            <td>
-              <AsmBadge :tone="order.type === 'Import' ? 'info' : 'success'">{{
-                order.type
-              }}</AsmBadge>
-            </td>
             <td class="date">{{ formatDate(order.poDate) }}</td>
             <td class="date">{{ formatDate(order.targetDate) }}</td>
-            <td>
-              <span class="asm-currency">{{ order.currency }}</span>
-            </td>
             <td class="num">{{ formatAmount(order.currency, order.amount) }}</td>
             <td>
               <span class="tax-basis">{{ order.taxBasis }}</span>
@@ -180,7 +170,7 @@ function exportExcel() {
             </td>
           </tr>
           <tr v-if="!rows.length">
-            <td colspan="11" class="empty-row">선택한 조건에 해당하는 발주가 없습니다.</td>
+            <td colspan="9" class="empty-row">선택한 조건에 해당하는 발주가 없습니다.</td>
           </tr>
         </tbody>
       </table>
@@ -234,9 +224,12 @@ function exportExcel() {
   gap: 16px;
   flex-wrap: wrap;
 }
+/* 가이드 7-3 — 카드 제목 16px / 600 */
 .table-toolbar h2 {
-  font-size: 15px;
+  font-size: 14px;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .rows-select {
   display: flex;
@@ -264,8 +257,9 @@ function exportExcel() {
 .buyer-name {
   max-width: 200px;
 }
+/* 본문 셀은 AsuraDB 와 동일하게 기본 굵기 — 보조행(buyer)과의 대비는 색/크기로 냅니다. */
 .supplier-name {
-  font-weight: 600;
+  font-weight: 500;
 }
 .buyer-name {
   font-size: 11px;
@@ -281,7 +275,7 @@ function exportExcel() {
   padding: 4px 8px;
   border-radius: var(--asm-radius-sm);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .reconcile {

@@ -19,23 +19,23 @@ export const productsScreen = {
       key: 'all',
     },
     {
-      label: 'ITEM CODE',
+      label: 'Item Code',
       key: 'code',
     },
     {
-      label: 'CATEGORY',
+      label: 'Category',
       key: 'cat',
     },
     {
-      label: 'BRAND',
+      label: 'Brand',
       key: 'brand',
     },
     {
-      label: 'SIZE',
+      label: 'Size',
       key: 'size',
     },
     {
-      label: 'PATTERN',
+      label: 'Pattern',
       key: 'patt',
     },
     {
@@ -43,11 +43,11 @@ export const productsScreen = {
       key: 'pr',
     },
     {
-      label: 'WEIGHT',
+      label: 'Weight',
       key: 'wt',
     },
     {
-      label: 'HS CODE',
+      label: 'HS Code',
       key: 'hs',
     },
     {
@@ -55,42 +55,42 @@ export const productsScreen = {
       key: 'uom',
     },
     {
-      label: 'STD COST (USD)',
+      label: 'Std Cost (USD)',
       key: 'cost',
     },
     {
-      label: 'STATUS',
+      label: 'Status',
       key: 'st',
     },
   ],
   columns: [
     {
       key: 'code',
-      label: 'ITEM CODE',
+      label: 'Item Code',
       align: 'left',
       format: 'code',
     },
     {
       key: 'cat',
-      label: 'CATEGORY',
+      label: 'Category',
       align: 'center',
       format: 'text',
     },
     {
       key: 'brand',
-      label: 'BRAND',
+      label: 'Brand',
       align: 'left',
       format: 'text',
     },
     {
       key: 'size',
-      label: 'SIZE',
+      label: 'Size',
       align: 'left',
       format: 'text',
     },
     {
       key: 'patt',
-      label: 'PATTERN',
+      label: 'Pattern',
       align: 'left',
       format: 'text',
     },
@@ -102,19 +102,19 @@ export const productsScreen = {
     },
     {
       key: 'wt',
-      label: 'WEIGHT',
+      label: 'Weight',
       align: 'right',
       format: 'weight',
     },
     {
       key: 'hs',
-      label: 'HS CODE',
+      label: 'HS Code',
       align: 'left',
       format: 'code',
     },
     {
       key: 'sni',
-      label: 'SNI CERT.',
+      label: 'SNI Cert.',
       align: 'left',
       format: 'code',
     },
@@ -132,13 +132,13 @@ export const productsScreen = {
     },
     {
       key: 'cost',
-      label: 'STD COST (USD)',
+      label: 'Std Cost (USD)',
       align: 'right',
       format: 'price',
     },
     {
       key: 'st',
-      label: 'STATUS',
+      label: 'Status',
       align: 'center',
       format: 'badge',
     },

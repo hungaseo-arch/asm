@@ -142,9 +142,8 @@ async function onResendCode() {
   <!-- 이메일 인증 코드 입력 -->
   <div v-else-if="verificationEmail" class="auth-screen">
     <div class="asm-panel auth-card">
-      <div class="asm-accent-line"></div>
       <div class="card-head">
-        <div class="brand-mark">A</div>
+        <img src="/img/ascendo-logo-horizontal.png" alt="ASCENDO" class="brand-mark" />
         <h1>이메일 인증</h1>
         <p>
           <b>{{ verificationEmail }}</b> 으로 보낸 6자리 코드를 입력하세요.
@@ -180,9 +179,8 @@ async function onResendCode() {
   <!-- 로그인 / 가입 -->
   <div v-else class="auth-screen">
     <div class="asm-panel auth-card">
-      <div class="asm-accent-line"></div>
       <div class="card-head">
-        <div class="brand-mark">A</div>
+        <img src="/img/ascendo-logo-horizontal.png" alt="ASCENDO" class="brand-mark" />
         <h1>ASM</h1>
         <p>Ascendo Management System</p>
       </div>
@@ -248,31 +246,21 @@ async function onResendCode() {
   width: min(420px, 100%);
   overflow: hidden;
 }
-.asm-accent-line {
-  height: var(--asm-accent-h);
-  background: var(--asm-primary);
-}
 .card-head {
   padding: 24px 24px 12px;
   text-align: center;
 }
+/* ASCENDO 가로형 로고 원본(public/img/ascendo-logo-horizontal.png). 형태·비율 변형 금지. */
 .brand-mark {
-  width: 44px;
-  height: 44px;
+  height: 36px;
+  width: auto;
   margin: 0 auto 12px;
-  background: var(--asm-primary);
-  color: var(--asm-primary-fg);
-  border-radius: var(--asm-radius-lg);
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 22px;
+  display: block;
 }
 .card-head h1 {
   font-size: 20px;
   margin: 0 0 4px;
   letter-spacing: 0.04em;
-  font-weight: 600;
 }
 .card-head p {
   font-size: 12px;
@@ -302,7 +290,7 @@ async function onResendCode() {
   color: var(--asm-fg-muted);
 }
 .mode-tabs button.active {
-  background: var(--asm-bg);
+  background: var(--asm-card);
   color: var(--asm-primary);
   box-shadow: var(--asm-shadow-xs);
 }

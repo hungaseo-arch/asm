@@ -18,19 +18,19 @@ export const deliveryNoteScreen = {
       key: 'all',
     },
     {
-      label: 'DN NO.',
+      label: 'DN No.',
       key: 'no',
     },
     {
-      label: 'DN DATE',
+      label: 'DN Date',
       key: 'dt',
     },
     {
-      label: 'DO NO.',
+      label: 'DO No.',
       key: 'dono',
     },
     {
-      label: 'CUSTOMER',
+      label: 'Customer',
       key: 'cust',
     },
     {
@@ -38,44 +38,45 @@ export const deliveryNoteScreen = {
       key: 'qty',
     },
     {
-      label: 'AMOUNT',
+      label: 'Amount',
       key: 'amt',
     },
     {
-      label: 'RECEIVED BY',
+      label: 'Received By',
       key: 'rcv',
     },
     {
-      label: 'RECEIVED DATE',
+      label: 'Received Date',
       key: 'rdt',
     },
     {
-      label: 'STATUS',
+      label: 'Status',
       key: 'st',
     },
   ],
   columns: [
     {
       key: 'no',
-      label: 'DN NO.',
+      label: 'DN No.',
       align: 'left',
       format: 'code',
     },
     {
       key: 'dt',
-      label: 'DN DATE',
+      label: 'DN Date',
       align: 'center',
       format: 'date',
     },
     {
       key: 'dono',
-      label: 'DO NO.',
+      label: 'DO No.',
       align: 'left',
       format: 'code',
+      hideInTable: true,
     },
     {
       key: 'cust',
-      label: 'CUSTOMER',
+      label: 'Customer',
       align: 'left',
       format: 'text',
       ellipsis: true,
@@ -88,26 +89,26 @@ export const deliveryNoteScreen = {
     },
     {
       key: 'amt',
-      label: 'AMOUNT',
+      label: 'Amount',
       align: 'right',
       format: 'currency',
       currency: 'USD',
     },
     {
       key: 'rcv',
-      label: 'RECEIVED BY',
+      label: 'Received By',
       align: 'center',
       format: 'text',
     },
     {
       key: 'rdt',
-      label: 'RECEIVED DATE',
+      label: 'Received Date',
       align: 'center',
       format: 'date',
     },
     {
       key: 'st',
-      label: 'STATUS',
+      label: 'Status',
       align: 'center',
       format: 'badge',
     },

@@ -173,7 +173,7 @@ defineExpose({ exportExcel })
             <td>
               <span class="cat-tag">{{ item.cat }}</span>
             </td>
-            <td>{{ item.brand }}</td>
+            <td class="brand-cell">{{ item.brand }}</td>
             <!-- 규격에는 콤마를 넣지 않습니다 (사내 표기 규칙) -->
             <td>
               <b>{{ item.size }}</b>
@@ -262,9 +262,12 @@ defineExpose({ exportExcel })
   gap: 16px;
   flex-wrap: wrap;
 }
+/* 가이드 7-3 — 카드 제목 16px / 600 */
 .table-toolbar h2 {
-  font-size: 15px;
+  font-size: 14px;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .rows-select {
   display: flex;
@@ -298,22 +301,23 @@ defineExpose({ exportExcel })
   position: sticky;
   left: 0;
   z-index: 3;
-  background: var(--asm-bg);
+  background: var(--asm-card);
 }
 .table-scroll :is(th, td).col-key {
   position: sticky;
   left: 56px;
   z-index: 3;
   min-width: 168px;
-  background: var(--asm-bg);
-  box-shadow: 5px 0 7px -7px rgb(8 18 31 / 0.3);
+  background: var(--asm-card);
+  box-shadow: var(--asm-sticky-shadow);
 }
+/* 헤더는 배경을 채우지 않으므로 고정 열도 카드색을 유지합니다 (가이드 8-1) */
 .table-scroll thead :is(th.no-col, th.col-key) {
   z-index: 6;
-  background: var(--asm-muted);
+  background: var(--asm-card);
 }
 .table-scroll tbody tr:hover :is(td.no-col, td.col-key) {
-  background: var(--asm-muted);
+  background: var(--asm-muted-30);
 }
 /* 합계 라벨은 가로 스크롤 중에도 좌측에 남습니다 */
 .table-scroll tfoot td:first-child {
@@ -336,6 +340,9 @@ defineExpose({ exportExcel })
   background: var(--asm-muted);
   color: var(--asm-fg-muted);
 }
+.brand-cell {
+  text-transform: uppercase;
+}
 .item-code {
   border: 1px solid var(--asm-border);
   background: var(--asm-surface-subtle);
@@ -348,15 +355,12 @@ defineExpose({ exportExcel })
   color: var(--asm-danger-fg);
 }
 
-/* 합계 행 — 스크롤 시 하단 고정 */
+/* 합계 행 — 스크롤 시 하단 고정. 색·굵기는 asm-theme.css 의 .table tfoot(가이드 8-1). */
 tfoot td {
   position: sticky;
   bottom: 0;
   /* 좌측 고정 열(z-index 3)보다 위에 그려야 합계가 가려지지 않습니다 */
   z-index: 4;
-  background: var(--asm-muted);
-  color: var(--asm-fg);
-  font-weight: 700;
   border-top: 1px solid var(--asm-border);
   white-space: nowrap;
 }

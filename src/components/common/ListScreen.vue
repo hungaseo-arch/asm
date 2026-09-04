@@ -2,19 +2,14 @@
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { useExcelExport } from '@/composables/useExcelExport'
-import AsmBadge from '@/components/common/AsmBadge.vue'
+import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import AsmDateInput from '@/components/common/AsmDateInput.vue'
 import SortableHeader from '@/components/common/SortableHeader.vue'
-import {
-  formatAmount,
-  formatDate,
-  formatDecimal,
-  formatInt,
-  formatPercent,
-  formatSigned,
-  formatWeight,
-} from '@/utils/format'
-import { ACCESS_LEVEL, toneOf } from '@/types/list-screen'
+import ListCellValue from '@/components/common/ListCellValue.vue'
+import ListRowDetailModal from '@/components/common/ListRowDetailModal.vue'
+import { formatInt } from '@/utils/format'
+import { displayColumnValue as display } from '@/utils/list-cell'
+import { toneOf } from '@/types/list-screen'
 const props = defineProps({ screen: { type: Object, required: true } })
 // ── 상태 (State / Status) ─────────────────────────────────────────────────
 const PAGE_SIZES = [10, 30, 50, 100]
@@ -97,38 +92,81 @@ const totals = computed(() => {
   }
   return sums
 })
-/** 합계 행에서 라벨 뒤에 이어지는 열들 */
-const totalCells = computed(() => props.screen.columns.slice(props.screen.totalLabelSpan - 1))
-// ── 서식 (Formatting / Format) ────────────────────────────────────────────
-function display(column, value, row) {
-  if (value === undefined || value === null || value === '') return '—'
-  const numeric = Number(value)
-  switch (column.format) {
-    case 'int':
-      return formatInt(numeric)
-    case 'signed':
-      return formatSigned(numeric)
-    case 'price':
-      return formatDecimal(numeric)
-    case 'percent':
-      return formatPercent(numeric)
-    case 'weight':
-      return formatWeight(numeric)
-    case 'currency': {
-      // 행마다 통화가 다른 화면(PPC·Receipt 등)은 같은 행의 통화 열을 씁니다.
-      const rowCurrency = column.currencyKey ? String(row?.[column.currencyKey] ?? '') : ''
-      const currency =
-        (rowCurrency === 'IDR' || rowCurrency === 'USD' ? rowCurrency : null) ??
-        column.currency ??
-        'USD'
-      return formatAmount(currency, numeric)
-    }
-    case 'date':
-      return formatDate(String(value))
-    default:
-      return String(value)
+/**
+ * 표에 보일 핵심 열 (Core columns / Kolom inti) — 열이 10개가 넘는 화면(제품·창고 등)이
+ * 전부 표시되면 가로 스크롤이 생겨 지저분해 보입니다(2026-09-04 반영). 앞쪽 몇 개만
+ * 표에 남기고, 나머지는 행을 클릭하면 뜨는 상세 모달(ListRowDetailModal)에서 보여줍니다.
+ * 합계 열(totalKeys)과 상태 배지 열은 표의 다른 기능(합계 행·색상 스캔)과 맞물려 있어
+ * 앞쪽 순번과 무관하게 항상 포함합니다.
+ */
+const CORE_COLUMN_LIMIT = 6
+const coreColumns = computed(() => {
+  // hideInTable 열은 표에서 빠지지만 상세 모달·엑셀에는 그대로 남습니다.
+  const eligible = props.screen.columns.filter((column) => !column.hideInTable)
+  const core = eligible.slice(0, CORE_COLUMN_LIMIT)
+  const coreKeys = new Set(core.map((column) => column.key))
+  const mustInclude = eligible.filter(
+    (column) =>
+      !coreKeys.has(column.key) &&
+      (props.screen.totalKeys.includes(column.key) || column.format === 'badge'),
+  )
+  return [...core, ...mustInclude]
+})
+/** 합계 행에서 라벨 뒤에 이어지는 열들 — 표에 실제로 보이는 핵심 열 기준입니다. */
+const totalCells = computed(() => coreColumns.value.slice(props.screen.totalLabelSpan - 1))
+/** 상세 모달에 띄울 행. null 이면 닫힌 상태입니다. */
+const selectedRow = ref(null)
+/**
+ * 요약 카드 (Summary / Ringkasan) — Purchase PO·Inventory 두 전용 화면에만 있던
+ * KPI 카드를, 화면마다 이미 갖고 있는 합계 열(totalKeys)·상태 배지 톤 분류를 그대로
+ * 재사용해 모든 목록 화면에 공통으로 붙입니다(2026-09-04 반영). 화면별 수작업 KPI
+ * 정의 없이도 "건수 · 합계 열마다 1장 · 주의 필요 건수"가 자동으로 채워집니다.
+ */
+const statusColumn = computed(() =>
+  props.screen.columns.find((column) => column.format === 'badge'),
+)
+const attentionCount = computed(() => {
+  const column = statusColumn.value
+  if (!column) return 0
+  return filtered.value.filter((row) => {
+    const tone = toneOf(String(row[column.key] ?? ''))
+    return tone === 'warning' || tone === 'danger'
+  }).length
+})
+const summaryCards = computed(() => {
+  const cards = [
+    {
+      label: 'Total records',
+      value: formatInt(filtered.value.length),
+      note: 'Current filtered result',
+      tone: 'default',
+    },
+  ]
+  for (const key of props.screen.totalKeys) {
+    const column = props.screen.columns.find((c) => c.key === key)
+    if (!column) continue
+    cards.push({
+      label: column.label,
+      value: display(column, totals.value[key]),
+      note: 'Sum of filtered rows',
+      tone: column.format === 'currency' ? 'success' : 'default',
+    })
   }
-}
+  if (statusColumn.value) {
+    cards.push({
+      label: 'Needs attention',
+      value: formatInt(attentionCount.value),
+      note: `${statusColumn.value.label} pending or at risk`,
+      tone: attentionCount.value > 0 ? 'warning' : 'default',
+    })
+  }
+  return cards
+})
+// 요약 카드는 본문이 아니라 좌측 레일(AppSummaryRail)에 렌더링합니다 (2026-09-04 이동).
+provideSidebarSummary(() => summaryCards.value)
+// ── 서식 (Formatting / Format) ────────────────────────────────────────────
+// display() 는 utils/list-cell.js 의 displayColumnValue 를 그대로 가져다 씁니다
+// (import 구문 참고) — 표·상세 모달·요약 카드가 서식 규칙을 공유합니다.
 const cellClass = (column, index = -1) => [
   column.align === 'right' ? 'num' : '',
   column.align === 'center' ? 'text-center' : '',
@@ -177,35 +215,31 @@ const primaryLabel = computed(() => {
 </script>
 
 <template>
-  <!-- 경로 (Breadcrumb) -->
-  <nav class="breadcrumb-bar" aria-label="breadcrumb">
-    <span>{{ screen.group }}</span>
-    <ChevronRight :size="14" />
-    <b>{{ screen.navLabel }}</b>
-  </nav>
-
-  <!-- 화면 제목 -->
+  <!--
+    화면 제목은 헤더·본문 모두에서 시각적으로 표시하지 않습니다 — 좌측 사이드바의
+    활성 항목 강조와 중복되기 때문입니다(2026-09-04 반영). 문서 구조상 h1 은 필요해
+    스크린리더 전용으로만 남깁니다.
+  -->
   <section class="page-heading">
     <div>
-      <p class="asm-eyebrow mb-1">{{ screen.group }}</p>
-      <h1>{{ screen.title }}</h1>
+      <h1 class="visually-hidden">{{ screen.title }}</h1>
       <p class="page-sub mb-0">{{ screen.subtitle }}</p>
     </div>
     <div class="page-actions">
-      <button type="button" class="btn btn-outline-primary" @click="printPage">
-        <Printer :size="16" />
+      <button type="button" class="btn btn-sm btn-outline-primary" @click="printPage">
+        <Printer :size="14" />
         Print
       </button>
-      <button type="button" class="btn btn-secondary" @click="exportExcel">
-        <Download :size="16" />
+      <button type="button" class="btn btn-sm btn-secondary" @click="exportExcel">
+        <Download :size="14" />
         Excel
       </button>
       <button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-sm btn-primary"
         @click="toast.info(`${primaryLabel} 등록 화면은 준비 중입니다`)"
       >
-        <Plus :size="17" />
+        <Plus :size="15" />
         {{ primaryLabel }}
       </button>
     </div>
@@ -287,7 +321,7 @@ const primaryLabel = computed(() => {
           <tr>
             <th scope="col" class="no-col">No</th>
             <SortableHeader
-              v-for="(column, columnIndex) in screen.columns"
+              v-for="(column, columnIndex) in coreColumns"
               :key="column.key"
               :class="columnIndex === 0 ? 'col-key' : ''"
               :label="column.label"
@@ -299,47 +333,36 @@ const primaryLabel = computed(() => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, index) in rows" :key="`${screen.slug}-${rangeStart + index}`">
+          <!-- 행 클릭 시 전체 열을 담은 상세 모달을 엽니다 (2026-09-04, 표는 핵심 열만). -->
+          <tr
+            v-for="(row, index) in rows"
+            :key="`${screen.slug}-${rangeStart + index}`"
+            class="data-row"
+            tabindex="0"
+            role="button"
+            :aria-label="`${row[screen.columns[0]?.key] ?? '행'} 상세 보기`"
+            @click="selectedRow = row"
+            @keydown.enter="selectedRow = row"
+          >
             <td class="num no-col">{{ formatInt(rangeStart + index) }}</td>
             <td
-              v-for="(column, columnIndex) in screen.columns"
+              v-for="(column, columnIndex) in coreColumns"
               :key="column.key"
               :class="cellClass(column, columnIndex)"
               :style="column.width ? { width: column.width } : undefined"
             >
-              <AsmBadge
-                v-if="column.format === 'badge'"
-                :tone="toneOf(String(row[column.key]))"
-                dot
-              >
-                {{ row[column.key] }}
-              </AsmBadge>
-              <template v-else-if="column.format === 'access'">
-                <span
-                  class="access"
-                  :class="`access--${ACCESS_LEVEL[String(row[column.key])]?.tone ?? 'none'}`"
-                  :title="ACCESS_LEVEL[String(row[column.key])]?.label ?? String(row[column.key])"
-                  >{{ ACCESS_LEVEL[String(row[column.key])]?.mark ?? '—' }}</span
-                >
-              </template>
-              <template v-else-if="column.format === 'mark'">
-                <Check v-if="Number(row[column.key])" :size="15" class="mark-yes" />
-                <Minus v-else :size="15" class="mark-no" />
-              </template>
               <span
-                v-else-if="column.ellipsis"
+                v-if="column.ellipsis"
                 class="asm-ellipsis"
                 :title="String(row[column.key] ?? '')"
               >
-                {{ display(column, row[column.key], row) }}
+                <ListCellValue :column="column" :value="row[column.key]" :row="row" />
               </span>
-              <template v-else>{{ display(column, row[column.key], row) }}</template>
+              <ListCellValue v-else :column="column" :value="row[column.key]" :row="row" />
             </td>
           </tr>
           <tr v-if="!rows.length">
-            <td :colspan="screen.columns.length + 1" class="empty-row">
-              조회된 데이터가 없습니다.
-            </td>
+            <td :colspan="coreColumns.length + 1" class="empty-row">조회된 데이터가 없습니다.</td>
           </tr>
         </tbody>
         <!-- 합계는 검색 결과 전체 기준입니다. -->
@@ -386,38 +409,25 @@ const primaryLabel = computed(() => {
       </div>
     </div>
   </section>
+
+  <ListRowDetailModal
+    v-if="selectedRow"
+    :screen="screen"
+    :row="selectedRow"
+    @close="selectedRow = null"
+  />
 </template>
 
 <style scoped>
-.breadcrumb-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--asm-fg-muted);
-  font-size: 12px;
-  margin-bottom: 16px;
-}
-.breadcrumb-bar b {
-  color: var(--asm-fg);
-}
-
 .page-heading {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 24px;
-}
-/* 가이드 4-2 — 페이지 제목 text-2xl(24px) / weight 700 / letter-spacing -0.01em */
-.page-heading h1 {
-  font-size: 24px;
-  line-height: 32px;
-  letter-spacing: -0.01em;
-  margin: 0;
-  font-weight: 700;
+  margin-bottom: 16px;
 }
 .page-sub {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--asm-fg-muted);
   margin-top: 4px;
 }
@@ -469,9 +479,12 @@ const primaryLabel = computed(() => {
   gap: 16px;
   flex-wrap: wrap;
 }
+/* 가이드 7-3 — 카드 제목 16px / 600 */
 .table-toolbar h2 {
-  font-size: 15px;
+  font-size: 14px;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .count-pill {
   font-size: 11px;
@@ -498,9 +511,11 @@ const primaryLabel = computed(() => {
   min-height: 288px;
   overscroll-behavior: contain;
 }
-.table-scroll table {
-  min-width: 1200px;
-}
+/*
+ * 표에는 핵심 열만 보이므로(coreColumns) 컨테이너 폭에 맞춰 자연스럽게 줄어들게
+ * 둡니다 — 예전처럼 항상 1200px 를 강제하면 열이 몇 개든 가로 스크롤이 생겼습니다
+ * (2026-09-04 제거). 고정 열(sticky) 최소폭이 실제로 넘칠 때만 overflow-x 로 대응합니다.
+ */
 
 .no-col {
   width: 56px;
@@ -512,22 +527,23 @@ const primaryLabel = computed(() => {
   position: sticky;
   left: 0;
   z-index: 3;
-  background: var(--asm-bg);
+  background: var(--asm-card);
 }
 .table-scroll :is(th, td).col-key {
   position: sticky;
   left: 56px;
   z-index: 3;
   min-width: 168px;
-  background: var(--asm-bg);
-  box-shadow: 5px 0 7px -7px rgb(8 18 31 / 0.3);
+  background: var(--asm-card);
+  box-shadow: var(--asm-sticky-shadow);
 }
+/* 헤더는 배경을 채우지 않으므로 고정 열도 카드색을 유지합니다 (가이드 8-1) */
 .table-scroll thead :is(th.no-col, th.col-key) {
   z-index: 6;
-  background: var(--asm-muted);
+  background: var(--asm-card);
 }
 .table-scroll tbody tr:hover :is(td.no-col, td.col-key) {
-  background: var(--asm-muted);
+  background: var(--asm-muted-30);
 }
 /* 합계 라벨은 가로 스크롤 중에도 좌측에 남습니다 */
 .table-scroll tfoot td:first-child {
@@ -543,46 +559,23 @@ const primaryLabel = computed(() => {
 .asm-ellipsis {
   max-width: 260px;
 }
-
-/* 권한 수준 기호 — 가이드라인 3장 범례와 동일한 색 체계 */
-.access {
-  font-size: 14px;
-  line-height: 1;
+/* 행 클릭 → 상세 모달 (2026-09-04) — 클릭 가능함을 커서·포커스 링으로 드러냅니다. */
+.data-row {
+  cursor: pointer;
 }
-.access--full {
-  color: var(--asm-primary);
-  font-weight: 700;
-}
-.access--edit {
-  color: var(--asm-success-fg);
-  font-weight: 700;
-}
-.access--view {
-  color: var(--bs-info);
-}
-.access--cond {
-  color: var(--asm-warning-fg);
-  font-weight: 700;
-}
-.access--none {
-  color: var(--asm-border-strong);
+.data-row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--asm-primary);
 }
 
-.mark-yes {
-  color: var(--asm-success-fg);
-}
-.mark-no {
-  color: var(--asm-border-strong);
-}
+/* 권한 기호(.access)·불리언 마크(.mark-yes/.mark-no) 스타일은 ListCellValue.vue 로 이동했습니다. */
 
+/* 합계 행 — 색·굵기는 asm-theme.css 의 .table tfoot 규칙(가이드 8-1)을 따릅니다. */
 tfoot td {
   position: sticky;
   bottom: 0;
   /* 좌측 고정 열(z-index 3)보다 위에 그려야 합계가 가려지지 않습니다 */
   z-index: 4;
-  background: var(--asm-muted);
-  color: var(--asm-fg);
-  font-weight: 700;
   border-top: 1px solid var(--asm-border);
   white-space: nowrap;
 }

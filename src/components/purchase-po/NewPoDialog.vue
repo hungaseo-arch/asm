@@ -190,13 +190,14 @@ function submit() {
 </template>
 
 <style scoped>
-/* 가이드 7-5 — 일반 폼 모달 최대폭 560px · radius-xl · shadow-lg */
+/* 가이드 8-5 — 일반 폼 모달 최대폭 560px · radius-lg · shadow-lg · 상단 4px 블루 액센트 */
 .dialog {
   position: relative;
   width: min(560px, 100%);
   max-height: calc(100vh - 32px);
-  background: var(--asm-bg);
+  background: var(--asm-card);
   border-radius: var(--asm-radius-xl);
+  border-top: 4px solid var(--asm-primary);
   box-shadow: var(--asm-shadow-lg);
   display: flex;
   flex-direction: column;
@@ -246,10 +247,10 @@ function submit() {
   margin-top: 4px;
 }
 
+/* 가이드 7-2 오류 — 테두리 danger-border + 하단 오류 문구. 별도 링은 쓰지 않습니다. */
 .field.is-invalid .form-control,
 .field.is-invalid .form-select {
-  border-color: var(--bs-danger);
-  box-shadow: 0 0 0 2px rgb(201 0 25 / 0.09);
+  border-color: var(--asm-danger-border);
 }
 
 .error-summary {
@@ -316,7 +317,7 @@ function submit() {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  background: var(--asm-bg);
+  background: var(--asm-card);
 }
 
 @keyframes popIn {

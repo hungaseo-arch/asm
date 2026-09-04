@@ -19,37 +19,37 @@ export const vendorScreen = {
       key: 'all',
     },
     {
-      label: 'SUPPLIER NAME',
+      label: 'Supplier Name',
       key: 'nm',
     },
     {
-      label: 'COUNTRY',
+      label: 'Country',
       key: 'cty',
     },
     {
-      label: 'TYPE',
+      label: 'Type',
       key: 'typ',
     },
     {
-      label: 'ADDRESS',
+      label: 'Address',
       key: 'addr',
     },
     {
-      label: 'PHONE NO.',
+      label: 'Phone No.',
       key: 'tel',
     },
   ],
   columns: [
     {
       key: 'nm',
-      label: 'SUPPLIER NAME',
+      label: 'Supplier Name',
       align: 'left',
       format: 'text',
       ellipsis: true,
     },
     {
       key: 'cty',
-      label: 'COUNTRY',
+      label: 'Country',
       align: 'center',
       format: 'text',
     },
@@ -61,20 +61,20 @@ export const vendorScreen = {
     },
     {
       key: 'typ',
-      label: 'TYPE',
+      label: 'Type',
       align: 'center',
       format: 'text',
     },
     {
       key: 'addr',
-      label: 'ADDRESS',
+      label: 'Address',
       align: 'left',
       format: 'text',
       ellipsis: true,
     },
     {
       key: 'tel',
-      label: 'PHONE NO.',
+      label: 'Phone No.',
       align: 'left',
       format: 'code',
     },

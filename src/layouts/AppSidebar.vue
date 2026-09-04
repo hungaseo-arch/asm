@@ -1,21 +1,20 @@
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { APP_VERSION, navGroups } from '@/config/navigation'
+import { APP_VERSION, findNavGroup, matchPath } from '@/config/navigation'
 defineProps({ open: { type: Boolean, default: false } })
 const emit = defineEmits(['close'])
 const route = useRoute()
 const router = useRouter()
-/** 사용자가 직접 토글한 그룹만 기록합니다. 미기록 그룹은 현재 화면 기준으로 펼칩니다. */
-const toggled = ref({})
-const isActive = (item) => Boolean(item.to && route.path.startsWith(item.to))
-function isOpen(group) {
-  return toggled.value[group.label] ?? group.items.some(isActive)
-}
-function toggleGroup(group) {
-  toggled.value = { ...toggled.value, [group.label]: !isOpen(group) }
-}
+const isActive = (item) => Boolean(item.to && matchPath(route.path, item.to))
+/**
+ * 대분류(1단)는 상단 헤더가 보여주므로 사이드바에는 두지 않습니다 — 같은 정보를 두 번
+ * 내보내면 그룹 헤더 8개가 목록을 늘리기만 합니다. 사이드바는 '현재 대분류의 하위메뉴'만
+ * 평면으로 나열합니다.
+ */
+const group = computed(() => findNavGroup(route.path))
+const items = computed(() => group.value?.items ?? [])
 function openItem(item) {
   if (item.to) {
     void router.push(item.to)
@@ -36,52 +35,30 @@ function openItem(item) {
   ></button>
 
   <aside class="sidebar" :class="{ 'is-open': open }">
-    <div class="sidebar-head">
-      <span>WORKSPACE</span>
-      <button
-        type="button"
-        class="asm-icon-btn is-sm is-borderless d-lg-none"
-        aria-label="메뉴 닫기"
-        @click="emit('close')"
-      >
-        <X :size="18" />
-      </button>
-    </div>
-
+    <!-- 모바일 전용 닫기 버튼 — 데스크톱에서는 숨김(d-lg-none) -->
     <button
       type="button"
-      class="sub-item mb-1"
-      @click="toast.info('대시보드는 현재 범위에 포함되지 않습니다')"
+      class="asm-icon-btn is-sm is-borderless sidebar-close d-lg-none"
+      aria-label="메뉴 닫기"
+      @click="emit('close')"
     >
-      <LayoutDashboard :size="17" />
-      <span>Dashboard</span>
+      <X :size="18" />
     </button>
 
-    <div v-for="group in navGroups" :key="group.label" class="nav-group">
+    <!-- 현재 대분류의 하위메뉴(2단)만 평면으로 나열합니다. -->
+    <nav class="nav-list" :aria-label="group?.nav.label">
       <button
+        v-for="item in items"
+        :key="item.label"
         type="button"
-        class="group-head"
-        :aria-expanded="isOpen(group)"
-        @click="toggleGroup(group)"
+        class="sub-item"
+        :class="{ 'is-active': isActive(item) }"
+        @click="openItem(item)"
       >
-        <span>{{ group.label }}</span>
-        <ChevronRight :size="14" class="caret" :class="{ 'is-open': isOpen(group) }" />
+        <span class="flex-grow-1">{{ item.label }}</span>
+        <em v-if="item.badge">{{ item.badge }}</em>
       </button>
-      <template v-if="isOpen(group)">
-        <button
-          v-for="item in group.items"
-          :key="item.label"
-          type="button"
-          class="sub-item"
-          :class="{ 'is-active': isActive(item) }"
-          @click="openItem(item)"
-        >
-          <component :is="item.icon" :size="17" />
-          <span class="flex-grow-1">{{ item.label }}</span>
-          <em v-if="item.badge">{{ item.badge }}</em>
-        </button>
-      </template>
-    </div>
+    </nav>
 
     <div class="sidebar-foot">
       <span>PT ASCENDO INTERNASIONAL</span>
@@ -91,62 +68,25 @@ function openItem(item) {
 </template>
 
 <style scoped>
+/* 메뉴·요약 카드 위치 교체(2026-09-04) — 사이드바(메뉴)를 화면 우측으로 옮깁니다. */
 .sidebar {
   position: fixed;
-  top: calc(var(--asm-topbar-h) + var(--asm-accent-h));
+  top: var(--asm-header-offset);
   bottom: 0;
-  left: 0;
-  padding: 16px 12px;
+  right: 0;
+  padding: 12px 8px;
   overflow-y: auto;
   z-index: 1020;
   display: flex;
   flex-direction: column;
 }
-/* 가이드 6-3 그룹 구분자 — 12px · muted-foreground · 대문자 · letter-spacing .08em */
-.sidebar-head,
-.nav-group .group-head {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--asm-fg-muted);
+/* 모바일 닫기 버튼 — 사이드바 좌상단(레일이 화면 우측에서 슬라이드), 데스크톱에서는 숨김 */
+.sidebar-close {
+  align-self: flex-start;
+  margin-bottom: 8px;
 }
-.sidebar-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 8px 8px;
-}
-.nav-group {
-  margin-top: 16px;
-}
-.nav-group .group-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 4px 8px;
-  margin-bottom: 4px;
-  border-radius: var(--asm-radius-md);
-  text-align: left;
-}
-.nav-group .group-head:hover {
-  background: var(--asm-secondary);
-  color: var(--asm-primary);
-}
-.nav-group .group-head:focus-visible {
-  outline: 3px solid rgb(0 64 133 / 0.2);
-  outline-offset: 1px;
-}
-.caret {
-  flex: none;
-  transition: transform 0.15s;
-}
-.caret.is-open {
-  transform: rotate(90deg);
+.nav-list {
+  margin-top: 4px;
 }
 .sub-item em {
   font-style: normal;
@@ -159,7 +99,7 @@ function openItem(item) {
 }
 .sidebar-foot {
   margin-top: auto;
-  border-top: 1px solid var(--asm-border);
+  border-top: 1px solid var(--asm-sidebar-border);
   padding: 16px 8px 0;
   color: var(--asm-fg-muted);
 }
@@ -176,10 +116,10 @@ function openItem(item) {
 
 .sidebar-scrim {
   position: fixed;
-  inset: calc(var(--asm-topbar-h) + var(--asm-accent-h)) 0 0;
+  inset: var(--asm-header-offset) 0 0;
   border: 0;
   padding: 0;
-  background: rgb(8 18 31 / 0.38);
+  background: var(--asm-scrim);
   z-index: 1015;
 }
 </style>

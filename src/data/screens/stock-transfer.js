@@ -18,27 +18,27 @@ export const stockTransferScreen = {
       key: 'all',
     },
     {
-      label: 'TRF NO.',
+      label: 'Trf No.',
       key: 'no',
     },
     {
-      label: 'TRF DATE',
+      label: 'Trf Date',
       key: 'dt',
     },
     {
-      label: 'FROM WH',
+      label: 'From WH',
       key: 'fwh',
     },
     {
-      label: 'TO WH',
+      label: 'To WH',
       key: 'twh',
     },
     {
-      label: 'ITEM CODE',
+      label: 'Item Code',
       key: 'code',
     },
     {
-      label: 'SIZE',
+      label: 'Size',
       key: 'size',
     },
     {
@@ -46,52 +46,52 @@ export const stockTransferScreen = {
       key: 'qty',
     },
     {
-      label: 'VEHICLE NO.',
+      label: 'Vehicle No.',
       key: 'veh',
     },
     {
-      label: 'EST ARRIVAL',
+      label: 'Est Arrival',
       key: 'eta',
     },
     {
-      label: 'STATUS',
+      label: 'Status',
       key: 'st',
     },
   ],
   columns: [
     {
       key: 'no',
-      label: 'TRF NO.',
+      label: 'Trf No.',
       align: 'left',
       format: 'code',
     },
     {
       key: 'dt',
-      label: 'TRF DATE',
+      label: 'Trf Date',
       align: 'center',
       format: 'date',
     },
     {
       key: 'fwh',
-      label: 'FROM WH',
+      label: 'From WH',
       align: 'center',
       format: 'text',
     },
     {
       key: 'twh',
-      label: 'TO WH',
+      label: 'To WH',
       align: 'center',
       format: 'text',
     },
     {
       key: 'code',
-      label: 'ITEM CODE',
+      label: 'Item Code',
       align: 'left',
       format: 'code',
     },
     {
       key: 'size',
-      label: 'SIZE',
+      label: 'Size',
       align: 'left',
       format: 'text',
     },
@@ -103,19 +103,19 @@ export const stockTransferScreen = {
     },
     {
       key: 'veh',
-      label: 'VEHICLE NO.',
+      label: 'Vehicle No.',
       align: 'left',
       format: 'code',
     },
     {
       key: 'eta',
-      label: 'EST ARRIVAL',
+      label: 'Est Arrival',
       align: 'center',
       format: 'date',
     },
     {
       key: 'st',
-      label: 'STATUS',
+      label: 'Status',
       align: 'center',
       format: 'badge',
     },

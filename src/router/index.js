@@ -52,8 +52,9 @@ export const router = createRouter({
   routes,
   scrollBehavior: () => ({ top: 0 }),
 })
+// 탭은 폭이 좁아 앞부분만 보입니다 — 화면 이름보다 서비스명(ASM)을 앞에 둡니다.
 router.afterEach((to) => {
   const title = to.meta.title
-  document.title = title ? `${title} · ASM` : 'ASM · Ascendo Management System'
+  document.title = title ? `ASM · ${title}` : 'ASM · Ascendo Management System'
 })
 export default router

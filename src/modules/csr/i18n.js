@@ -10,7 +10,7 @@ const SEP = ' / '
 
 const HANGUL = /[가-힣]/
 /** "미검증 (Belum diverifikasi)" — 검증 이력 결과가 쓰는 괄호 병기. 한쪽만 한글일 때만 두 언어로 봅니다. */
-const PAREN = /^(.+?)s*((.+))s*$/
+const PAREN = /^(.+?)[ ]*[(](.+)[)][ ]*$/
 
 export function pickLang(value, lang) {
   if (value === null || value === undefined) return value

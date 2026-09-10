@@ -670,7 +670,11 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               </label>
               <label class="field">
                 <span>{{ T('decision') }}</span>
-                <input v-model="replyDraft.decision" class="form-control form-control-sm" />
+                <!-- 자유 입력 → 드롭다운(2026-09-10 요청). 선택지는 IT수용여부 옵션과 같은 사전 값. -->
+                <select v-model="replyDraft.decision" class="form-select form-select-sm">
+                  <option value="">—</option>
+                  <option v-for="o in OPTIONS.it_decision" :key="o" :value="o">{{ V(o) }}</option>
+                </select>
               </label>
               <label class="field wide">
                 <span>{{ T('fix_plan') }}</span>
@@ -716,7 +720,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             <!-- 머리: 회신일 + 수용 여부 배지. 본문: 채워진 항목만, 긴 글은 전폭. -->
             <div class="reply-head">
               <h3>{{ r.replied_on }}</h3>
-              <span v-if="r.decision" class="asm-badge asm-badge--info">{{ r.decision }}</span>
+              <span v-if="r.decision" class="asm-badge asm-badge--info">{{ V(r.decision) }}</span>
             </div>
             <dl v-if="replyFields(r).length" class="reply-body">
               <div v-for="f in replyFields(r)" :key="f.key" :class="{ wide: f.wide }">

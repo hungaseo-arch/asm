@@ -7,6 +7,7 @@ import { STATUS_TONE, isConfigured } from '../config'
 import { label, pickLang, pickPair, toneOf } from '../i18n'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import CsrSignIn from '../components/CsrSignIn.vue'
+import CsrLangToggle from '../components/CsrLangToggle.vue'
 
 /** 미등록 화면의 「다시 확인」 — 역할을 다시 읽고, 있으면 바로 목록을 불러옵니다. */
 async function recheck() {
@@ -234,7 +235,8 @@ watch(
             </button>
           </div>
 
-          <!-- 계정 메뉴는 헤더 아바타로, 언어 토글은 대시보드 머리줄로 옮겼습니다(2026-09-10). -->
+          <!-- 계정 메뉴는 헤더 아바타로(2026-09-10). 언어 토글은 대시보드와 같은 것 — 목록에도 두어 달라는 요청. -->
+          <CsrLangToggle v-model="issues.lang" />
         </div>
 
         <section class="asm-panel table-panel">

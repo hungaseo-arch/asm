@@ -46,6 +46,7 @@ Pages 로 배포하므로 **`main` 이 곧 배포본**입니다.
   현업 검증(조치확인 초록 · 부분조치 노랑 · 미조치/Completed 부적정 빨강 · 미검증 회색 · 최초 발견 파랑)을
   배지로 — 상세 속성 격자·§5·§7, 목록, 대시보드 교차표 머리. `config.DECISION_TONE/RESULT_TONE` · `i18n.toneOf`
 - `.asm-badge--primary` 추가 — Verified 배지가 정의 없는 톤을 써서 맨색으로 보이던 것
+- 목록 툴바 오른쪽에도 언어 토글(국기) — 대시보드와 같은 `CsrLangToggle`, 한쪽에서 바꾸면 전체에 적용
 
 ---
 

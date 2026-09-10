@@ -5,6 +5,7 @@ import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { STATUS_TONE, isConfigured } from '../config'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
+import CsrSignIn from '../components/CsrSignIn.vue'
 import { formatInt } from '@/utils/format'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
@@ -62,11 +63,7 @@ const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)
 
       <div v-else-if="session.loading" class="asm-panel state">불러오는 중…</div>
 
-      <div v-else-if="!session.isAuthenticated" class="asm-panel state">
-        <h2 class="asm-title">로그인이 필요합니다</h2>
-        <p>등록된 계정으로 로그인해야 개선요청을 볼 수 있습니다.</p>
-        <p v-if="session.error" class="err">{{ session.error }}</p>
-      </div>
+      <CsrSignIn v-else-if="!session.isAuthenticated" />
 
       <!--
         로그인은 됐지만 csr_user_roles 에 없는 상태. RLS 때문에 목록이 통째로 비어 나오는데,
@@ -78,6 +75,13 @@ const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)
           계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다({{ session.user?.email }}).
           관리자에게 역할 등록을 요청하십시오.
         </p>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary mt-3"
+          @click="session.signOut()"
+        >
+          다른 계정으로 로그인
+        </button>
       </div>
 
       <template v-else>
@@ -111,6 +115,14 @@ const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)
 
           <div class="d-flex align-items-center gap-2">
             <span class="asm-pill">{{ session.role }}</span>
+            <button
+              type="button"
+              class="btn btn-sm btn-link"
+              :title="session.user?.email"
+              @click="session.signOut()"
+            >
+              로그아웃
+            </button>
             <!-- 언어 토글 — 기본 인도네시아어, 필요할 때 한국어 (작업지시서 §1) -->
             <div class="btn-group btn-group-sm" role="group" aria-label="언어">
               <button

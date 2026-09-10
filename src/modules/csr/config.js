@@ -26,6 +26,63 @@ export const ROLES = ['admin', 'it_dept', 'business']
 export const IT_STATUSES = ['Open', 'Ongoing', 'Completed', 'Verified', 'On Hold', 'N/A']
 
 /**
+ * 선택 항목 (Notion 옵션 문자열 그대로 — 작업지시서 §8: 번역·정규화 금지)
+ *
+ * DB 컬럼은 text 라 무엇이든 들어가지만, 화면에서는 이관된 값과 같은 문자열만 고르게 해
+ * 필터·집계가 갈라지지 않게 합니다. 새 옵션이 필요하면 여기와 Notion 양쪽에 더합니다.
+ */
+export const OPTIONS = {
+  it_decision: [
+    '수용 / Diterima',
+    '조건부 수용 / Diterima Bersyarat',
+    '결정요청 / Perlu Keputusan',
+    '보류 / Ditunda',
+    '반려 / Ditolak',
+    '미회신 / Belum Ada Balasan',
+  ],
+  verification_result: [
+    '조치확인 / Terkonfirmasi',
+    '부분조치 / Sebagian',
+    '미조치 / Belum Ditindaklanjuti',
+    '미검증 / Belum Diverifikasi',
+    'Completed 부적정 / Completed Tidak Sesuai',
+  ],
+  go_live_category: [
+    '오픈 前 필수 / Wajib Sebelum Go-Live',
+    '오픈 後 / Setelah Go-Live',
+    '미정 / Belum Ditentukan',
+  ],
+  priority: ['S1 Blocker', 'S2 Major', 'S3 Minor', 'S4 Enhancement'],
+  issue_type: [
+    '오류 / Bug',
+    '개선 / Perbaikan',
+    '신규기능 / Fitur Baru',
+    '데이터정비 / Perapian Data',
+    '정책결정 / Keputusan Kebijakan',
+  ],
+  role_split: ['개발부서 / Tim Pengembang', '현업 / Tim Bisnis', '공동 / Bersama'],
+  request_dept: [
+    '총괄팀 / Tim Umum',
+    '현지 사용자 / Pengguna Lokal',
+    '구매 / Pembelian',
+    '창고 / Gudang',
+    '영업 / Penjualan',
+    '재무 / Keuangan',
+    '인사 / HRD',
+  ],
+  menu_main: [
+    'Purchasing',
+    'Sales',
+    'Inventory',
+    'Partners',
+    'Master Data',
+    'Settings',
+    '공통 / Umum',
+    '업무요건 / Kebutuhan Bisnis',
+  ],
+}
+
+/**
  * 상태 배지 색 (작업지시서 §5-5 — Notion 색과 동일)
  * asm-theme.css 의 .asm-badge--* 톤을 그대로 씁니다.
  */

@@ -19,9 +19,14 @@ onMounted(async () => {
   if (session.isAuthenticated && !session.isUnregistered) await issues.load()
 })
 
-/** 제목은 화면 언어에 따라 고릅니다 — 한쪽이 비어 있으면 다른 쪽으로 떨어집니다. */
+/**
+ * 제목은 화면 언어에 따라 고릅니다 — 한쪽이 비어 있으면 다른 쪽으로 떨어집니다.
+ * 앞의 "02. " 같은 번호는 뗍니다 — 이슈번호 열이 따로 있어 두 번 보입니다(2026-09-10 요청).
+ * 표시만 바꿉니다. 저장된 제목은 Notion 원문 그대로입니다(작업지시서 §8).
+ */
+const stripNo = (t) => (t ? String(t).replace(/^d+.s*/, '') : t)
 const title = (row) =>
-  issues.lang === 'id' ? (row.title_id ?? row.title_ko) : (row.title_ko ?? row.title_id)
+  stripNo(issues.lang === 'id' ? (row.title_id ?? row.title_ko) : (row.title_ko ?? row.title_id))
 
 // 요약 카드는 헤더의 브랜드 메뉴 → 「요약」 으로 열리는 좌측 드로어에 실립니다.
 provideSidebarSummary(() => [
@@ -171,21 +176,19 @@ const passwordOpen = ref(false)
                   <th>IT상태</th>
                   <th>현업검증</th>
                   <th>IT수용여부</th>
-                  <th>오픈구분</th>
                   <th>담당자</th>
-                  <th>회신요약</th>
                   <th>목표배포일</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="issues.loading">
-                  <td colspan="9" class="empty-row">불러오는 중…</td>
+                  <td colspan="7" class="empty-row">불러오는 중…</td>
                 </tr>
                 <tr v-else-if="issues.error">
-                  <td colspan="9" class="empty-row err">{{ issues.error }}</td>
+                  <td colspan="7" class="empty-row err">{{ issues.error }}</td>
                 </tr>
                 <tr v-else-if="!issues.filtered.length">
-                  <td colspan="9" class="empty-row">조건에 맞는 개선요청이 없습니다</td>
+                  <td colspan="7" class="empty-row">조건에 맞는 개선요청이 없습니다</td>
                 </tr>
                 <tr
                   v-for="row in issues.filtered"
@@ -207,11 +210,7 @@ const passwordOpen = ref(false)
                   </td>
                   <td>{{ row.verification_result }}</td>
                   <td>{{ row.it_decision }}</td>
-                  <td>{{ row.go_live_category }}</td>
                   <td>{{ row.it_pic }}</td>
-                  <td class="reply-col">
-                    {{ issues.lang === 'id' ? row.it_reply_summary_id : row.it_reply_summary_ko }}
-                  </td>
                   <td>{{ row.target_release_on ?? '—' }}</td>
                 </tr>
               </tbody>
@@ -279,14 +278,9 @@ const passwordOpen = ref(false)
 .table-scroll {
   overflow-x: auto;
 }
-/* 제목·회신요약은 길어서 표를 밀어냅니다 — 폭을 묶고 넘치면 잘라 둡니다. */
+/* 제목은 길어서 표를 밀어냅니다 — 폭을 묶고 넘치면 잘라 둡니다. */
 .title-col {
   max-width: 420px;
-}
-.reply-col {
-  max-width: 320px;
-  font-size: 12px;
-  color: var(--asm-fg-muted);
 }
 .no-col {
   font-variant-numeric: tabular-nums;

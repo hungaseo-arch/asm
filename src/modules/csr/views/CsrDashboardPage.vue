@@ -193,7 +193,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
           <!-- 검증 대기 (Completed · 현업 검증 필요) -->
           <section class="asm-panel sec">
             <h2 class="asm-title">
-              {{ L('preset_pending') }}
+              {{ t('현업 검증 대기', 'Menunggu verifikasi Tim Bisnis') }}
               <span class="count-pill">{{ formatInt(pendingVerify.length) }}</span>
             </h2>
             <p v-if="!pendingVerify.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>

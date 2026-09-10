@@ -15,8 +15,8 @@ Pages 로 배포하므로 **`main` 이 곧 배포본**입니다.
 - **010 · 014 번역 검수** — 010(현상·개선 의견·현업 답변 60건) + 014(검증 이력 146행 · IT 회신 42행)
   Claude 번역분의 현업 검수. 담당 **서종환**(2026-09-10 지정). 010 수정은 상세 화면 「편집」(KO·ID 두 칸)으로,
   014 수정은 당분간 SQL(`csr_verifications.note_ko/id` · `csr_it_replies.<col>_ko/id`)
-- **`db/014_sub_translations.sql` 콘솔 적용 대기** — §7 검증 이력 · §5 IT 회신 본문의 KO/ID 쌍 컬럼 추가 + 값.
-  적용 전에도 화면은 원문으로 되돌아가므로 깨지지 않음. 마지막 SELECT 가 `verif_missing 0 · reply_missing 0` 이면 완료
+- **`db/014_sub_translations.sql` 적용 완료(2026-09-10)** — §7 검증 이력 · §5 IT 회신 본문의 KO/ID 쌍.
+  Data API 실측: 검증 146/146 · 회신 42행 4컬럼 누락 0. 상세 화면 토글로 양방향 표시 확인
 
 - **CSR §1 캡쳐(사진 첨부) 완료(2026-09-10)** — Apps Script 웹앱 배포(실행: 소유자 · 액세스: 모든 사용자),
   `VITE_CSR_UPLOAD_URL` 로컬·Actions 등록, Notion 캡쳐 **38건 전부** Drive 업로드 + `db/012`·`013` 적용.

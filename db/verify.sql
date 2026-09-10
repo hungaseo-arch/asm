@@ -119,8 +119,11 @@ WITH checks AS (
   SELECT 18, 'env', 'auth 스키마', 'true',
          EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'auth')::text
   UNION ALL
+  -- neon_auth."user" 컬럼: id · name · email · emailVerified · image · createdAt ·
+  -- updatedAt · role · banned · banReason · banExpires (2026-09-10 실측).
+  -- deleted_at 은 없습니다 — 비활성은 banned 로 표시됩니다.
   SELECT 19, 'env', 'neon_auth 계정 수', '9 이상',
-         (SELECT count(*)::text FROM neon_auth."user" WHERE deleted_at IS NULL)
+         (SELECT count(*)::text FROM neon_auth."user" WHERE NOT COALESCE(banned, false))
 )
 SELECT no AS "#", 단계, 항목, 기대, 실제,
        CASE WHEN 실제 = split_part(기대, ' ', 1) THEN 'OK' ELSE '확인' END AS 상태

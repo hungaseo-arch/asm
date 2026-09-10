@@ -100,7 +100,9 @@ export function toneOf(kind, value) {
   if (!value) return 'neutral'
   const table = kind === 'it_decision' ? DECISION_TONE : RESULT_TONE
   const head = termLang(value, 'ko').split(' — ')[0].trim()
-  return table[head] ?? 'neutral'
+  // 대소문자 무시 — 'Completed 부적정'(DB) 과 'COMPLETED 부적정'(문서·손입력) 을 같은 값으로 봅니다.
+  const hit = Object.keys(table).find((k) => k.toLowerCase() === head.toLowerCase())
+  return hit ? table[hit] : 'neutral'
 }
 
 export function termLang(value, lang) {

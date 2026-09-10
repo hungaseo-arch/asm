@@ -165,7 +165,13 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 
         <!-- 교차표 — IT상태 × 현업검증 -->
         <section class="asm-panel sec">
-          <h2 class="asm-title">{{ L('it_status') }} × {{ L('verification_result') }}</h2>
+          <h2 class="asm-title">
+            {{ L('it_status') }} × {{ L('verification_result') }}
+            <!-- 상태 명칭 표준화 작업지시서(§3 상태 정의·전환 규칙)로 가는 링크 — 2026-09-10 요청 -->
+            <RouterLink to="/csr/status-guide" class="guide-link">
+              {{ t('상태 기준', 'Standar status') }} ↗
+            </RouterLink>
+          </h2>
           <div class="table-scroll">
             <table class="table asm-table cross">
               <thead>
@@ -372,6 +378,15 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.guide-link {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.guide-link:hover {
+  text-decoration: underline;
 }
 .sec small {
   font-weight: 500;

@@ -33,6 +33,12 @@ export const csrRoutes = [
     meta: { requiresAuth: false, title: 'CSR 공지' },
   },
   {
+    path: '/csr/status-guide',
+    name: 'csr-status-guide',
+    component: () => import('./views/CsrStatusGuidePage.vue'),
+    meta: { requiresAuth: false, title: 'CSR 상태 기준' },
+  },
+  {
     // 이슈번호는 'VIII-6' · 'CSR-202609-001' 처럼 슬래시 없는 임의 문자열입니다.
     // /csr/notices 보다 뒤에 두어야 'notices' 가 이슈번호로 잡히지 않습니다.
     path: '/csr/:issueNo',

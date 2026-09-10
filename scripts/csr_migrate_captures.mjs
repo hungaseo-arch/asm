@@ -77,8 +77,19 @@ for (const f of files) {
     issueNo: f.issueNo,
     token: TOKEN,
   })
-  const res = await fetch(UPLOAD_URL, { method: 'POST', body })
-  const out = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }))
+  // Apps Script 는 302 → googleusercontent 로 넘기고, 큰 본문에서 간헐적으로 ECONNRESET 이 납니다 —
+  // 3회까지 물러났다 다시 보냅니다(2026-09-10 실측).
+  let out = null
+  for (let attempt = 1; attempt <= 3 && !out; attempt++) {
+    try {
+      const res = await fetch(UPLOAD_URL, { method: 'POST', body, redirect: 'follow' })
+      out = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }))
+    } catch (e) {
+      console.warn(`  재시도 ${attempt}/3`, f.file, e.cause?.code ?? e.message)
+      await new Promise((r) => setTimeout(r, 1500 * attempt))
+    }
+  }
+  if (!out) out = { ok: false, error: 'network' }
   if (!out.ok) {
     console.error('  실패', f.file, out.error)
     continue

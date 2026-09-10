@@ -138,7 +138,10 @@ watch(
         개수로 접습니다 — 머리줄은 한 줄이어야 합니다. 누르면 공지 화면으로 갑니다.
       -->
       <div class="headline">
-        <p class="asm-eyebrow">Manajemen Permintaan Perbaikan · 개선요청 관리</p>
+        <div class="page-titles">
+          <h1 class="page-title">CSR</h1>
+          <p class="page-sub mb-0">Manajemen Permintaan Perbaikan · 개선요청 관리</p>
+        </div>
         <button
           v-if="pinned.length"
           type="button"
@@ -329,10 +332,6 @@ watch(
   justify-content: space-between;
   gap: 16px;
   min-height: 28px;
-}
-.headline .asm-eyebrow {
-  margin: 0;
-  flex: none;
 }
 /* 고정 공지 — 머리줄 우측 한 줄. 남는 폭만 쓰고 넘치면 말줄임, 전체는 툴팁. */
 .notice {

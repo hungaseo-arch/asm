@@ -155,8 +155,10 @@ async function remove(n) {
     <section class="notices">
       <div class="head">
         <div>
-          <p class="asm-eyebrow">Pengumuman · 알림</p>
-          <h1 class="asm-title">{{ id('공지사항', 'Pengumuman') }}</h1>
+          <div class="page-titles">
+            <h1 class="page-title">Notices</h1>
+            <p class="page-sub mb-0">Pengumuman · 알림</p>
+          </div>
         </div>
         <div class="d-flex gap-2 align-items-center">
           <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">

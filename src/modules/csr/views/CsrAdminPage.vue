@@ -247,7 +247,10 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
   <DefaultLayout>
     <section class="admin">
       <div class="headline">
-        <p class="asm-eyebrow">Administrasi · 관리</p>
+        <div class="page-titles">
+          <h1 class="page-title">Admin</h1>
+          <p class="page-sub mb-0">Administrasi · 관리</p>
+        </div>
         <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">
           ← {{ t('개선요청 목록', 'Daftar permintaan') }}
         </button>
@@ -495,9 +498,6 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-}
-.headline .asm-eyebrow {
-  margin: 0;
 }
 .state {
   padding: 24px;

@@ -983,6 +983,11 @@ thead .asm-sticky-col {
   flex-wrap: wrap;
   min-width: 0;
 }
+.page-titles .page-sub {
+  font-size: 14px;
+  color: var(--asm-fg-muted);
+  margin: 0;
+}
 .page-titles .page-title {
   font-size: 20px;
   font-weight: 700;

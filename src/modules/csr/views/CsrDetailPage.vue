@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -60,6 +60,7 @@ const DICT = {
     'Proksi unggah belum dikonfigurasi (VITE_CSR_UPLOAD_URL)',
   ],
   remove: ['삭제', 'Hapus'],
+  close: ['닫기', 'Tutup'],
   remove_confirm: [
     '이 캡쳐를 목록에서 지울까요? Drive 파일은 남습니다.',
     'Hapus tangkapan ini dari daftar? File Drive tetap ada.',
@@ -472,7 +473,20 @@ async function onRemoveAttachment(a) {
 }
 
 /** Drive 썸네일 — uc?export=view 는 대용량·권한 문제가 있어 쓰지 않습니다(작업지시서 §8). */
-const thumb = (fileId) => `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`
+const thumb = (fileId, w = 1200) => `https://drive.google.com/thumbnail?id=${fileId}&sz=w${w}`
+/*
+ * 캡쳐 확대 — 새 창(Drive 뷰어) 대신 모달(2026-09-10 요청). 큰 썸네일(w2000)을 띄우고 Esc·바깥 클릭·
+ * 화면 이동에 닫습니다. Drive 원본이 필요하면 모달 안의 링크로.
+ */
+const lightbox = ref(null)
+const openLightbox = (a) => (lightbox.value = a)
+const closeLightbox = () => (lightbox.value = null)
+function onLightboxKey(e) {
+  if (e.key === 'Escape' && lightbox.value) closeLightbox()
+}
+onMounted(() => document.addEventListener('keydown', onLightboxKey))
+onBeforeUnmount(() => document.removeEventListener('keydown', onLightboxKey))
+watch(() => route.params.issueNo, closeLightbox)
 const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 </script>
 
@@ -655,18 +669,18 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             </p>
             <div v-else class="gallery">
               <figure v-for="a in attachments" :key="a.id" class="shot">
-                <a
-                  :href="`https://drive.google.com/file/d/${a.drive_file_id}/view`"
-                  target="_blank"
-                  rel="noopener"
+                <button
+                  type="button"
+                  class="shot-open"
                   :title="a.file_name ?? ''"
+                  @click="openLightbox(a)"
                 >
                   <img
                     :src="thumb(a.drive_file_id)"
                     :alt="a.caption ?? a.file_name ?? ''"
                     loading="lazy"
                   />
-                </a>
+                </button>
                 <figcaption>
                   <span class="fname">{{ a.caption ?? a.file_name ?? '' }}</span>
                   <button
@@ -744,149 +758,152 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
           }}</pre>
         </section>
 
-        <!-- §5 IT부서 회신 (회차별) — it_dept · admin 추가 -->
-        <section class="asm-panel sec">
-          <div class="sec-head">
-            <h2 class="asm-title">5. {{ T('sec_reply') }}</h2>
-            <button
-              v-if="canAdd(role, 'it_replies') && !replyOpen"
-              type="button"
-              class="btn btn-sm btn-outline-primary"
-              @click="replyOpen = true"
-            >
-              {{ T('add_reply') }}
-            </button>
-          </div>
-
-          <form v-if="replyOpen" class="sub-form" @submit.prevent="submitReply">
-            <div class="grid">
-              <label class="field">
-                <span>{{ T('replied_on') }}</span>
-                <input
-                  v-model="replyDraft.replied_on"
-                  type="date"
-                  class="form-control form-control-sm"
-                  required
-                />
-              </label>
-              <label class="field">
-                <span>{{ T('decision') }}</span>
-                <!-- 자유 입력 → 드롭다운(2026-09-10 요청). 선택지는 IT수용여부 옵션과 같은 사전 값. -->
-                <select v-model="replyDraft.decision" class="form-select form-select-sm">
-                  <option value="">—</option>
-                  <option v-for="o in OPTIONS.it_decision" :key="o" :value="o">{{ V(o) }}</option>
-                </select>
-              </label>
-              <label class="field wide">
-                <span>{{ T('fix_plan') }}</span>
-                <textarea
-                  v-model="replyDraft.fix_plan"
-                  class="form-control form-control-sm"
-                  rows="2"
-                ></textarea>
-              </label>
-              <label class="field wide">
-                <span>{{ T('note') }}</span>
-                <textarea
-                  v-model="replyDraft.note"
-                  class="form-control form-control-sm"
-                  rows="2"
-                ></textarea>
-              </label>
-              <label class="field">
-                <span>{{ T('needs_decision') }}</span>
-                <input v-model="replyDraft.needs_decision" class="form-control form-control-sm" />
-              </label>
-              <label class="field">
-                <span>{{ T('pic_and_target') }}</span>
-                <input v-model="replyDraft.pic_and_target" class="form-control form-control-sm" />
-              </label>
-            </div>
-            <div class="actions">
+        <!-- §5 IT부서 회신 · §6 현업 답변 을 한 행 두 열로(2026-09-10 요청) -->
+        <div class="sec-grid">
+          <!-- §5 IT부서 회신 (회차별) — it_dept · admin 추가 -->
+          <section class="asm-panel sec">
+            <div class="sec-head">
+              <h2 class="asm-title">5. {{ T('sec_reply') }}</h2>
               <button
+                v-if="canAdd(role, 'it_replies') && !replyOpen"
                 type="button"
-                class="btn btn-outline-secondary btn-sm"
-                @click="replyOpen = false"
+                class="btn btn-sm btn-outline-primary"
+                @click="replyOpen = true"
               >
-                {{ T('cancel') }}
-              </button>
-              <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">
-                {{ T('submit') }}
+                {{ T('add_reply') }}
               </button>
             </div>
-          </form>
 
-          <p v-if="!sortedReplies.length" class="muted">{{ T('no_reply') }}</p>
-          <article v-for="r in sortedReplies" :key="r.id" class="reply">
-            <!-- 머리: 회신일 + 수용 여부 배지. 본문: 채워진 항목만, 긴 글은 전폭. -->
-            <div class="reply-head">
-              <h3>{{ r.replied_on }}</h3>
-              <span v-if="r.decision" class="asm-badge asm-badge--info">{{ V(r.decision) }}</span>
-            </div>
-            <dl v-if="replyFields(r).length" class="reply-body">
-              <div v-for="f in replyFields(r)" :key="f.key" :class="{ wide: f.wide }">
-                <dt>{{ T(f.key) }}</dt>
-                <dd>{{ r[f.key] }}</dd>
+            <form v-if="replyOpen" class="sub-form" @submit.prevent="submitReply">
+              <div class="grid">
+                <label class="field">
+                  <span>{{ T('replied_on') }}</span>
+                  <input
+                    v-model="replyDraft.replied_on"
+                    type="date"
+                    class="form-control form-control-sm"
+                    required
+                  />
+                </label>
+                <label class="field">
+                  <span>{{ T('decision') }}</span>
+                  <!-- 자유 입력 → 드롭다운(2026-09-10 요청). 선택지는 IT수용여부 옵션과 같은 사전 값. -->
+                  <select v-model="replyDraft.decision" class="form-select form-select-sm">
+                    <option value="">—</option>
+                    <option v-for="o in OPTIONS.it_decision" :key="o" :value="o">{{ V(o) }}</option>
+                  </select>
+                </label>
+                <label class="field wide">
+                  <span>{{ T('fix_plan') }}</span>
+                  <textarea
+                    v-model="replyDraft.fix_plan"
+                    class="form-control form-control-sm"
+                    rows="2"
+                  ></textarea>
+                </label>
+                <label class="field wide">
+                  <span>{{ T('note') }}</span>
+                  <textarea
+                    v-model="replyDraft.note"
+                    class="form-control form-control-sm"
+                    rows="2"
+                  ></textarea>
+                </label>
+                <label class="field">
+                  <span>{{ T('needs_decision') }}</span>
+                  <input v-model="replyDraft.needs_decision" class="form-control form-control-sm" />
+                </label>
+                <label class="field">
+                  <span>{{ T('pic_and_target') }}</span>
+                  <input v-model="replyDraft.pic_and_target" class="form-control form-control-sm" />
+                </label>
               </div>
-            </dl>
-            <p v-else class="muted">—</p>
-          </article>
-        </section>
+              <div class="actions">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  @click="replyOpen = false"
+                >
+                  {{ T('cancel') }}
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">
+                  {{ T('submit') }}
+                </button>
+              </div>
+            </form>
 
-        <!-- §6 현업 답변 — business · admin 편집 -->
-        <section class="asm-panel sec">
-          <div class="sec-head">
-            <h2 class="asm-title">
-              6. {{ T('sec_answer') }}
-              <small v-if="issue.business_answered_on">({{ issue.business_answered_on }})</small>
-            </h2>
-            <button
-              v-if="editable('business_answer_md') && mdEditing !== 'business_answer_md'"
-              type="button"
-              class="btn btn-sm btn-link"
-              @click="startMd('business_answer_md')"
-            >
-              {{ bodyOf('business_answer_md') ? T('edit') : T('write_answer') }}
-            </button>
-          </div>
-          <template v-if="mdEditing === 'business_answer_md'">
-            <label class="field date-field">
-              <span>{{ T('answered_on') }}</span>
-              <input v-model="mdDate" type="date" class="form-control form-control-sm" />
-            </label>
-            <div class="md-pair">
-              <label class="field">
-                <span>KO</span>
-                <textarea v-model="mdDraft.ko" class="form-control md-edit" rows="6"></textarea>
-              </label>
-              <label class="field">
-                <span>ID</span>
-                <textarea v-model="mdDraft.id" class="form-control md-edit" rows="6"></textarea>
-              </label>
-            </div>
-            <div class="actions">
+            <p v-if="!sortedReplies.length" class="muted">{{ T('no_reply') }}</p>
+            <article v-for="r in sortedReplies" :key="r.id" class="reply">
+              <!-- 머리: 회신일 + 수용 여부 배지. 본문: 채워진 항목만, 긴 글은 전폭. -->
+              <div class="reply-head">
+                <h3>{{ r.replied_on }}</h3>
+                <span v-if="r.decision" class="asm-badge asm-badge--info">{{ V(r.decision) }}</span>
+              </div>
+              <dl v-if="replyFields(r).length" class="reply-body">
+                <div v-for="f in replyFields(r)" :key="f.key" :class="{ wide: f.wide }">
+                  <dt>{{ T(f.key) }}</dt>
+                  <dd>{{ r[f.key] }}</dd>
+                </div>
+              </dl>
+              <p v-else class="muted">—</p>
+            </article>
+          </section>
+
+          <!-- §6 현업 답변 — business · admin 편집 -->
+          <section class="asm-panel sec">
+            <div class="sec-head">
+              <h2 class="asm-title">
+                6. {{ T('sec_answer') }}
+                <small v-if="issue.business_answered_on">({{ issue.business_answered_on }})</small>
+              </h2>
               <button
+                v-if="editable('business_answer_md') && mdEditing !== 'business_answer_md'"
                 type="button"
-                class="btn btn-outline-secondary btn-sm"
-                @click="mdEditing = null"
+                class="btn btn-sm btn-link"
+                @click="startMd('business_answer_md')"
               >
-                {{ T('cancel') }}
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary btn-sm"
-                :disabled="saving"
-                @click="saveMd"
-              >
-                {{ T('save') }}
+                {{ bodyOf('business_answer_md') ? T('edit') : T('write_answer') }}
               </button>
             </div>
-          </template>
-          <pre v-else-if="bodyOf('business_answer_md')" class="md">{{
-            md(bodyOf('business_answer_md'))
-          }}</pre>
-          <p v-else class="muted">{{ T('no_answer') }}</p>
-        </section>
+            <template v-if="mdEditing === 'business_answer_md'">
+              <label class="field date-field">
+                <span>{{ T('answered_on') }}</span>
+                <input v-model="mdDate" type="date" class="form-control form-control-sm" />
+              </label>
+              <div class="md-pair">
+                <label class="field">
+                  <span>KO</span>
+                  <textarea v-model="mdDraft.ko" class="form-control md-edit" rows="6"></textarea>
+                </label>
+                <label class="field">
+                  <span>ID</span>
+                  <textarea v-model="mdDraft.id" class="form-control md-edit" rows="6"></textarea>
+                </label>
+              </div>
+              <div class="actions">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  @click="mdEditing = null"
+                >
+                  {{ T('cancel') }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  :disabled="saving"
+                  @click="saveMd"
+                >
+                  {{ T('save') }}
+                </button>
+              </div>
+            </template>
+            <pre v-else-if="bodyOf('business_answer_md')" class="md">{{
+              md(bodyOf('business_answer_md'))
+            }}</pre>
+            <p v-else class="muted">{{ T('no_answer') }}</p>
+          </section>
+        </div>
 
         <!-- §7 검증 이력 — business · admin 추가 -->
         <section class="asm-panel sec">
@@ -995,6 +1012,32 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
           <p v-else-if="logOpen" class="muted mt-2">{{ T('no_log') }}</p>
         </section>
       </template>
+
+      <!-- 캡쳐 확대 모달 — 바깥(어두운 배경) 클릭 또는 Esc 로 닫힘 -->
+      <div
+        v-if="lightbox"
+        class="lightbox"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="lightbox.file_name ?? ''"
+        @click.self="closeLightbox"
+      >
+        <div class="lightbox-body">
+          <img :src="thumb(lightbox.drive_file_id, 2000)" :alt="lightbox.file_name ?? ''" />
+          <div class="lightbox-bar">
+            <span class="fname">{{ lightbox.caption ?? lightbox.file_name ?? '' }}</span>
+            <a
+              :href="`https://drive.google.com/file/d/${lightbox.drive_file_id}/view`"
+              target="_blank"
+              rel="noopener"
+              >Drive ↗</a
+            >
+            <button type="button" class="btn btn-sm btn-outline-secondary" @click="closeLightbox">
+              {{ T('close') }}
+            </button>
+          </div>
+        </div>
+      </div>
     </section>
   </DefaultLayout>
 </template>
@@ -1319,6 +1362,58 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.shot-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  line-height: 0;
+}
+/* 모달 — 헤더(sticky) 위에 오도록 z-index 를 드롭다운(1050)보다 높게 */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgb(0 0 0 / 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: zoom-out;
+}
+.lightbox-body {
+  cursor: default;
+  max-width: min(1400px, 96vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lightbox-body img {
+  max-width: 100%;
+  max-height: calc(92vh - 44px);
+  object-fit: contain;
+  background: #fff;
+  border-radius: var(--asm-radius-md);
+}
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-size: 12px;
+}
+.lightbox-bar .fname {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lightbox-bar a {
+  color: #fff;
 }
 .shot figcaption {
   display: flex;

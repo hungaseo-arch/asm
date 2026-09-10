@@ -62,18 +62,30 @@ src/
 ├─ data/                     프로토타입 시드 데이터 (운영 전환 시 삭제)
 │  ├─ purchase-orders.js · inventory.js
 │  └─ screens/               목록 화면 28종 정의 + 예시 데이터
-├─ layouts/                  DefaultLayout · AppTopbar · AppSidebar
+├─ layouts/                  DefaultLayout · AppTopbar · AppSidebar(메뉴 드로어) · AppSummaryRail(요약 드로어)
 ├─ plugins/icons.js          Font Awesome 전역 아이콘 등록 (이름 → 아이콘 매핑 단일 지점)
-├─ router/index.ts           라우트 (실서버 경로명 사용 · 지시서 §5)
+├─ router/index.js           라우트 (실서버 경로명 사용 · 지시서 §5)
 ├─ stores/                   purchase-po · inventory · session (Pinia)
 ├─ types/                    purchase-po.js · inventory.js · list-screen.js (상태·배지 상수)
 ├─ utils/format.js           사내 숫자 표기 표준 (아래 4항)
 └─ views/                    라우트 단위 페이지 (PurchasePoPage · InventoryListPage · ListScreenPage · AuthPage · NotFoundPage)
 ```
 
+저장소 최상위:
+
+```
+db/                     CSR 모듈 Neon SQL (000 선행점검 · 001~003 스키마/RLS/트리거 · 004 역할 · 005 제약 · verify)
+docs/csr/               CSR 이관 절차서 · Phase 보고서
+import/                 Notion 내보내기 원본 + 생성 SQL (.gitignore — 커밋 금지)
+workOrder.md            프론트엔드 작업 지시서 (스택·API·라우팅·표기 규칙의 기준 문서)
+ARCHITECTURE.md         구조와 설계 판단 근거
+CONTRIBUTING.md         작업 규칙
+CHANGELOG.md            변경 이력
+```
+
 ---
 
-## 4. 숫자 표기 규칙 (`src/lib/format.ts`)
+## 4. 숫자 표기 규칙 (`src/utils/format.js`)
 
 사내 표준을 코드로 강제했습니다. **화면에서 숫자를 직접 문자열로 만들지 말고 반드시 이 함수를 사용하세요.**
 
@@ -128,10 +140,14 @@ src/
 3. **라우터 이동** — 성공 시 `router.replace()`. `window.location.reload()` 금지
 4. **외부 인증 후 세션 갱신** — `verify-code` 후 반드시 세션 refetch
 
-라우트 보호는 `router/index.ts` 의 `meta.requiresAuth` 로 켭니다.
+라우트 보호는 `router/index.js` 의 `meta.requiresAuth` 로 켭니다.
 
-```ts
-{ path: '/purchase-po', component: ..., meta: { requiresAuth: true } }
+> **현재 로그인은 비활성 상태입니다** — 백엔드 세션 없이 화면만 배포하므로 `/auth` 는 `/` 로
+> 리다이렉트되고 모든 라우트가 `meta.requiresAuth: false` 입니다. `AuthPage.vue` · `stores/session.js` ·
+> `api/auth.js` 는 그대로 두었으니 되살릴 때 라우트만 복구하면 됩니다.
+
+```js
+{ path: '/vendor-po', component: ..., meta: { requiresAuth: true } }
 ```
 
 ---
@@ -153,16 +169,36 @@ src/
 
 **잔여 작업 (Next steps)**
 
-1. **API 연동** — `stores/purchase-po.ts` 의 시드 데이터를 `GET /api/purchase-orders` 호출로 교체 (화면 코드 수정 불필요)
+1. **API 연동** — `stores/purchase-po.js` 의 시드 데이터를 실서버 엔드포인트 호출로 교체 (화면 코드 수정 불필요)
 2. 신규 PO 저장을 `POST /api/purchase-orders` 로 연결 (현재는 클라이언트 상태에만 반영)
-3. Inventory 데이터 연동 — `stores/inventory.ts` 시드를 `GET /api/inventory` 로 교체
-   (목록 화면 28종은 `data/screens/*.ts` 의 rows 를 각 API 결과로 교체하면 화면 수정 없이 동작)
+3. Inventory 데이터 연동 — `stores/inventory.js` 시드를 실서버 엔드포인트로 교체
+   (목록 화면 28종은 `data/screens/*.js` 의 rows 를 각 API 결과로 교체하면 화면 수정 없이 동작)
 4. 남은 메뉴 화면 — Delivery Note (Warehouse) · Upload Monthly Closing Data · Change Password (현재는 안내 토스트만 표시)
 5. 서버 사이드 페이징/정렬 (데이터 1,000건 초과 시 필요)
 6. 로그인 필수화 여부 결정 → `meta.requiresAuth: true` 적용
-7. 단위 테스트(Vitest + @vue/test-utils) 도입 — 우선순위: `lib/format.ts`, `stores/*.ts`
+7. 단위 테스트(Vitest + @vue/test-utils) 도입 — 우선순위: `utils/format.js`, `stores/*.js`
 
 **미이관 (의도적 제외)**
 
 - Lovable/Skywork 전용 스캐폴드(`lovable-tagger`, `react-router-dom-proxy`, prerender, CDN 이미지 리라이터)
 - 미사용 shadcn/ui 컴포넌트 49종 — Bootstrap 5.3 으로 대체
+
+---
+
+## 8. CSR 모듈 (ASM 개선요청 관리)
+
+운영 ASM 의 개선요청(CSR)을 Notion 에서 넘겨받아 `/csr` 에서 관리하는 **독립 모듈**입니다.
+기존 25종 화면과 컴포넌트·스토어를 공유하지 않습니다 — 별도 지시서(`claude_작업지시서_ASM_CSM_v1.0.md`)를 따릅니다.
+
+| 항목 | 값 |
+|---|---|
+| 라우트 | `/csr` (배포 URL `https://hungaseo-arch.github.io/asm/csr`) |
+| DB | Neon `asm-csm` · 식별자 접두사 `csr_` |
+| 인증 | Neon Auth (Better Auth 기반) — 역할 `admin` · `it_dept` · `business` |
+| 첨부 | Google Drive (`내 드라이브/CSR_캡쳐`) + Apps Script 업로드 프록시 |
+
+**권한은 UI 가 아니라 DB 가 통제합니다.** RLS 정책이 행을, `csr_issues_column_guard` 트리거가
+컬럼을 판정합니다. 프론트의 `CSR_POLICY` 는 같은 규칙을 화면에 비추기만 합니다 —
+`it_dept` 계정으로 `verification_result` 를 바꾸려 하면 DB 가 `42501` 로 거부합니다.
+
+진행 상황과 적용 절차는 [docs/csr/](docs/csr/) 를 보십시오.

@@ -2,10 +2,17 @@
 -- ASM CSR — 초기 역할 3종 등록
 --   작업지시서 §3-3 (C-6) / 003_triggers.sql 적용 후 실행
 --
---   ★ 실행 전 준비 (2026-09-10 현재 C-6 보류 — 계정을 만든 뒤에 실행하십시오)
---     1. Neon 콘솔 → Auth → Users → Create user 로 계정 3개를 만듭니다.
---     2. 아래 표의 이메일 3개를 실제 값으로 바꿉니다.
+--   ★ 실행 전 준비
+--     0. db/006_user_department.sql 을 먼저 적용하십시오 (department 컬럼).
+--     1. Neon 콘솔 → Auth → Users → Create user 로 아래 계정을 만듭니다.
+--     2. 이름(display_name)을 실제 표기로 맞춥니다.
 --     3. 이 파일을 실행합니다. user_id 는 이메일로 자동 조회됩니다.
+--
+--   ── role 과 department 는 다릅니다 ───────────────────────────────────────
+--   role 은 **권한 등급 3종**뿐입니다(admin · it_dept · business). RLS 정책(002)과
+--   컬럼 가드(003)가 이 세 값에 1:1로 묶여 있어, 소속을 넣으면 CHECK 제약 위반으로
+--   실패하고 설령 들어가도 권한 판정이 무너집니다.
+--   영업·수입·재무 같은 소속은 department 에 적습니다 — 표시·집계용이며 권한과 무관합니다.
 --
 --   csr_user_roles 에 없는 사용자는 로그인에 성공해도 아무것도 보지 못합니다
 --   (002_rls_policies.sql 의 SELECT 정책이 csr_role() IS NOT NULL 이므로).
@@ -26,13 +33,23 @@ BEGIN;
 -- ─── 여기만 고치십시오 ───────────────────────────────────────────────────────
 --   seed_user_id: 보통은 NULL 로 두십시오 — 이메일로 자동 조회됩니다.
 --                 자동 조회가 안 될 때만 콘솔 Auth → Users 의 User ID 를 적습니다.
-CREATE TEMP TABLE csr_seed (email text, role text, display_name text, seed_user_id text)
-  ON COMMIT DROP;
+CREATE TEMP TABLE csr_seed (
+  email text, role text, department text, display_name text, seed_user_id text
+) ON COMMIT DROP;
 
-INSERT INTO csr_seed (email, role, display_name, seed_user_id) VALUES
-  ('TODO-admin@example.com',    'admin',    'TODO 관리자', NULL),
-  ('TODO-it@example.com',       'it_dept',  'TODO IT부서', NULL),
-  ('TODO-business@example.com', 'business', 'TODO 현업',   NULL);
+INSERT INTO csr_seed (email, role, department, display_name, seed_user_id) VALUES
+  -- 관리자 — 전 컬럼 편집 · 역할 관리 · 삭제
+  ('jhseo@ptascendo.com',   'admin',    'it',          'Seo Jonghwan', NULL),
+  -- IT부서 — 회신 등록 + it_status·담당자·목표배포일·회신요약 5개 컬럼만
+  ('jklee@ptascendo.com',   'it_dept',  'it',          'Lee',          NULL),
+  -- 현업 — 이슈 등록 · 현업 답변 · 검증 · 첨부 (소속만 다르고 권한은 같습니다)
+  ('lia@ptascendo.com',     'business', 'sales_admin', 'Lia',          NULL),
+  ('merry@ptascendo.com',   'business', 'sales_admin', 'Merry',        NULL),
+  ('tari@ptascendo.com',    'business', 'import',      'Tari',         NULL),
+  ('alya@ptascendo.com',    'business', 'import',      'Alya',         NULL),
+  ('komang@ptascendo.com',  'business', 'finance',     'Komang',       NULL),
+  ('arif@ptascendo.com',    'business', 'sales',       'Arif',         NULL),
+  ('rizki@ptascendo.com',   'business', 'sales',       'Rizki',        NULL);
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- 자리표시자를 그대로 두고 실행하면 여기서 멈춥니다 — TODO 가 실제 역할로 등록되면
@@ -45,6 +62,12 @@ BEGIN
   IF n > 0 THEN
     RAISE EXCEPTION 'CSR: 자리표시자가 %건 남아 있습니다 — 파일 상단의 TODO 이메일을 실제 값으로 바꾸십시오.', n;
   END IF;
+
+  -- 소속을 role 에 잘못 적는 실수를 여기서 잡습니다 — CHECK 제약보다 메시지가 친절합니다.
+  SELECT count(*) INTO n FROM csr_seed WHERE role <> ALL (ARRAY['admin', 'it_dept', 'business']);
+  IF n > 0 THEN
+    RAISE EXCEPTION 'CSR: role 은 admin · it_dept · business 만 쓸 수 있습니다 (%건 위반). 소속은 department 에 적으십시오.', n;
+  END IF;
 END;
 $guard$;
 
@@ -52,6 +75,7 @@ $guard$;
 CREATE TEMP TABLE csr_resolved ON COMMIT DROP AS
 SELECT s.email,
        s.role,
+       s.department,
        s.display_name,
        COALESCE(s.seed_user_id, u.id::text) AS user_id,
        u.banned
@@ -80,17 +104,18 @@ BEGIN
 END;
 $check$;
 
-INSERT INTO public.csr_user_roles (user_id, email, role, display_name)
-SELECT user_id, email, role, display_name FROM csr_resolved
+INSERT INTO public.csr_user_roles (user_id, email, role, department, display_name)
+SELECT user_id, email, role, department, display_name FROM csr_resolved
 ON CONFLICT (user_id) DO UPDATE
   SET email        = EXCLUDED.email,
       role         = EXCLUDED.role,
+      department   = EXCLUDED.department,
       display_name = EXCLUDED.display_name;
 
 COMMIT;
 
 -- ─── 확인용 조회 ─────────────────────────────────────────────────────────────
--- 3행이 나오면 정상입니다.
-SELECT role, email, display_name, user_id, created_at
+-- 9행이 나오면 정상입니다.
+SELECT role, department, email, display_name, user_id, created_at
   FROM public.csr_user_roles
- ORDER BY CASE role WHEN 'admin' THEN 1 WHEN 'it_dept' THEN 2 ELSE 3 END;
+ ORDER BY CASE role WHEN 'admin' THEN 1 WHEN 'it_dept' THEN 2 ELSE 3 END, department, email;

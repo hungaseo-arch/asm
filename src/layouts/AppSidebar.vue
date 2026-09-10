@@ -62,10 +62,13 @@ function openItem(item) {
     </button>
 
     <!--
-      대분류(1단) — 헤더의 상단 메뉴가 보이지 않는 좁은 화면에서만 나옵니다. 데스크톱에서
-      같이 내보내면 헤더와 같은 정보가 두 번 나옵니다.
+      대분류(1단) — 폭과 무관하게 늘 보여 줍니다.
+      한때 넓은 화면에서는 숨겼습니다(헤더 상단 메뉴와 중복이라). 그랬더니 다른 대분류에
+      있을 때 드로어만으로는 목표 화면에 갈 수 없었습니다 — 헤더에서 대분류를 눌러
+      엉뚱한 화면으로 한 번 이동한 뒤 드로어를 다시 열어야 했습니다(2026-09-10 확인).
+      드로어는 사용자가 직접 연 것이므로, 그 안에서 어디로든 갈 수 있어야 합니다.
     -->
-    <nav class="group-nav d-lg-none" aria-label="대분류">
+    <nav class="group-nav" aria-label="대분류">
       <button
         v-for="item in topNav"
         :key="item.key"
@@ -73,6 +76,7 @@ function openItem(item) {
         class="group-chip"
         :class="{ 'is-active': group?.key === item.key }"
         :aria-current="group?.key === item.key ? 'true' : undefined"
+        :title="item.label"
         @click="browsedKey = item.key"
       >
         {{ item.label }}

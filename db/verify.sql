@@ -50,7 +50,7 @@ WITH checks AS (
 
   UNION ALL
   -- 002 의 GRANT 가 실제로 걸렸는지. 0 이면 Data API 로 조회 시 빈 결과나 401/403 이 납니다.
-  SELECT 7, 'authenticated 테이블 권한', '5개 테이블 이상',
+  SELECT 7, 'authenticated 테이블 권한', '6',
          count(DISTINCT table_name)::text
     FROM information_schema.role_table_grants
    WHERE grantee = 'authenticated' AND table_schema = 'public'
@@ -67,12 +67,12 @@ WITH checks AS (
          EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'auth')::text
 
   UNION ALL
-  -- 004 가 조회하는 동기화 테이블. false 면 004 는 계정을 만들어도 매칭에 실패합니다.
-  SELECT 10, 'neon_auth.users_sync 존재', 'true',
-         EXISTS (
-           SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-            WHERE n.nspname = 'neon_auth' AND c.relname = 'users_sync'
-         )::text
+  -- 2026-09-10 실측: Better Auth 기반 Neon Auth 에는 users_sync 가 없습니다(false 가 정상).
+  -- 004_seed_roles.sql 은 아래 참고 2 에서 확인한 실제 사용자 테이블을 참조하도록 고쳤습니다.
+  SELECT 10, 'neon_auth 스키마 테이블 수', '9',
+         (SELECT count(*)::text
+            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+           WHERE n.nspname = 'neon_auth' AND c.relkind IN ('r', 'v', 'm'))
 
   UNION ALL
   SELECT 11, '이슈 데이터 (Phase 2 대상)', '0 (아직 이관 전)',
@@ -95,9 +95,13 @@ SELECT p.proname AS auth_function, pg_get_function_result(p.oid) AS returns
 -- users_sync 가 없다면 여기 보이는 이름이 실제 사용자 테이블입니다
 -- (Neon Auth 가 Better Auth 기반으로 바뀌며 이름이 달라졌을 수 있습니다).
 -- 다르면 알려 주십시오 — 004_seed_roles.sql 의 JOIN 한 줄만 바꾸면 됩니다.
-SELECT c.relname AS neon_auth_table
-  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+SELECT c.relname AS neon_auth_table,
+       string_agg(a.attname, ', ' ORDER BY a.attnum) AS columns
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
  WHERE n.nspname = 'neon_auth' AND c.relkind IN ('r', 'v', 'm')
+ GROUP BY 1
  ORDER BY 1;
 
 -- ─── 참고 3. 채번 함수가 도는지 ──────────────────────────────────────────────

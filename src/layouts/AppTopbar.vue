@@ -61,7 +61,6 @@ function place(button) {
   navPos.value = { left: r.left, top: r.bottom + 6 }
 }
 const groupItems = (key) => navGroups.find((g) => g.key === key)?.items ?? []
-const groupLabel = (key) => navGroups.find((g) => g.key === key)?.label ?? ''
 function toggleGroup(item, event) {
   place(event.currentTarget)
   navOpen.value = navOpen.value === item.key ? null : item.key
@@ -174,7 +173,6 @@ async function signOut() {
           role="menu"
           :style="{ left: navPos.left + 'px', top: navPos.top + 'px' }"
         >
-          <span class="group-label">{{ groupLabel(item.key) }}</span>
           <button
             v-for="sub in groupItems(item.key)"
             :key="sub.label"
@@ -411,14 +409,6 @@ async function signOut() {
   z-index: 1050;
   min-width: 240px;
   padding: 6px;
-}
-.nav-dropdown .group-label {
-  display: block;
-  padding: 6px 10px 4px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--asm-fg-muted);
 }
 .nav-dropdown .dropdown-item {
   display: flex;

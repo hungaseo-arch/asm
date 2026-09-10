@@ -376,8 +376,9 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 .table-scroll {
   overflow-x: auto;
 }
+/* 숫자 칸은 가로 가운데(2026-09-10 요청) — 열 폭이 넓어 오른쪽 정렬이면 헤더와 멀어 보였습니다. */
 .num {
-  text-align: right;
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 .total {

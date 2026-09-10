@@ -8,6 +8,7 @@ import { IT_STATUSES, STATUS_TONE, isConfigured } from '../config'
 import { label, pickLang } from '../i18n'
 import { formatInt } from '@/utils/format'
 import CsrSignIn from '../components/CsrSignIn.vue'
+import CsrLangToggle from '../components/CsrLangToggle.vue'
 
 /**
  * 대시보드 (작업지시서 §5-2)
@@ -122,9 +123,13 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
           <h1 class="page-title">Dashboard</h1>
           <p class="page-sub mb-0">Dasbor · 대시보드</p>
         </div>
-        <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">
-          ← {{ t('개선요청 목록', 'Daftar permintaan') }}
-        </button>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">
+            ← {{ t('개선요청 목록', 'Daftar permintaan') }}
+          </button>
+          <!-- 언어 토글 — 목록 툴바에서 옮겼습니다(2026-09-10). 대시보드가 로고 클릭 첫 화면이라 여기가 입구. -->
+          <CsrLangToggle v-model="issues.lang" />
+        </div>
       </div>
 
       <div v-if="!isConfigured()" class="asm-panel state">설정이 필요합니다</div>

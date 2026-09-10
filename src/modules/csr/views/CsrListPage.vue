@@ -14,7 +14,6 @@ async function recheck() {
   if (session.isAuthenticated && !session.isUnregistered) await issues.load()
 }
 import CsrPasswordDialog from '../components/CsrPasswordDialog.vue'
-import CsrLangToggle from '../components/CsrLangToggle.vue'
 import { formatInt } from '@/utils/format'
 import { noteNotices } from '../notices'
 import { useIdentityStore } from '@/stores/identity'
@@ -235,11 +234,7 @@ watch(
             </button>
           </div>
 
-          <div class="d-flex align-items-center gap-2">
-            <!-- 계정(역할·비밀번호·로그아웃)은 헤더 아바타 메뉴로 옮겼습니다(2026-09-10). -->
-            <!-- 언어 토글 — 기본 인도네시아어, 필요할 때 한국어 (작업지시서 §1) -->
-            <CsrLangToggle v-model="issues.lang" />
-          </div>
+          <!-- 계정 메뉴는 헤더 아바타로, 언어 토글은 대시보드 머리줄로 옮겼습니다(2026-09-10). -->
         </div>
 
         <section class="asm-panel table-panel">

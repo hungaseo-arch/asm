@@ -98,6 +98,29 @@ const T = (key) => DICT[key]?.[lang.value === 'id' ? 1 : 0] ?? key
  * 적은 것이라 언어 토글을 타지 않습니다(2026-09-10 「메뉴언어와 동일하게」). 나머지 옵션값은
  * "조치확인 / Terkonfirmasi" 꼴이라 토글 언어 쪽만 보여 줍니다.
  */
+/**
+ * 본문(마크다운) 표시. 본문은 이슈마다 한 언어로 쓰여 있고(한국어 37건 · 인니어 26건) 번역본
+ * 컬럼은 없어 그대로 보여 줍니다. 다만 "**재현 절차 / Langkah reproduksi**" 처럼 **한 줄 안에
+ * 두 언어를 " / " 로 이어 둔 제목 줄**만 토글 언어 쪽을 남깁니다(2026-09-10 「63건 언어 분리 확인」).
+ * 저장값은 손대지 않습니다 — 화면에서만 가릅니다(§8).
+ */
+// 앞뒤 장식(** 또는 #) + "A / B" 한 줄. 본문 문장 속의 "/"(경로·분수)는 60자 제한과 앞뒤 공백 조건에 걸려 안 잡힙니다.
+const MD_BILINGUAL_LINE =
+  /^([ ]*(?:[*]{2}|#+[ ]*)?)([^/\n]{1,60}?)[ ]+[/][ ]+([^/\n]{1,60}?)((?:[*]{2})?[ ]*)$/
+const md = (text) =>
+  text == null
+    ? text
+    : String(text)
+        .split('\n')
+        .map((line) => {
+          const mm = line.match(MD_BILINGUAL_LINE)
+          if (!mm) return line
+          const [, open, a, b, close] = mm
+          const koFirst = /[가-힣]/.test(a)
+          const pick = lang.value === 'id' ? (koFirst ? b : a) : koFirst ? a : b
+          return open + pick + close
+        })
+        .join('\n')
 const VF = (key, value) => (key === 'path_menu' ? (value ?? null) : V(value))
 /**
  * 화면경로가 여럿이면 " · "(양쪽 공백) 로 이어져 있습니다 — "신규·상세" 처럼 공백 없는 가운뎃점은
@@ -581,14 +604,14 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               </button>
             </div>
           </template>
-          <pre v-else-if="issue[sec.key]" class="md">{{ issue[sec.key] }}</pre>
+          <pre v-else-if="issue[sec.key]" class="md">{{ md(issue[sec.key]) }}</pre>
           <p v-else class="muted">—</p>
         </section>
 
         <section class="asm-panel sec">
           <h2 class="asm-title">4. {{ L('acceptance') }}</h2>
           <pre class="md">{{
-            pickPair(issue.acceptance_ko, issue.acceptance_id, lang) ?? '—'
+            md(pickPair(issue.acceptance_ko, issue.acceptance_id, lang)) ?? '—'
           }}</pre>
         </section>
 
@@ -717,7 +740,9 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               </button>
             </div>
           </template>
-          <pre v-else-if="issue.business_answer_md" class="md">{{ issue.business_answer_md }}</pre>
+          <pre v-else-if="issue.business_answer_md" class="md">{{
+            md(issue.business_answer_md)
+          }}</pre>
           <p v-else class="muted">{{ T('no_answer') }}</p>
         </section>
 

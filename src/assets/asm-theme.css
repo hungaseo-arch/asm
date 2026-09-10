@@ -87,6 +87,10 @@
   --asm-neutral: #5f5f5f;
   --asm-neutral-soft: #ededed;
   --asm-neutral-border: #d6d6d6; /* 5.5:1 */
+  /* orange — CSR 현업검증 REJECTED(COMPLETED 부적정) 전용 (작업지시서 v1.1 §C-2). danger(빨강)와 구분. */
+  --asm-orange: #b4500a;
+  --asm-orange-soft: #fff0e6;
+  --asm-orange-border: #f2b08a;
 
   /* 상태 별칭 — 기존 컴포넌트가 참조하는 -fg / -bg 이름을 그대로 유지합니다. */
   --asm-info-fg: var(--asm-info);
@@ -605,6 +609,11 @@ thead .asm-sticky-col {
   background: var(--asm-primary-soft);
   color: var(--asm-primary-soft-fg);
   border-color: var(--asm-primary-10);
+}
+.asm-badge--orange {
+  background: var(--asm-orange-soft);
+  color: var(--asm-orange);
+  border-color: var(--asm-orange-border);
 }
 
 /*

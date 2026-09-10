@@ -7,6 +7,7 @@
  * 그대로 냅니다.
  */
 import { DECISION_TONE, RESULT_TONE } from './config'
+import { verifyMeta } from './status'
 
 const SEP = ' / '
 
@@ -98,6 +99,13 @@ const TERM_TO_KO = new Map(TERMS.map(([ko, id]) => [id.toLowerCase(), ko]))
 /** 결정사항 값의 배지 톤 — kind 는 'it_decision' | 'verification_result'. 모르는 값은 neutral. */
 export function toneOf(kind, value) {
   if (!value) return 'neutral'
+  if (kind === 'verification_result') {
+    // 코드(PENDING…)든 종전 표기든 status.js 정의로. 기록성 값(최초 발견)만 아래 표로 떨어집니다.
+    const meta = verifyMeta(value)
+    const initial = RESULT_TONE[termLang(value, 'ko').split(' — ')[0].trim()]
+    if (initial) return initial
+    if (meta) return meta.tone
+  }
   const table = kind === 'it_decision' ? DECISION_TONE : RESULT_TONE
   const head = termLang(value, 'ko').split(' — ')[0].trim()
   // 대소문자 무시 — 'Completed 부적정'(DB) 과 'COMPLETED 부적정'(문서·손입력) 을 같은 값으로 봅니다.

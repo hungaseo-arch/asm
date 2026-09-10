@@ -31,8 +31,8 @@ export const ROLES = ['admin', 'it_dept', 'business']
  */
 export const INITIAL_PASSWORD = 'ascendo123'
 
-/** IT상태 (Status) — db/001_schema.sql 의 CHECK 제약과 같은 순서입니다. */
-export const IT_STATUSES = ['Open', 'Ongoing', 'Completed', 'Verified', 'On Hold', 'N/A']
+/** IT상태 · 현업검증 정의는 status.js 한 곳에 있습니다(작업지시서 v1.1 §C). 여기서는 다시 내보내기만. */
+export { IT_STATUSES, STATUS_TONE, VERIFY_CODES } from './status'
 
 /**
  * 선택 항목 (Notion 옵션 문자열 그대로 — 작업지시서 §8: 번역·정규화 금지)
@@ -48,13 +48,6 @@ export const OPTIONS = {
     '보류 / Ditunda',
     '반려 / Ditolak',
     '미회신 / Belum Ada Balasan',
-  ],
-  verification_result: [
-    '조치확인 / Terkonfirmasi',
-    '부분조치 / Sebagian',
-    '미조치 / Belum Ditindaklanjuti',
-    '미검증 / Belum Diverifikasi',
-    'Completed 부적정 / Completed Tidak Sesuai',
   ],
   go_live_category: [
     '오픈 前 필수 / Wajib Sebelum Go-Live',
@@ -92,19 +85,6 @@ export const OPTIONS = {
 }
 
 /**
- * 상태 배지 색 (작업지시서 §5-5 — Notion 색과 동일)
- * asm-theme.css 의 .asm-badge--* 톤을 그대로 씁니다.
- */
-export const STATUS_TONE = {
-  Open: 'danger',
-  Ongoing: 'info',
-  Completed: 'success',
-  Verified: 'primary',
-  'On Hold': 'warning',
-  'N/A': 'neutral',
-}
-
-/**
  * 결정사항 색 (2026-09-10 「IT부서 · 현업부서 각각 결정사항에 따라 색상 구분」)
  * 키는 한국어 용어(i18n.termLang 으로 정규화한 뒤 " — " 앞 조각) — "수용 / Diterima" · "Diterima" ·
  * "수용 — Completed" 모두 같은 색이 됩니다. 톤은 다섯 가지뿐이라 뜻이 가까운 값끼리 나눠 씁니다.
@@ -117,13 +97,8 @@ export const DECISION_TONE = {
   반려: 'danger',
   미회신: 'neutral',
 }
+/** 현업검증 코드의 톤은 status.js(VERIFY_STATUS.tone). 여기는 코드로 못 옮기는 기록성 값만. */
 export const RESULT_TONE = {
-  조치확인: 'success',
-  부분조치: 'warning',
-  미조치: 'danger',
-  미검증: 'neutral',
-  'Completed 부적정': 'danger',
-  // 검증 이력의 첫 행(발견·제안·접수) — 결과라기보다 기록이라 안내색
   '최초 발견': 'info',
   '최초 제안': 'info',
   '최초 접수': 'info',
@@ -139,10 +114,17 @@ export const RESULT_TONE = {
  * 여기 규칙과 DB 트리거가 어긋나면 UI 는 열려 있는데 저장이 42501 로 실패합니다.
  * 한쪽을 고치면 반드시 다른 쪽도 고치십시오.
  */
+/*
+ * R&R 2026-09-08 (작업지시서 v1.1 §A-2, db/015):
+ *   admin · business (현업·총괄팀) — IT 전용 컬럼 제외 전부. it_status 는 Completed → Verified 만.
+ *   it_dept (IT부서)               — 아래 IT 전용 컬럼만. it_status 는 Verified 로 올리거나 되돌릴 수 없음.
+ * it_decision(IT수용여부)이 현업 → IT 로 옮겨졌습니다.
+ */
 const IT_ONLY_COLUMNS = [
   'it_status',
   'it_pic',
   'target_release_on',
+  'it_decision',
   'it_reply_summary_ko',
   'it_reply_summary_id',
 ]
@@ -150,16 +132,17 @@ const IT_ONLY_COLUMNS = [
 export const CSR_POLICY = {
   it_dept: {
     editable: IT_ONLY_COLUMNS,
+    statusDeny: ['Verified'],
     canAdd: ['it_replies'],
   },
   business: {
-    // IT 전용 5개를 제외한 전 컬럼. it_status 만 예외적으로 Completed → Verified 허용.
     deny: IT_ONLY_COLUMNS,
     statusTransition: { Completed: ['Verified'] },
     canAdd: ['issues', 'verifications', 'attachments'],
   },
   admin: {
-    editable: '*',
+    deny: IT_ONLY_COLUMNS,
+    statusTransition: { Completed: ['Verified'] },
     canAdd: '*',
   },
 }
@@ -173,12 +156,19 @@ const SYSTEM_COLUMNS = ['id', 'created_at', 'updated_at', 'updated_by']
  */
 export function canEditColumn(role, column, { from, to } = {}) {
   if (!role) return false
-  if (SYSTEM_COLUMNS.includes(column)) return role === 'admin'
-  if (role === 'admin') return true
+  if (SYSTEM_COLUMNS.includes(column)) return false
 
-  if (role === 'it_dept') return IT_ONLY_COLUMNS.includes(column)
+  if (role === 'it_dept') {
+    if (!IT_ONLY_COLUMNS.includes(column)) return false
+    if (column === 'it_status') {
+      // Verified 는 현업이 닫는 것 — IT 는 올리지도 되돌리지도 못합니다.
+      if (from === 'Verified') return false
+      if (to === 'Verified') return false
+    }
+    return true
+  }
 
-  if (role === 'business') {
+  if (role === 'admin' || role === 'business') {
     if (column === 'it_status') {
       // 검증을 마친 현업이 Completed 를 Verified 로 닫는 경우만 허용합니다.
       if (from === undefined) return true // 전이 여부를 아직 모를 때는 열어 둡니다

@@ -9,6 +9,14 @@ import { label, pickLang, toneOf } from '../i18n'
 import { formatInt } from '@/utils/format'
 import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrLangToggle from '../components/CsrLangToggle.vue'
+import {
+  VERIFY_CODES,
+  isPendingVerification,
+  itStatusTitle,
+  mapLegacyVerifyStatus,
+  verifyCodeOf,
+  verifyTitle,
+} from '../status'
 
 /**
  * 대시보드 (작업지시서 §5-2)
@@ -52,20 +60,28 @@ const pagedPending = computed(() => slicePage(pendingVerify.value, 'pending'))
 const pagedNoReply = computed(() => slicePage(noReply.value, 'noreply'))
 const c = computed(() => issues.counts)
 
-/** 현업검증 옵션은 데이터에서 뽑습니다 — 하드코딩하면 새 값이 표에서 빠집니다. */
-const verifValues = computed(() =>
-  [...new Set(live.value.map((r) => r.verification_result).filter(Boolean))].sort(),
-)
+/**
+ * 현업검증 열 — 코드 5종(status.js) 순서로, 데이터에 있는 것만. 종전 표기("조치확인 / …")와 코드가
+ * 섞여 있어도 한 열로 모읍니다(016 적용 전후 모두 같은 표). 모르는 값은 뒤에 원문대로.
+ */
+const vcode = (r) => mapLegacyVerifyStatus(r.verification_result) ?? r.verification_result ?? ''
+const verifValues = computed(() => {
+  const present = new Set(live.value.map(vcode).filter(Boolean))
+  return [
+    ...VERIFY_CODES.filter((c) => present.has(c)),
+    ...[...present].filter((v) => !VERIFY_CODES.includes(v)).sort(),
+  ]
+})
 const cross = computed(() => {
   const m = {}
   for (const r of live.value) {
-    const k = `${r.it_status}|${r.verification_result ?? ''}`
+    const k = `${r.it_status}|${vcode(r)}`
     m[k] = (m[k] ?? 0) + 1
   }
   return m
 })
 const rowTotal = (s) => live.value.filter((r) => r.it_status === s).length
-const colTotal = (v) => live.value.filter((r) => r.verification_result === v).length
+const colTotal = (v) => live.value.filter((r) => vcode(r) === v).length
 
 /**
  * 검증 대기 — IT 가 Completed 로 회신했는데 현업이 아직 Verified 로 닫지 않은 것.
@@ -75,7 +91,7 @@ const colTotal = (v) => live.value.filter((r) => r.verification_result === v).le
  */
 const pendingVerify = computed(() =>
   live.value
-    .filter((r) => r.it_status === 'Completed')
+    .filter(isPendingVerification) // 정의는 status.js 한 곳(§C-2)
     .sort((a, b) => a.issue_no.localeCompare(b.issue_no, undefined, { numeric: true })),
 )
 /** IT부서가 아직 답하지 않은 것 */
@@ -181,8 +197,9 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
                     <span
                       class="asm-badge"
                       :class="`asm-badge--${toneOf('verification_result', v)}`"
+                      :title="verifyTitle(v)"
                     >
-                      {{ V(v) }}
+                      {{ verifyCodeOf(v) }}
                     </span>
                   </th>
                   <th class="nowrap total">{{ t('합계', 'Total') }}</th>
@@ -191,7 +208,12 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
               <tbody>
                 <tr v-for="s in IT_STATUSES.filter((x) => rowTotal(x))" :key="s">
                   <th class="nowrap">
-                    <span class="asm-badge" :class="`asm-badge--${STATUS_TONE[s]}`">{{ s }}</span>
+                    <span
+                      class="asm-badge"
+                      :class="`asm-badge--${STATUS_TONE[s]}`"
+                      :title="itStatusTitle(s)"
+                      >{{ s }}</span
+                    >
                   </th>
                   <td v-for="v in verifValues" :key="v" class="num">
                     {{ cross[`${s}|${v}`] ?? '' }}

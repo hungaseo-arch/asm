@@ -5,6 +5,17 @@ import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { getDb, unwrap } from '../api/neon'
 import { addReply, addVerification, loadStatusLog, nullIfBlank, updateIssue } from '../api/issues'
+import {
+  VERIFY_CODES,
+  isInitialLegacy,
+  mapLegacyVerifyStatus,
+  itStatusTitle,
+  verifyCodeOf,
+  verifyLabel,
+  verifyTitle,
+} from '../status'
+import { todayWib } from '../dates'
+import CsrStatusLegend from '../components/CsrStatusLegend.vue'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { IT_STATUSES, OPTIONS, STATUS_TONE, canAdd, canEditColumn, isConfigured } from '../config'
@@ -83,7 +94,7 @@ const DICT = {
   no_answer: ['아직 답변이 없습니다.', 'Belum ada tanggapan.'],
   sec_verif: ['검증 이력', 'Riwayat Verifikasi'],
   add_verif: ['+ 검증 추가', '+ Tambah verifikasi'],
-  date: ['일자', 'Tanggal'],
+  date: ['일자 (WIB)', 'Tanggal (WIB)'],
   result: ['결과', 'Hasil'],
   content: ['내용', 'Keterangan'],
   no_verif: ['검증 이력이 없습니다.', 'Belum ada riwayat verifikasi.'],
@@ -101,7 +112,7 @@ const DICT = {
   save_failed: ['저장에 실패했습니다', 'Gagal menyimpan'],
   reply_added: ['회신을 등록했습니다', 'Balasan tersimpan'],
   reply_failed: ['회신 등록에 실패했습니다', 'Gagal menyimpan balasan'],
-  result_required: ['결과를 입력하십시오', 'Isi hasil verifikasi'],
+  result_required: ['결과를 선택하십시오', 'Pilih hasil verifikasi'],
   verif_added: ['검증 이력을 등록했습니다', 'Riwayat verifikasi tersimpan'],
   verif_failed: ['검증 이력 등록에 실패했습니다', 'Gagal menyimpan riwayat verifikasi'],
 }
@@ -111,13 +122,25 @@ const T = (key) => DICT[key]?.[lang.value === 'id' ? 1 : 0] ?? key
  * 적은 것이라 언어 토글을 타지 않습니다(2026-09-10 「메뉴언어와 동일하게」). 나머지 옵션값은
  * "조치확인 / Terkonfirmasi" 꼴이라 토글 언어 쪽만 보여 줍니다.
  */
-const VF = (key, value) => (key === 'path_menu' ? pathToEnglish(value) : V(value))
+const VF = (key, value) =>
+  key === 'path_menu'
+    ? pathToEnglish(value)
+    : key === 'verification_result'
+      ? verifyCodeOf(value) // 코드(PENDING…) — 종전 표기도 코드로 (작업지시서 v1.1 §C)
+      : V(value)
 /** 검증 결과 · 수용 여부 같은 정해진 값 — 용어 사전으로 토글 언어 표시. */
 const VT = (value) => termLang(value, lang.value)
 /** 속성 격자에서 배지로 보이는 항목 — IT상태 · IT수용여부 · 현업검증 (결정사항 색 구분). */
 const BADGE_KEYS = new Set(['it_status', 'it_decision', 'verification_result'])
 const badgeTone = (key, value) =>
   key === 'it_status' ? (STATUS_TONE[value] ?? 'neutral') : toneOf(key, value)
+/** 배지 툴팁 — "ko / id — 설명" (§C-2). 수용 여부는 툴팁 없음(용어 사전이 이미 언어를 가릅니다). */
+const badgeTitle = (key, value) =>
+  key === 'it_status'
+    ? itStatusTitle(value)
+    : key === 'verification_result'
+      ? verifyTitle(value)
+      : ''
 /**
  * 회신·검증의 자유 텍스트 — 014 이후 <col>_ko/_id 쌍. 토글 언어 → 반대쪽 → 원문 순으로 되돌아가므로
  * 014 전 DB 나 화면에서 새로 쓴 행(원문만 있음)도 그대로 보입니다.
@@ -253,7 +276,7 @@ const FIELDS = [
     key: 'verification_result',
     label: 'verification_result',
     type: 'select',
-    options: OPTIONS.verification_result,
+    options: VERIFY_CODES,
   },
   { key: 'verified_on', label: 'verified_on', type: 'date' },
 ]
@@ -268,27 +291,35 @@ const ALL_KEYS = [...FIELDS.map((f) => f.key), ...TEXT_PAIRS.flatMap((p) => [p.k
 
 /** 이 역할이 이 컬럼을 고칠 수 있는가 — 입력창 활성 여부. 실제 차단은 DB 가 합니다. */
 const editable = (key) => {
-  if (key === 'it_status' && role.value === 'business') {
-    // business 는 Completed 인 건만 Verified 로 닫을 수 있습니다. 그 외 상태면 잠급니다.
+  if (key === 'it_status') {
+    // 현업(admin·business)은 Completed 인 건만 Verified 로 닫습니다. IT 는 Verified 가 아닌 건만 움직입니다.
+    if (role.value === 'it_dept') return issue.value?.it_status !== 'Verified'
     return issue.value?.it_status === 'Completed'
   }
   return canEditColumn(role.value, key)
 }
-/** it_status 선택지 — business 에게는 Completed → Verified 전이만 보여 줍니다. */
+/** it_status 선택지 — 현업은 Completed → Verified 전이만, IT 는 Verified 를 뺀 나머지. */
 const statusOptions = computed(() =>
-  role.value === 'business' ? ['Completed', 'Verified'] : IT_STATUSES,
+  role.value === 'it_dept'
+    ? IT_STATUSES.filter((s) => s !== 'Verified')
+    : ['Completed', 'Verified'],
 )
 const canEditAnything = computed(() => ALL_KEYS.some(editable))
 
+/** 저장값 → 폼값. 현업검증은 종전 표기("조치확인 / …")가 남아 있어도 코드로 보여 줍니다(016 전 DB). */
+const formValue = (k) =>
+  k === 'verification_result'
+    ? (mapLegacyVerifyStatus(issue.value[k]) ?? issue.value[k] ?? null)
+    : (issue.value[k] ?? null)
 function startEdit() {
-  for (const k of ALL_KEYS) draft[k] = issue.value[k] ?? ''
+  for (const k of ALL_KEYS) draft[k] = formValue(k) ?? ''
   editing.value = true
 }
 async function saveEdit() {
   const patch = {}
   for (const k of ALL_KEYS) {
     if (!editable(k)) continue
-    const before = issue.value[k] ?? null
+    const before = formValue(k)
     const after = nullIfBlank(draft[k])
     if (before !== after) patch[k] = after
   }
@@ -299,6 +330,7 @@ async function saveEdit() {
   saving.value = true
   try {
     issue.value = await updateIssue(issue.value.id, patch)
+    issues.replaceRow(issue.value)
     statusLog.value = await loadStatusLog(issue.value.id)
     editing.value = false
     const n = Object.keys(patch).length
@@ -311,7 +343,8 @@ async function saveEdit() {
 }
 
 // ─── 본문(마크다운) 편집 — findings · recommendation · 현업 답변 ───────────────
-const today = () => new Date().toISOString().slice(0, 10)
+// 서버(현지) 시간대 WIB 기준 오늘 — 브라우저 로컬이 아닙니다(작업지시서 v1.1 §G).
+const today = () => todayWib()
 /*
  * 본문은 010 이후 _ko/_id 쌍으로 저장됩니다(원문 컬럼은 보존). 표시는 토글 언어 쪽, 없으면 반대쪽,
  * 그것도 없으면 원문 컬럼 — 010 을 아직 안 돌린 DB 에서도 그대로 보입니다.
@@ -392,6 +425,18 @@ async function submitReply() {
   }
 }
 
+/** 헤더 행과 상태 로그를 서버에서 다시 읽고 목록 행에도 반영합니다. */
+async function refreshIssue() {
+  const id = issue.value?.id
+  if (!id) return
+  const fresh = unwrap(await getDb().from('csr_issues').select('*').eq('id', id))?.[0]
+  if (fresh) {
+    issue.value = fresh
+    issues.replaceRow(fresh)
+  }
+  statusLog.value = await loadStatusLog(id)
+}
+
 // ─── §7 검증 이력 추가 ───────────────────────────────────────────────────────
 const verifyOpen = ref(false)
 const verifyDraft = reactive({ verified_on: today(), result: '', note: '' })
@@ -412,6 +457,8 @@ async function submitVerification() {
       me.value,
     )
     verifications.value = [row, ...verifications.value]
+    // 017 트리거가 헤더(현업검증·최종검증일)를 맞췄으므로 서버 값을 다시 읽습니다 — 낙관적 갱신 금지(§B-2).
+    await refreshIssue()
     verifyOpen.value = false
     Object.assign(verifyDraft, { verified_on: today(), result: '', note: '' })
     toast.success(T('verif_added'))
@@ -510,9 +557,13 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 <template>
   <DefaultLayout>
     <section class="csr-detail">
-      <button type="button" class="btn btn-sm btn-link back" @click="router.push('/csr')">
-        ← {{ T('back') }}
-      </button>
+      <div class="top-row">
+        <button type="button" class="btn btn-sm btn-link back" @click="router.push('/csr')">
+          ← {{ T('back') }}
+        </button>
+        <!-- 상태 범례 — 상단 우측 (작업지시서 v1.1 §C-2) -->
+        <CsrStatusLegend :lang="lang" />
+      </div>
 
       <div v-if="loading" class="asm-panel state">{{ L('loading') }}</div>
       <div v-else-if="error" class="asm-panel state err">{{ error }}</div>
@@ -526,6 +577,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             <span
               class="asm-badge"
               :class="`asm-badge--${STATUS_TONE[issue.it_status] ?? 'neutral'}`"
+              :title="itStatusTitle(issue.it_status)"
             >
               {{ issue.it_status }}
             </span>
@@ -565,7 +617,11 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                   </span>
                 </dd>
                 <dd v-else-if="BADGE_KEYS.has(f.key) && issue[f.key]">
-                  <span class="asm-badge" :class="`asm-badge--${badgeTone(f.key, issue[f.key])}`">
+                  <span
+                    class="asm-badge"
+                    :class="`asm-badge--${badgeTone(f.key, issue[f.key])}`"
+                    :title="badgeTitle(f.key, issue[f.key])"
+                  >
                     {{ VF(f.key, issue[f.key]) }}
                   </span>
                 </dd>
@@ -604,7 +660,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                     :key="o"
                     :value="o"
                   >
-                    {{ V(o) }}
+                    {{ f.key === 'verification_result' ? verifyLabel(o) : V(o) }}
                   </option>
                 </select>
                 <input
@@ -959,7 +1015,12 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               </label>
               <label class="field">
                 <span>{{ T('result') }}</span>
-                <input v-model="verifyDraft.result" class="form-control form-control-sm" required />
+                <select v-model="verifyDraft.result" class="form-select form-select-sm" required>
+                  <option value="">—</option>
+                  <option v-for="c in VERIFY_CODES" :key="c" :value="c">
+                    {{ verifyLabel(c) }}
+                  </option>
+                </select>
               </label>
               <label class="field wide">
                 <span>{{ T('content') }}</span>
@@ -1000,10 +1061,15 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                   <span
                     v-if="v.result"
                     class="asm-badge"
-                    :class="`asm-badge--${toneOf('verification_result', v.result)}`"
+                    :class="`asm-badge--${toneOf('verification_result', v.result_legacy ?? v.result)}`"
+                    :title="verifyTitle(v.result)"
                   >
-                    {{ VT(v.result) }}
+                    {{ verifyCodeOf(v.result) }}
                   </span>
+                  <!-- 최초 발견·제안·접수는 코드로는 PENDING — 원문을 곁들여 기록성을 남깁니다(016). -->
+                  <small v-if="isInitialLegacy(v.result_legacy ?? v.result)" class="legacy">
+                    {{ VT(v.result_legacy ?? v.result) }}
+                  </small>
                 </td>
                 <td class="wrap">{{ pairOf(v, 'note') }}</td>
               </tr>
@@ -1082,6 +1148,18 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.verif .legacy {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--asm-fg-muted);
 }
 .back {
   align-self: flex-start;

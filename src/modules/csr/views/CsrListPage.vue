@@ -8,6 +8,8 @@ import { label, pickLang, pickPair, toneOf } from '../i18n'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrLangToggle from '../components/CsrLangToggle.vue'
+import CsrStatusLegend from '../components/CsrStatusLegend.vue'
+import { itStatusTitle, verifyCodeOf, verifyFilterLabel, verifyTitle } from '../status'
 
 /** 미등록 화면의 「다시 확인」 — 역할을 다시 읽고, 있으면 바로 목록을 불러옵니다. */
 async function recheck() {
@@ -217,6 +219,24 @@ watch(
             <button type="button" class="btn btn-sm btn-outline-secondary" @click="issues.reset()">
               {{ L('reset') }}
             </button>
+            <select
+              v-model="issues.filters.verification"
+              class="form-select form-select-sm w-auto"
+              :aria-label="L('verification_result')"
+            >
+              <option value="All">{{ L('verification_result') }}: {{ L('reset') }}</option>
+              <option v-for="c in issues.options.verification" :key="c" :value="c">
+                {{ verifyFilterLabel(c, lang) }}
+              </option>
+            </select>
+            <select
+              v-model="issues.filters.pic"
+              class="form-select form-select-sm w-auto"
+              :aria-label="L('it_pic')"
+            >
+              <option value="All">{{ L('it_pic') }}: {{ L('reset') }}</option>
+              <option v-for="p in issues.options.pic" :key="p" :value="p">{{ p }}</option>
+            </select>
             <span class="vr"></span>
             <button
               type="button"
@@ -236,7 +256,11 @@ watch(
           </div>
 
           <!-- 계정 메뉴는 헤더 아바타로(2026-09-10). 언어 토글은 대시보드와 같은 것 — 목록에도 두어 달라는 요청. -->
-          <CsrLangToggle v-model="issues.lang" />
+          <div class="d-flex align-items-center gap-2">
+            <!-- 상태 범례 — 상단 우측 (작업지시서 v1.1 §C-2) -->
+            <CsrStatusLegend :lang="lang" />
+            <CsrLangToggle v-model="issues.lang" />
+          </div>
         </div>
 
         <section class="asm-panel table-panel">
@@ -292,6 +316,7 @@ watch(
                     <span
                       class="asm-badge"
                       :class="`asm-badge--${STATUS_TONE[row.it_status] ?? 'neutral'}`"
+                      :title="itStatusTitle(row.it_status)"
                     >
                       {{ row.it_status }}
                     </span>
@@ -301,8 +326,9 @@ watch(
                       v-if="row.verification_result"
                       class="asm-badge"
                       :class="`asm-badge--${toneOf('verification_result', row.verification_result)}`"
+                      :title="verifyTitle(row.verification_result)"
                     >
-                      {{ V(row.verification_result) }}
+                      {{ verifyCodeOf(row.verification_result) }}
                     </span>
                   </td>
                   <td class="nowrap">

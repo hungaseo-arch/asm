@@ -4,43 +4,18 @@
  *
  * 대시보드 교차표 제목 옆 링크에서 들어옵니다. 원문은 docs/csr/작업지시서_상태명칭표준화.md —
  * 두 곳을 같이 고칩니다. 정적 문서라 DB·세션을 쓰지 않습니다(로그인 없이도 열림).
- * §3 표의 배지는 지금 화면이 쓰는 톤(config.STATUS_TONE · RESULT_TONE)으로 그려
- * 문서와 화면의 색이 어긋나지 않게 합니다.
+ * §3 표는 status.js 의 정의(코드·언어·톤)를 그대로 그려 문서와 화면이 어긋나지 않게 합니다.
  */
 import { useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
-import { STATUS_TONE } from '../config'
-import { toneOf } from '../i18n'
+import { IT_STATUS, VERIFY_STATUS } from '../status'
 
 const router = useRouter()
 
-const IT_STATUS = [
-  ['OPEN', '접수', 'OPEN', 'Terbuka', '개선요청 접수됨, IT부서 착수 전(검토·우선순위 대기)'],
-  ['ONGOING', '진행 중', 'ONGOING', 'Dalam Proses', 'IT부서가 개발·수정 진행 중, 일부 배포 가능'],
-  ['COMPLETED', '조치 완료', 'COMPLETED', 'Selesai', 'IT부서 기준 조치·배포 완료, 현업 검증 대기'],
-  [
-    'VERIFIED',
-    '검증 완료',
-    'VERIFIED',
-    'Terverifikasi',
-    '현업 검증 통과로 최종 종결 (전환 권한: 총괄팀)',
-  ],
-]
-const VERIFY_STATUS = [
-  ['PENDING', '미검증', 'PENDING', 'Menunggu Verifikasi', '현업 검증 전 대기 상태'],
-  ['NOT_APPLIED', '미조치', 'NOT APPLIED', 'Belum Diterapkan', '검증 결과 실서버에 반영 없음'],
-  ['PARTIAL', '부분조치', 'PARTIAL', 'Sebagian Diterapkan', '일부만 반영, 잔여 항목 있음'],
-  ['ACCEPTED', '조치확인', 'ACCEPTED', 'Diterima', '요청대로 반영됨을 현업이 확인'],
-  [
-    'REJECTED',
-    'COMPLETED 부적정',
-    'REJECTED',
-    'Ditolak',
-    'IT 완료 처리했으나 검증 불합격, 재작업 대상',
-  ],
-]
-// 코드 → 화면 값. IT상태는 코드가 곧 저장값(첫 글자만 대문자), 현업검증은 한국어 값이 저장값.
-const itValue = (code) => code[0] + code.slice(1).toLowerCase()
+// 표 4행·5행 — 정의는 status.js(작업지시서 v1.1 §C: 상수 1곳). On Hold · N/A 는 표준 4단계가 아니라 제외.
+const IT_ROWS = IT_STATUS.filter((s) =>
+  ['Open', 'Ongoing', 'Completed', 'Verified'].includes(s.value),
+)
 </script>
 
 <template>
@@ -101,16 +76,14 @@ const itValue = (code) => code[0] + code.slice(1).toLowerCase()
               </tr>
             </thead>
             <tbody>
-              <tr v-for="[code, ko, en, idn, desc] in IT_STATUS" :key="code">
+              <tr v-for="s in IT_ROWS" :key="s.value">
                 <td class="nowrap">
-                  <span class="asm-badge" :class="`asm-badge--${STATUS_TONE[itValue(code)]}`">
-                    {{ code }}
-                  </span>
+                  <span class="asm-badge" :class="`asm-badge--${s.tone}`">{{ s.code }}</span>
                 </td>
-                <td class="nowrap">{{ ko }}</td>
-                <td class="nowrap">{{ en }}</td>
-                <td class="nowrap">{{ idn }}</td>
-                <td class="wrap">{{ desc }}</td>
+                <td class="nowrap">{{ s.ko }}</td>
+                <td class="nowrap">{{ s.code }}</td>
+                <td class="nowrap">{{ s.id }}</td>
+                <td class="wrap">{{ s.desc }}</td>
               </tr>
             </tbody>
           </table>
@@ -129,19 +102,14 @@ const itValue = (code) => code[0] + code.slice(1).toLowerCase()
               </tr>
             </thead>
             <tbody>
-              <tr v-for="[code, ko, en, idn, desc] in VERIFY_STATUS" :key="code">
+              <tr v-for="s in VERIFY_STATUS" :key="s.code">
                 <td class="nowrap">
-                  <span
-                    class="asm-badge"
-                    :class="`asm-badge--${toneOf('verification_result', ko)}`"
-                  >
-                    {{ code }}
-                  </span>
+                  <span class="asm-badge" :class="`asm-badge--${s.tone}`">{{ s.code }}</span>
                 </td>
-                <td class="nowrap">{{ ko }}</td>
-                <td class="nowrap">{{ en }}</td>
-                <td class="nowrap">{{ idn }}</td>
-                <td class="wrap">{{ desc }}</td>
+                <td class="nowrap">{{ s.ko }}</td>
+                <td class="nowrap">{{ s.code }}</td>
+                <td class="nowrap">{{ s.id }}</td>
+                <td class="wrap">{{ s.desc }}</td>
               </tr>
             </tbody>
           </table>
@@ -151,8 +119,8 @@ const itValue = (code) => code[0] + code.slice(1).toLowerCase()
         <ul>
           <li>itStatus: OPEN 빨강 · ONGOING 파랑 · COMPLETED 초록 · VERIFIED 남색/회청</li>
           <li>
-            verifyStatus: PENDING 회색 · NOT_APPLIED 빨강 · PARTIAL 노랑 · ACCEPTED 초록 · REJECTED
-            빨강(테두리 강조)
+            verifyStatus: PENDING 회색 · NOT APPLIED 빨강 · PARTIAL 노랑 · ACCEPTED 초록 · REJECTED
+            주황 (v1.1 §C-2 에서 주황으로 확정)
           </li>
         </ul>
 

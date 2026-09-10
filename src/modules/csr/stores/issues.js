@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { getDb, unwrap } from '../api/neon'
 import { isConfigured } from '../config'
+import { PENDING_VERIFICATION, VERIFY_CODES, mapLegacyVerifyStatus } from '../status'
 import { useIdentityStore } from '@/stores/identity'
 
 /** 목록에 필요한 열만 가져옵니다 — 본문(findings_md 등)은 상세에서만 씁니다. */
@@ -89,7 +90,8 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
     goLive: uniqueValues('go_live_category'),
     pic: uniqueValues('it_pic'),
     itStatus: uniqueValues('it_status'),
-    verification: uniqueValues('verification_result'),
+    // 현업검증은 코드 5종 고정(status.js) — 데이터에서 뽑으면 종전 표기와 코드가 섞여 두 줄이 됩니다.
+    verification: VERIFY_CODES,
   }))
 
   /**
@@ -111,7 +113,11 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
       if (!f.showArchived && r.is_archived) return false
       if (f.excludeVerified && r.it_status === 'Verified') return false
       if (f.itStatus !== 'All' && r.it_status !== f.itStatus) return false
-      if (f.verification !== 'All' && r.verification_result !== f.verification) return false
+      if (
+        f.verification !== 'All' &&
+        mapLegacyVerifyStatus(r.verification_result) !== f.verification
+      )
+        return false
       if (f.menuMain !== 'All' && r.menu_main !== f.menuMain) return false
       if (f.menuSub !== 'All' && r.menu_sub !== f.menuSub) return false
       if (f.priority !== 'All' && r.priority !== f.priority) return false
@@ -154,13 +160,23 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
       // 「IT부서용」 — Verified 를 뺀 나머지. 아직 손이 필요한 건만 봅니다.
       filters.value.excludeVerified = true
     } else if (name === 'pending') {
-      // 「검증 대기」 — IT 가 완료했다고 회신한 건.
-      filters.value.itStatus = 'Completed'
+      // 「검증 대기」 — 정의는 status.js 의 PENDING_VERIFICATION 한 곳(작업지시서 v1.1 §C-2).
+      filters.value.itStatus = PENDING_VERIFICATION.itStatus
     }
   }
 
   function reset() {
     filters.value = { ...EMPTY_FILTERS }
+  }
+
+  /**
+   * 상세에서 저장한 행을 목록에도 반영 — 목록으로 돌아왔을 때 값이 어긋나지 않게(작업지시서 v1.1 §B-3).
+   * 목록 컬럼만 골라 넣습니다(본문 컬럼은 목록 행에 없어도 됩니다).
+   */
+  function replaceRow(row) {
+    if (!row?.id) return
+    const i = rows.value.findIndex((r) => r.id === row.id)
+    if (i >= 0) rows.value[i] = { ...rows.value[i], ...row }
   }
 
   const counts = computed(() => {
@@ -190,5 +206,6 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
     load,
     reset,
     applyPreset,
+    replaceRow,
   }
 })

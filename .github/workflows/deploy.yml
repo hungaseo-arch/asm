@@ -1,6 +1,11 @@
 # GitHub Pages 배포 (Deploy / Penerapan)
-# main 브랜치 push 시 vue-tsc 타입체크 + vite 빌드 후 Pages 에 게시합니다.
+# main 브랜치 push 시 vite 빌드 후 Pages 에 게시합니다.
 # 사전 설정: 저장소 Settings → Pages → Build and deployment → Source = "GitHub Actions"
+#
+# CSR(Neon) 접속 URL — Settings → Secrets and variables → Actions → **Variables** 에 등록:
+#   VITE_CSR_DATA_API_URL · VITE_CSR_AUTH_URL · (선택) VITE_CSR_UPLOAD_URL
+# 비밀이 아니라 Variables 로 둡니다 — 어차피 클라이언트 번들에 들어가는 공개 URL 이고,
+# 권한은 Neon 쪽 JWT·RLS 가 지킵니다. 비어 있으면 /csr 만 "설정 필요" 로 뜨고 나머지는 정상.
 name: Deploy to GitHub Pages
 
 on:
@@ -35,6 +40,9 @@ jobs:
       - run: npm run build
         env:
           ASM_BASE: /${{ github.event.repository.name }}/
+          VITE_CSR_DATA_API_URL: ${{ vars.VITE_CSR_DATA_API_URL }}
+          VITE_CSR_AUTH_URL: ${{ vars.VITE_CSR_AUTH_URL }}
+          VITE_CSR_UPLOAD_URL: ${{ vars.VITE_CSR_UPLOAD_URL }}
 
       # SPA 새로고침 대응 — Pages 는 없는 경로에 404.html 을 돌려주므로 index 사본을 둡니다.
       - run: cp dist/index.html dist/404.html

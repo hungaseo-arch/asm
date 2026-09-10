@@ -54,7 +54,7 @@ function exportExcel() {
   <section class="asm-panel table-panel">
     <!-- 툴바 (Toolbar / Bilah alat) -->
     <div class="table-toolbar">
-      <h2>Purchase orders</h2>
+      <h2 class="asm-title">Purchase orders</h2>
       <div class="d-flex align-items-center gap-2">
         <label class="rows-select mb-0">
           <span>Rows</span>
@@ -224,12 +224,9 @@ function exportExcel() {
   gap: 16px;
   flex-wrap: wrap;
 }
-/* 가이드 7-3 — 카드 제목 16px / 600 */
+/* 카드 제목 — 가이드 8-3 규격은 .asm-title(전역)이 맡습니다. */
 .table-toolbar h2 {
-  font-size: 14px;
   margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 .rows-select {
   display: flex;

@@ -8,7 +8,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="not-found">
+  <!-- 심볼 워터마크 — 가이드 4-4: 오류 화면은 지정 사용처입니다(우하단 잘림 배치, 6%). -->
+  <div class="not-found asm-motif">
     <div class="text-center">
       <p class="asm-eyebrow mb-2">ASM · ASCENDO MANAGEMENT SYSTEM</p>
       <h1>404</h1>

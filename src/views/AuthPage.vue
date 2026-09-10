@@ -132,173 +132,239 @@ async function onResendCode() {
 </script>
 
 <template>
-  <!-- (1) 로딩: 세션 확인이 끝나기 전에는 판단하지 않습니다. -->
-  <div v-if="session.isPending" class="auth-screen">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">확인 중…</span>
-    </div>
-  </div>
+  <!--
+    가이드 7-4 — 명함 앞면(AS 01) 구성 응용. 좌측 45% 는 브랜드 블루 전면 + 중앙 White
+    시그니처 + 우하단 심볼 워터마크(White 10%, 가이드 4-4), 우측 55% 는 흰 배경 폼입니다.
+    로딩·이메일 인증·로그인 세 상태가 같은 골격을 공유하고 우측 내용만 바뀝니다.
+  -->
+  <div class="auth-screen">
+    <aside class="auth-brand asm-motif asm-motif--invert">
+      <!--
+        White 반전 시그니처 — 가이드 4-1/BS 06 은 블루 바탕에 White 반전 시그니처를
+        규정하지만 원본 벡터(White 반전본)가 아직 없어, 가이드 4-1 각주와 같은 방식으로
+        Full Color 원본을 흰 실루엣으로 눕혀 임시 표시합니다. BI 담당 부서에서 White
+        반전 원본(AI/SVG)을 받으면 이 img 의 src 만 교체하고 .is-reversed 를 지우면
+        됩니다 — 그 전까지는 BS 07 "컬러 임의 변경"에 해당하는 임시 표기입니다.
+      -->
+      <img
+        src="/img/ascendo-logo-horizontal.png"
+        alt="ASCENDO"
+        class="auth-signature is-reversed"
+      />
+      <p class="auth-tagline">Ascendo Management System</p>
+    </aside>
 
-  <!-- 이메일 인증 코드 입력 -->
-  <div v-else-if="verificationEmail" class="auth-screen">
-    <div class="asm-panel auth-card">
-      <div class="card-head">
-        <img src="/img/ascendo-logo-horizontal.png" alt="ASCENDO" class="brand-mark" />
-        <h1>이메일 인증</h1>
-        <p>
-          <b>{{ verificationEmail }}</b> 으로 보낸 6자리 코드를 입력하세요.
-        </p>
+    <div class="auth-form-col">
+      <div class="auth-card">
+        <!-- (1) 로딩: 세션 확인이 끝나기 전에는 판단하지 않습니다. -->
+        <div v-if="session.isPending" class="auth-loading">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">확인 중…</span>
+          </div>
+        </div>
+
+        <!-- 이메일 인증 코드 입력 -->
+        <template v-else-if="verificationEmail">
+          <div class="card-head">
+            <h1>이메일 인증</h1>
+            <p>
+              <b>{{ verificationEmail }}</b> 으로 보낸 6자리 코드를 입력하세요.
+            </p>
+          </div>
+          <form @submit.prevent="onVerifyCode">
+            <label class="d-block mb-3">
+              <span class="form-label">인증 코드 (Verification code)</span>
+              <input
+                v-model="verificationCode"
+                class="form-control code-input"
+                inputmode="numeric"
+                maxlength="6"
+                placeholder="000000"
+                required
+              />
+            </label>
+            <!-- 가이드 8-1 Large — 로그인·모달 확정 버튼은 40px / 700 -->
+            <button class="btn btn-primary btn-lg w-100" type="submit" :disabled="submitting">
+              인증 완료
+            </button>
+            <button
+              class="btn btn-link w-100 mt-2"
+              type="button"
+              :disabled="submitting || resendWaitSeconds > 0"
+              @click="onResendCode"
+            >
+              {{
+                resendWaitSeconds > 0 ? `${resendWaitSeconds}초 후 재발송 가능` : '인증 코드 재발송'
+              }}
+            </button>
+          </form>
+        </template>
+
+        <!-- 로그인 / 가입 -->
+        <template v-else>
+          <div class="card-head">
+            <h1>{{ mode === 'signup' ? '가입' : '로그인' }}</h1>
+            <p>ASM 계정으로 계속하세요.</p>
+          </div>
+
+          <!-- 밑줄 탭 — 가이드 8-6(40px · 활성 Blue 700 + 하단 2px 블루선) -->
+          <div class="asm-tabs mb-4" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              class="tab"
+              :aria-selected="mode === 'signin'"
+              :class="{ 'is-active': mode === 'signin' }"
+              @click="mode = 'signin'"
+            >
+              로그인
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="tab"
+              :aria-selected="mode === 'signup'"
+              :class="{ 'is-active': mode === 'signup' }"
+              @click="mode = 'signup'"
+            >
+              가입
+            </button>
+          </div>
+
+          <form @submit.prevent="onSubmit">
+            <label v-if="mode === 'signup'" class="d-block mb-3">
+              <span class="form-label">이름 (Name / Nama)</span>
+              <input v-model="name" class="form-control" autocomplete="name" required />
+            </label>
+            <label class="d-block mb-3">
+              <span class="form-label">이메일 (Email)</span>
+              <input
+                v-model="email"
+                type="email"
+                class="form-control"
+                autocomplete="email"
+                required
+              />
+            </label>
+            <label class="d-block mb-3">
+              <span class="form-label">비밀번호 (Password / Kata sandi)</span>
+              <input
+                v-model="password"
+                type="password"
+                class="form-control"
+                :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'"
+                minlength="8"
+                required
+              />
+            </label>
+            <button class="btn btn-primary btn-lg w-100" type="submit" :disabled="submitting">
+              {{ mode === 'signup' ? '가입하기' : '로그인' }}
+            </button>
+          </form>
+        </template>
       </div>
-      <form class="card-body-form" @submit.prevent="onVerifyCode">
-        <label class="d-block mb-3">
-          <span class="form-label">인증 코드 (Verification code)</span>
-          <input
-            v-model="verificationCode"
-            class="form-control code-input"
-            inputmode="numeric"
-            maxlength="6"
-            placeholder="000000"
-            required
-          />
-        </label>
-        <button class="btn btn-primary w-100" type="submit" :disabled="submitting">
-          인증 완료
-        </button>
-        <button
-          class="btn btn-link w-100 mt-2"
-          type="button"
-          :disabled="submitting || resendWaitSeconds > 0"
-          @click="onResendCode"
-        >
-          {{ resendWaitSeconds > 0 ? `${resendWaitSeconds}초 후 재발송 가능` : '인증 코드 재발송' }}
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 로그인 / 가입 -->
-  <div v-else class="auth-screen">
-    <div class="asm-panel auth-card">
-      <div class="card-head">
-        <img src="/img/ascendo-logo-horizontal.png" alt="ASCENDO" class="brand-mark" />
-        <h1>ASM</h1>
-        <p>Ascendo Management System</p>
-      </div>
-
-      <div class="mode-tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="mode === 'signin'"
-          :class="{ active: mode === 'signin' }"
-          @click="mode = 'signin'"
-        >
-          로그인
-        </button>
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="mode === 'signup'"
-          :class="{ active: mode === 'signup' }"
-          @click="mode = 'signup'"
-        >
-          가입
-        </button>
-      </div>
-
-      <form class="card-body-form" @submit.prevent="onSubmit">
-        <label v-if="mode === 'signup'" class="d-block mb-3">
-          <span class="form-label">이름 (Name / Nama)</span>
-          <input v-model="name" class="form-control" autocomplete="name" required />
-        </label>
-        <label class="d-block mb-3">
-          <span class="form-label">이메일 (Email)</span>
-          <input v-model="email" type="email" class="form-control" autocomplete="email" required />
-        </label>
-        <label class="d-block mb-3">
-          <span class="form-label">비밀번호 (Password / Kata sandi)</span>
-          <input
-            v-model="password"
-            type="password"
-            class="form-control"
-            :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'"
-            minlength="8"
-            required
-          />
-        </label>
-        <button class="btn btn-primary w-100" type="submit" :disabled="submitting">
-          {{ mode === 'signup' ? '가입하기' : '로그인' }}
-        </button>
-      </form>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* 가이드 7-4 — 좌 45% Blue · 우 55% White 2분할 */
 .auth-screen {
   min-height: 100vh;
   display: grid;
-  place-items: center;
-  background: var(--asm-page-bg);
-  padding: 24px 16px;
+  grid-template-columns: 45% 55%;
+  background: var(--asm-card);
 }
-.auth-card {
-  width: min(420px, 100%);
-  overflow: hidden;
+
+/*
+ * 좌측 브랜드 면 — 브랜드 블루 전면. 워터마크는 .asm-motif--invert(가이드 4-4,
+ * 블루 바탕 위 White 10%)가 우하단에 잘리게 깔아 줍니다.
+ */
+.auth-brand {
+  background: var(--asm-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* 가이드 6-2 — 로고와 아래 문구 사이 32px */
+  gap: 32px;
+  padding: 32px;
 }
-.card-head {
-  padding: 24px 24px 12px;
+/* 가이드 7-4 — 시그니처 높이 48px. BS 07 비율 왜곡 금지로 width 는 auto. */
+.auth-signature {
+  height: 48px;
+  width: auto;
+  position: relative; /* 워터마크(::before) 위로 */
+}
+/* 임시 White 반전 — BI 원본 White 반전 시그니처를 받으면 이 클래스를 지웁니다. */
+.auth-signature.is-reversed {
+  filter: brightness(0) invert(1);
+}
+.auth-tagline {
+  position: relative;
+  margin: 0;
+  color: var(--asm-primary-fg);
+  font-size: 14px;
+  font-weight: 300; /* 가이드 5-2 — 큰 부제는 Light(300) */
+  letter-spacing: 0.06em;
   text-align: center;
 }
-/* ASCENDO 가로형 로고 원본(public/img/ascendo-logo-horizontal.png). 형태·비율 변형 금지. */
-.brand-mark {
-  height: 36px;
-  width: auto;
-  margin: 0 auto 12px;
-  display: block;
+
+.auth-form-col {
+  display: grid;
+  place-items: center;
+  padding: 32px 24px;
+  background: var(--asm-card);
 }
+/*
+ * 폼 카드 — 가이드 7-4 최대폭 400px. 흰 면 위에 놓이므로 카드 테두리·배경은 두지
+ * 않습니다(가이드 8-3 의 카드는 회색 바탕 위에서 떠오르는 용도).
+ */
+.auth-card {
+  width: min(400px, 100%);
+}
+.auth-loading {
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+}
+.card-head {
+  margin-bottom: 24px;
+}
+/* 가이드 7-4 — 폼 제목 20px / 700 */
 .card-head h1 {
   font-size: 20px;
   margin: 0 0 4px;
-  letter-spacing: 0.04em;
 }
 .card-head p {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--asm-fg-muted);
   margin: 0;
-}
-.card-body-form {
-  padding: 8px 24px 24px;
-}
-
-.mode-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin: 16px 24px 4px;
-  background: var(--asm-muted);
-  border-radius: var(--asm-radius-lg);
-  padding: 4px;
-}
-.mode-tabs button {
-  border: 0;
-  background: transparent;
-  border-radius: var(--asm-radius-md);
-  height: 32px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--asm-fg-muted);
-}
-.mode-tabs button.active {
-  background: var(--asm-card);
-  color: var(--asm-primary);
-  box-shadow: var(--asm-shadow-xs);
 }
 
 .code-input {
   text-align: center;
   letter-spacing: 0.5em;
-  font-family: var(--bs-font-monospace);
+  font-variant-numeric: tabular-nums;
   font-size: 20px;
+}
+
+/*
+ * 가이드 7-4 모바일 — 상단 Blue 영역(높이 200px) + 하단 폼으로 세로 전환.
+ * 기준선은 레이아웃 전반과 같은 Bootstrap lg(991.98px)를 씁니다.
+ */
+@media (max-width: 991.98px) {
+  .auth-screen {
+    grid-template-columns: 1fr;
+    grid-template-rows: 200px 1fr;
+  }
+  .auth-brand {
+    gap: 16px;
+    padding: 24px;
+  }
+  .auth-form-col {
+    padding: 24px 16px 32px;
+    align-items: start;
+  }
 }
 </style>

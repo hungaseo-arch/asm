@@ -203,5 +203,16 @@ export function findNavGroup(path) {
   return navGroups.find((group) => group.nav.match.some((prefix) => matchPath(path, prefix)))
 }
 
+/**
+ * 현재 경로의 하위메뉴 항목 (Current menu item / Item menu saat ini)
+ *
+ * 가이드 7-2 는 헤더 좌측을 "로고 → 세로 구분선 → 화면 제목"으로 규정합니다. 화면 제목은
+ * 곧 지금 열려 있는 하위메뉴의 이름이므로 메뉴 정의에서 그대로 끌어옵니다 — 화면마다
+ * 제목을 따로 적어두면 메뉴 이름과 어긋납니다.
+ */
+export function findNavItem(path) {
+  return findNavGroup(path)?.items.find((item) => item.to && matchPath(path, item.to))
+}
+
 export const APP_USER = { name: 'Seo Jonghwan', initials: 'SH', role: 'General Manager' }
 export const APP_VERSION = 'v1.0 · 01 Sep 2026'

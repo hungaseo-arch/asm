@@ -302,7 +302,7 @@ const primaryLabel = computed(() => {
   <section class="asm-panel table-panel">
     <div class="table-toolbar">
       <div class="d-flex align-items-center gap-2">
-        <h2>{{ screen.cardTitle }}</h2>
+        <h2 class="asm-title">{{ screen.cardTitle }}</h2>
         <span class="count-pill">{{ formatInt(filtered.length) }}</span>
       </div>
       <div class="d-flex align-items-center gap-2">
@@ -479,12 +479,9 @@ const primaryLabel = computed(() => {
   gap: 16px;
   flex-wrap: wrap;
 }
-/* 가이드 7-3 — 카드 제목 16px / 600 */
+/* 카드 제목 — 가이드 8-3(18px / 700 + 좌측 3px 블루 세로선)은 .asm-title 이 맡습니다. */
 .table-toolbar h2 {
-  font-size: 14px;
   margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 .count-pill {
   font-size: 11px;
@@ -537,13 +534,17 @@ const primaryLabel = computed(() => {
   background: var(--asm-card);
   box-shadow: var(--asm-sticky-shadow);
 }
-/* 헤더는 배경을 채우지 않으므로 고정 열도 카드색을 유지합니다 (가이드 8-1) */
+/*
+ * 고정 열의 헤더 칸도 나머지 헤더와 같은 블루 6% 배경을 씁니다 — 가이드 9-1 은 표
+ * 헤더를 "배경 #F0F6FC + 하단 2px 블루선"으로 규정하는데, 예전 기준(헤더 배경 없음)에
+ * 맞춰 이 두 칸만 흰색으로 덮고 있어 헤더 좌측이 얼룩져 보였습니다(체크리스트 7).
+ */
 .table-scroll thead :is(th.no-col, th.col-key) {
   z-index: 6;
-  background: var(--asm-card);
+  background: var(--asm-primary-6);
 }
 .table-scroll tbody tr:hover :is(td.no-col, td.col-key) {
-  background: var(--asm-muted-30);
+  background: var(--asm-primary-6);
 }
 /* 합계 라벨은 가로 스크롤 중에도 좌측에 남습니다 */
 .table-scroll tfoot td:first-child {
@@ -580,9 +581,11 @@ tfoot td {
   white-space: nowrap;
 }
 
+/* 빈 상태 — 가이드 9-1: 표 밖 알림창이 아니라 표 안 안내 행, 12px muted 중앙 */
 .empty-row {
   text-align: center;
   color: var(--asm-fg-muted);
+  font-size: 12px;
   padding: 48px !important;
   height: auto !important;
 }

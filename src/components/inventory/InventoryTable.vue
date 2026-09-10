@@ -70,7 +70,7 @@ defineExpose({ exportExcel })
   <section class="asm-panel table-panel">
     <!-- 툴바 (Toolbar / Bilah alat) -->
     <div class="table-toolbar">
-      <h2>Inventory</h2>
+      <h2 class="asm-title">Inventory</h2>
       <div class="d-flex align-items-center gap-2">
         <label class="rows-select mb-0">
           <span>Rows</span>
@@ -262,12 +262,9 @@ defineExpose({ exportExcel })
   gap: 16px;
   flex-wrap: wrap;
 }
-/* 가이드 7-3 — 카드 제목 16px / 600 */
+/* 카드 제목 — 가이드 8-3 규격은 .asm-title(전역)이 맡습니다. */
 .table-toolbar h2 {
-  font-size: 14px;
   margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 .rows-select {
   display: flex;
@@ -311,13 +308,13 @@ defineExpose({ exportExcel })
   background: var(--asm-card);
   box-shadow: var(--asm-sticky-shadow);
 }
-/* 헤더는 배경을 채우지 않으므로 고정 열도 카드색을 유지합니다 (가이드 8-1) */
+/* 고정 열 헤더도 블루 6% 배경 — 가이드 9-1(ListScreen.vue 와 동일 수정) */
 .table-scroll thead :is(th.no-col, th.col-key) {
   z-index: 6;
-  background: var(--asm-card);
+  background: var(--asm-primary-6);
 }
 .table-scroll tbody tr:hover :is(td.no-col, td.col-key) {
-  background: var(--asm-muted-30);
+  background: var(--asm-primary-6);
 }
 /* 합계 라벨은 가로 스크롤 중에도 좌측에 남습니다 */
 .table-scroll tfoot td:first-child {
@@ -365,9 +362,11 @@ tfoot td {
   white-space: nowrap;
 }
 
+/* 빈 상태 — 가이드 9-1: 표 안 안내 행, 12px muted 중앙 */
 .empty-row {
   text-align: center;
   color: var(--asm-fg-muted);
+  font-size: 12px;
   padding: 48px !important;
   height: auto !important;
 }

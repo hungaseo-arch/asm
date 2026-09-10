@@ -468,7 +468,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             <h1>{{ stripNo(pickPair(issue.title_ko, issue.title_id, lang)) }}</h1>
             <!-- 값은 한 줄 고정 — 화면경로처럼 긴 값이 카드를 세로로 늘리던 것을 막습니다. 전체는 툴팁. -->
             <dl class="props">
-              <!-- 화면경로는 길어서 격자 한 줄을 통째로 씁니다 — 잘라 보이면 어느 화면인지 모릅니다. -->
+              <!-- 화면경로는 2칸(대메뉴·중메뉴와 같은 행). 긴 경로는 칸 안에서 가로 스크롤. -->
               <div v-for="f in FIELDS" :key="f.key" :class="{ 'full-row': f.key === 'path_menu' }">
                 <dt>{{ L(f.label) }}</dt>
                 <dd v-if="f.key === 'path_menu' && issue.path_menu" class="paths">
@@ -938,17 +938,26 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   line-height: 1.4;
 }
 /* 속성은 격자로 흘립니다 — 항목이 16개라 표로 두면 세로로 길어집니다. */
+/*
+ * 4열 고정(2026-09-10 요청): 첫 행 = 대메뉴 1칸 · 중메뉴 1칸 · 화면경로 2칸. auto-fill 이면 폭에
+ * 따라 열 수가 바뀌어 화면경로가 다음 행으로 밀렸습니다. 좁은 화면(992px 미만)은 2열.
+ */
 .props {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px 24px;
   margin: 0;
+}
+@media (max-width: 991.98px) {
+  .props {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .props div {
   min-width: 0;
 }
 .props .full-row {
-  grid-column: 1 / -1;
+  grid-column: span 2;
 }
 /* 화면경로 — 한 줄에 전부. 정말 길면 잘라 보이는 대신 그 칸만 가로 스크롤합니다. */
 .props .full-row dd {

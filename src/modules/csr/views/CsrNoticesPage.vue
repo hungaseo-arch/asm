@@ -276,7 +276,7 @@ async function remove(n) {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 900px;
+  /* 폭 제한 없음 — 공지 행이 헤더보다 짧아 오른쪽이 비어 보였습니다(2026-09-10 「행 100%」). */
 }
 .head {
   display: flex;
@@ -358,6 +358,8 @@ async function remove(n) {
   font-size: 15px;
   font-weight: 700;
   margin: 0;
+  flex: 1 1 auto; /* 제목이 남는 폭을 차지 — 날짜·편집·삭제는 오른쪽 끝에 */
+  min-width: 0;
 }
 .meta {
   font-size: 12px;

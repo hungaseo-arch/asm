@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { screenRoutes } from '@/config/screens'
+import { csrRoutes } from '@/modules/csr'
 /** 화면 시안에서 옮긴 목록 화면들 — 정의만 다르고 컴포넌트는 하나를 공유합니다. */
 const listScreenRoutes = screenRoutes.map((screen) => ({
   path: screen.path,
@@ -32,6 +33,8 @@ const routes = [
     meta: { requiresAuth: false, title: 'Inventory List' },
   },
   ...listScreenRoutes,
+  // CSR 모듈 (작업지시서 §5-1) — 운영 화면과 분리된 독립 모듈입니다.
+  ...csrRoutes,
   {
     // 로그인 기능 비활성 — 백엔드 없이 화면만 제공합니다.
     // 되살리려면 이 항목을 AuthPage 라우트로 되돌리고 아래 인증 가드를 복구하십시오.

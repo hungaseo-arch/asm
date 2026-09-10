@@ -129,11 +129,13 @@ export const navGroups = [
     nav: {
       label: 'Settings',
       to: '/search-employee',
-      match: ['/search-employee', '/setting', '/change-password'],
+      match: ['/search-employee', '/setting', '/change-password', '/csr'],
     },
     items: [
       { label: 'Search Staff', icon: 'UserCog', to: '/search-employee' },
       { label: 'Change Password', icon: 'Repeat' },
+      // 개선요청(CSR) — Notion 이관분. 별도 지시서를 따르는 독립 모듈입니다.
+      { label: 'CSR (개선요청)', icon: 'ClipboardList', to: '/csr' },
     ],
   },
   {

@@ -1,11 +1,12 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { STATUS_TONE, isConfigured } from '../config'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import CsrSignIn from '../components/CsrSignIn.vue'
+import CsrPasswordDialog from '../components/CsrPasswordDialog.vue'
 import { formatInt } from '@/utils/format'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
@@ -37,6 +38,9 @@ provideSidebarSummary(() => [
 ])
 
 const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)}`)
+
+/** 비밀번호 변경 — 최초 비밀번호(ascendo123)를 그대로 쓰지 않도록 눈에 띄는 곳에 둡니다. */
+const passwordOpen = ref(false)
 </script>
 
 <template>
@@ -119,8 +123,11 @@ const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)
               type="button"
               class="btn btn-sm btn-link"
               :title="session.user?.email"
-              @click="session.signOut()"
+              @click="passwordOpen = true"
             >
+              비밀번호 변경
+            </button>
+            <button type="button" class="btn btn-sm btn-link" @click="session.signOut()">
               로그아웃
             </button>
             <!-- 언어 토글 — 기본 인도네시아어, 필요할 때 한국어 (작업지시서 §1) -->
@@ -212,6 +219,8 @@ const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)
           </div>
         </section>
       </template>
+
+      <CsrPasswordDialog v-if="passwordOpen" @close="passwordOpen = false" />
     </section>
   </DefaultLayout>
 </template>

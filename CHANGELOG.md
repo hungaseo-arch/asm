@@ -14,9 +14,11 @@ Pages 로 배포하므로 **`main` 이 곧 배포본**입니다.
 
 - **CSR §1 캡쳐(사진 첨부)** — Apps Script 업로드 프록시(`scripts/apps_script/`) + 상세 화면
   업로드 UI + Notion 이관분 38건 `csr_attachments` 적재. 미착수
-- **DB 적용 대기(순서대로)** — `db/011`(컬럼 가드 콘솔 통과 — 이것 없이는 콘솔의 모든 UPDATE 가
-  42501 로 실패; 008·010 이 "UPDATE 만 ERROR" 였던 원인) → `db/008`(화면경로 영어화) →
-  `db/010`(본문 3종 KO/ID 쌍 — 60건 번역, 검수 대상). `db/009`(auth GRANT)는 2026-09-10 적용 완료
+- **DB 적용 완료(2026-09-10)** — `db/008`(화면경로 영어화 54행) · `009`(auth GRANT) · `010`(본문 KO/ID
+  쌍 60건) · `011`(가드 콘솔 통과). Data API 로 실측: 화면경로 한글 잔존 0 · 본문 쌍 누락 0.
+  010 번역은 검수 대상(화면 편집으로 수정 가능)
+- **배포본 동작 확인(2026-09-10)** — Actions Variables 주입 + Neon Auth Domains 등록 후
+  https://hungaseo-arch.github.io/asm/csr 로그인·대시보드 정상
 
 ### 2026-09-10 (CSR 화면 정리 · 미배포)
 

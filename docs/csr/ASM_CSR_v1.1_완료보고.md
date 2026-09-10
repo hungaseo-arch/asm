@@ -2,8 +2,8 @@
 
 - 작성일: 2026-09-10 · 작성: Claude(작업지시서 v1.1 수행) · 검수: 서종환
 - 저장소: `hungaseo-arch/asm` (`main` 푸시 = GitHub Pages 배포 `hungaseo-arch.github.io/asm/csr`)
-- DB 반영: `db/015` ~ `db/019` 를 Neon SQL Editor 에서 **번호 순으로** 실행해야 합니다. 화면(프론트)은 적용 전후
-  모두 동작합니다 — 종전 표기와 코드를 둘 다 읽습니다(`status.js mapLegacyVerifyStatus`).
+- DB 반영: **완료(2026-09-10)** — `db/015`(1~5 문장) · `015b` · `015c` · `016` · `017` · `018` · `019`. 015 는 콘솔에서
+  6번째 문장(가드)이 ERROR 로 끝나 015b/015c 로 나눠 재실행(본문 ASCII 화). 화면은 종전 표기와 코드를 둘 다 읽습니다.
 - 스크린샷: `docs/csr/shots/v1.1_*.png` (헤드리스 Chrome 1440×900, 계정 alya/business, 한국어 모드)
 
 ---
@@ -23,9 +23,10 @@
   - 프론트 거울: `config.js CSR_POLICY / canEditColumn`, 상세 편집 폼(현업은 Completed 건만 IT상태 셀렉트 = Completed·Verified,
     IT 는 Verified 제외).
 - **변경 파일**: `db/015_rls_guard_v2.sql`, `src/modules/csr/config.js`, `src/modules/csr/views/CsrDetailPage.vue`
-- **검증**: (콘솔 적용 후) admin 으로 `/csr/09` 편집 → PATCH 200 · IT상태 Open 변경 시도 → 403. it_dept(jklee) 로
-  IT상태 변경 → 200 · 현업검증 변경 → 403. 적용 전 실측: business PATCH(같은 값) 403 `permission denied for schema auth`,
-  business `it_pic` 변경 403 `column it_pic not editable by role business`(가드 자체는 동작).
+- **검증(적용 후, Data API · business/alya · CSR-202609-001 대상)**: 같은 값 PATCH **200** · 일반 컬럼(관련이슈) 변경 **200**(되돌림) ·
+  `it_pic` **403** `column it_pic not editable by role business (IT department only)` · `it_decision` **403** ·
+  `it_status Open→Ongoing` **403** `(Completed to Verified only)`. `updated_by` 에 사용자 ID 기록(래퍼 동작).
+  적용 전 실측: 같은 값 PATCH 도 403 `permission denied for schema auth`. admin·it_dept 계정 시나리오(H-1·H-2)는 서종환 실행.
 - **리스크**: admin 이 IT 전용 컬럼(담당자·목표배포일·IT수용여부·회신요약)을 화면에서 못 고치게 됨 — 지시서 A-2 그대로.
   잘못 들어간 IT 값 정정은 콘솔(SQL)로.
 
@@ -38,7 +39,9 @@
 - 화면: 이력 등록 성공 후 헤더·상태 로그를 **서버에서 재조회**(`refreshIssue`) 하고 목록 행에도 반영(`issues.replaceRow`).
   낙관적 갱신 없음.
 - **변경 파일**: `db/017_verification_sync.sql`, `CsrDetailPage.vue`, `stores/issues.js`
-- **검증**: (적용 후) `/csr/13` 「+ 검증 추가」 REJECTED → 헤더 최종검증일·현업검증 즉시 일치, 목록도 일치.
+- **검증(적용 후)**: 019 의 이력 INSERT → CSR-202609-001 헤더 PENDING / 2026-09-10 자동 세팅. 과거 일자(2026-09-09, NOT APPLIED)
+  이력을 Data API 로 넣어도 헤더는 PENDING / 09-10 유지(덮어쓰지 않음). ※ 이 테스트 행(csr_verifications id 266)은 삭제 대상.
+  H-3(`/csr/13` REJECTED 추가)은 서종환 실행.
 - **리스크**: 이력 **수정·삭제**는 동기화하지 않음(지시서 범위 밖, 화면에도 기능 없음).
 
 ## [CSR-1.1-C] 현업검증 상태 코드 표준화
@@ -56,8 +59,9 @@
 - **변경 파일**: `db/016_verify_status_codes.sql`, `status.js`(신규), `components/CsrStatusLegend.vue`(신규), `config.js`, `i18n.js`,
   `stores/issues.js`, `views/CsrListPage.vue`, `views/CsrDetailPage.vue`, `views/CsrDashboardPage.vue`,
   `views/CsrStatusGuidePage.vue`, `src/assets/asm-theme.css`
-- **검증(적용 전, 종전 표기 상태에서)**: 목록 60건 배지 전부 코드(한국어 배지 0), 교차표 합계 22·20·5·12·1 = 60(변경 전과 동일),
-  필터 REJECTED → 13번 1건, 폼 select 5개, 범례 4행·5행·규칙 2건. (적용 후) `verif_unmapped 0 · issues_unmapped 0` 재확인.
+- **검증**: 적용 전(종전 표기) 교차표 22·20·5·12·1 = 60 으로 변경 전과 동일. 적용 후 Data API: 이슈 64건(아카이브 포함) 전부 코드,
+  이력 156행 미매핑 0 · 원문 보존 155. 배포본 목록 61건 한국어 배지 0, 교차표 PENDING 23 · NOT APPLIED 18 · PARTIAL 7 · ACCEPTED 11 ·
+  REJECTED 2 = 61(D 정정 + 신규 1건 반영). 필터·폼 select 5개, 범례 4행·5행·규칙 2건.
 - **리스크**: 노션 재동기화 시 코드 → 옵션명 변환 필요(`NOTION_VERIFY_OPTION` 준비만 됨, 동기화 코드 없음).
 
 ## [CSR-1.1-D] 데이터 정정
@@ -66,13 +70,18 @@
   017 원칙(헤더 = 최신 이력)을 지키려고 **08 의 2026-09-10 이력(id 256, 종전 미검증) 결과도 REJECTED** 로 맞춤 — 그 이력의
   내용("Import Cost 1건 · SKU 열·탭 부재")이 정정 근거이기 때문. 60 의 09-10 이력 본문 교체(원문 ID, 한국어는 번역).
   02 담당자 `Import` — 노션 원본도 `Import`(사람 아님) → 공란.
-- **검증**: (적용 후) 파일 끝 SELECT 두 개 + 화면 스크린샷.
+- **검증(적용 후)**: 02 담당자 NULL · 08 REJECTED/09-10 · 09 PARTIAL/09-10 · 13 REJECTED/09-10 · 22 PARTIAL/09-10 · 23 NOT APPLIED/09-10 ·
+  27/28/30 ACCEPTED/09-10 · 60 PARTIAL/09-10. 08 이력 256 REJECTED, 60 이력 264 본문 "Pengecekan server produksi…". 상세 08 상태 로그 2건.
+  스크린샷 `v1.1_detail_08_head.png` · `v1.1_detail_08_verif.png`.
 
 ## [CSR-1.1-E] 신규 CSR-202609-001
 
 - `db/019_new_issue_202609_001.sql` — `csr_next_issue_no()` 가 `CSR-202609-001` 을 돌려줄 때만 등록(1회 1건). 검증 이력
   1행(2026-09-10 PENDING) 동반, 017 이 헤더를 맞춤. 화면경로는 영문 규칙(`Filter dropdown`). 한국어 번역(개선 의견·수용기준·
   검증 내용)은 Claude — 검수 대상. `findings_md`(현상)는 지시서에 없어 비움.
+
+- **검증(적용 후)**: id 101 · 목록 최하단(60 다음) 노출 · 상세 정상(PENDING · 미회신 · Open). `next_no = CSR-202609-002`.
+  스크린샷 `v1.1_H5_list_bottom.png` · `v1.1_H5_detail_new.png`.
 
 ## [CSR-1.1-F] 27번 분리 — **미실행**(Asura님 승인 대기). 승인 시 `CSR-202609-002` 로 019 와 같은 형식으로 등록.
 
@@ -87,7 +96,16 @@
 
 ## H. 검증 시나리오 — 배포 후 확인 결과
 
-(콘솔 적용 후 갱신)
+| # | 시나리오 | 결과 |
+|---|---|---|
+| 1 | admin `/csr/09` PARTIAL · 09-10 저장 → 목록 반영 | 데이터는 018 로 이미 반영. admin 저장 경로는 **서종환 실행 대기**(business 로는 같은 경로 200 확인) |
+| 2 | `/csr/30` VERIFIED 전환 성공 · OPEN 되돌리기 거부 | **서종환 실행 대기**(business 로 Open→Ongoing 403 확인, 규칙 동일) |
+| 3 | `/csr/13` 검증 추가 REJECTED → 헤더 자동 갱신 | 트리거 동작은 CSR-202609-001 로 확인. 13번 실제 등록은 **서종환 실행 대기** |
+| 4 | 「검증 대기」 = 08 · 13 · 27 · 28 · 30 (5건) | **확인** — `v1.1_H4_list_pending.png` |
+| 5 | CSR-202609-001 목록 최하단 · 상세 정상 | **확인** — `v1.1_H5_*.png` |
+| 6 | `hungaseo-arch.github.io/asm/csr/08` 직접 진입 | **확인** — 앱이 그려지고 로그인 안내 표시(404 페이지 아님) |
+
+- 테스트 잔재 정리: `DELETE FROM public.csr_verifications WHERE id = 266;` (B 검증용 과거 일자 이력, CSR-202609-001)
 
 ## 잔여 리스크
 

@@ -24,12 +24,13 @@ Pages 로 배포하므로 **`main` 이 곧 배포본**입니다.
   Data API 실측: 38행 · 이슈 01~38 각 1건 · 중복 0. 39~60 은 Notion 에도 캡쳐 없음(현지 요청 건).
   상세 §1 썸네일·「+ 캡쳐 추가」·admin 삭제 동작 확인
 
-### 2026-09-10 — 작업지시서 v1.1 (잔여 작업) · DB 015~019 콘솔 적용 대기
+### 2026-09-10 — 작업지시서 v1.1 (잔여 작업) · DB 015/015b/015c/016~019 적용 완료
 
 - **[A] `csr_issues` UPDATE 403 원인·수정** — 가드가 `auth.user_id()` 를 호출자 권한으로 불러 `permission denied for schema auth`.
   `db/015`: SECURITY DEFINER 래퍼 `csr_actor_id()` + 컬럼 가드 v2(R&R 2026-09-08: admin·business 는 IT 전용 컬럼 제외,
   it_status 는 Completed → Verified 만 / it_dept 는 IT 전용 컬럼만, Verified 불가). it_decision 이 IT 전용으로 이관.
-  프론트 `CSR_POLICY`·상세 편집 폼도 같은 규칙
+  프론트 `CSR_POLICY`·상세 편집 폼도 같은 규칙. 콘솔에서 015 의 가드 문장이 ERROR → `015b`(가드, ASCII 본문)·`015c`(로그)로 재실행.
+  적용 후 Data API 실측: 같은 값 PATCH 200, IT 전용 컬럼·상태 전이 403, updated_by 에 사용자 ID
 - **[B] 검증 이력 → 헤더 동기화** — `db/017` AFTER INSERT 트리거(최신 일자만 덮어씀). 화면은 등록 후 서버 재조회 + 목록 행 반영
 - **[C] 현업검증 코드 5종** — `db/016`(legacy 컬럼 보존 · 매핑 · CHECK). 상수 1곳 `status.js`. 배지 = 코드 + 툴팁,
   REJECTED 주황(`.asm-badge--orange`), 이력 폼 결과 select, 목록 현업검증·담당자 필터, 범례 컴포넌트(목록·상세, 3개 언어),

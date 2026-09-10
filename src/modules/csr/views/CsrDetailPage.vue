@@ -9,6 +9,7 @@ import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { IT_STATUSES, OPTIONS, STATUS_TONE, canAdd, canEditColumn, isConfigured } from '../config'
 import { label, pathToEnglish, pickLang, pickPair } from '../i18n'
+import { isUploadConfigured, removeAttachment, uploadCapture } from '../api/upload'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,10 +50,21 @@ const DICT = {
     'Hanya kolom yang boleh Anda ubah yang ditampilkan',
   ],
   sec_capture: ['캡쳐', 'Tangkapan layar'],
-  no_capture: [
-    '첨부가 없습니다. Notion 이관분 38건은 Drive 업로드 프록시(Apps Script) 준비 후 옮깁니다.',
-    'Belum ada lampiran. 38 tangkapan dari Notion dipindahkan setelah proksi unggah Drive siap.',
+  no_capture: ['첨부가 없습니다.', 'Belum ada lampiran.'],
+  add_capture: ['+ 캡쳐 추가', '+ Tambah tangkapan'],
+  uploading: ['올리는 중…', 'Mengunggah…'],
+  uploaded: ['캡쳐를 올렸습니다', 'Tangkapan diunggah'],
+  upload_failed: ['업로드에 실패했습니다', 'Gagal mengunggah'],
+  upload_off: [
+    '업로드 프록시가 설정되지 않았습니다 (VITE_CSR_UPLOAD_URL)',
+    'Proksi unggah belum dikonfigurasi (VITE_CSR_UPLOAD_URL)',
   ],
+  remove: ['삭제', 'Hapus'],
+  remove_confirm: [
+    '이 캡쳐를 목록에서 지울까요? Drive 파일은 남습니다.',
+    'Hapus tangkapan ini dari daftar? File Drive tetap ada.',
+  ],
+  removed: ['삭제했습니다', 'Dihapus'],
   sec_findings: ['현상', 'Temuan'],
   sec_reco: ['개선 의견', 'Rekomendasi'],
   sec_reply: ['IT부서 회신', 'Balasan Tim IT'],
@@ -414,6 +426,51 @@ const sortedReplies = computed(() => [...replies.value].sort(byDateDesc('replied
 const sortedVerifications = computed(() => [...verifications.value].sort(byDateDesc('verified_on')))
 const logOpen = ref(false)
 
+// ─── §1 캡쳐 업로드 — business · admin (RLS 와 같은 판정) ───────────────────
+const fileInput = ref(null)
+const uploading = ref(false)
+const canUpload = computed(() => canAdd(role.value, 'attachments'))
+async function onPickFiles(event) {
+  const files = [...(event.target.files ?? [])]
+  event.target.value = '' // 같은 파일을 다시 골라도 change 가 나게
+  if (!files.length) return
+  if (!isUploadConfigured()) {
+    toast.error(T('upload_off'))
+    return
+  }
+  uploading.value = true
+  let ok = 0
+  try {
+    for (const [i, f] of files.entries()) {
+      try {
+        const row = await uploadCapture(f, {
+          issueId: issue.value.id,
+          issueNo: issue.value.issue_no,
+          uploadedBy: me.value,
+          sortOrder: attachments.value.length + i,
+        })
+        if (row) attachments.value = [...attachments.value, row]
+        ok++
+      } catch (e) {
+        report(e, 'upload_failed')
+      }
+    }
+    if (ok) toast.success(`${T('uploaded')} (${ok}/${files.length})`)
+  } finally {
+    uploading.value = false
+  }
+}
+async function onRemoveAttachment(a) {
+  if (!window.confirm(T('remove_confirm'))) return
+  try {
+    await removeAttachment(a.id)
+    attachments.value = attachments.value.filter((x) => x.id !== a.id)
+    toast.success(T('removed'))
+  } catch (e) {
+    report(e, 'save_failed')
+  }
+}
+
 /** Drive 썸네일 — uc?export=view 는 대용량·권한 문제가 있어 쓰지 않습니다(작업지시서 §8). */
 const thumb = (fileId) => `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`
 const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
@@ -566,20 +623,57 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 
         <!-- §1 캡쳐 -->
         <section class="asm-panel sec">
-          <h2 class="asm-title">1. {{ T('sec_capture') }}</h2>
+          <div class="sec-head">
+            <h2 class="asm-title">1. {{ T('sec_capture') }}</h2>
+            <!-- 업로드 — 현업·admin. 파일 선택 즉시 올라갑니다(별도 저장 단계 없음). -->
+            <template v-if="canUpload">
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/*,application/pdf"
+                multiple
+                hidden
+                @change="onPickFiles"
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                :disabled="uploading"
+                @click="fileInput?.click()"
+              >
+                {{ uploading ? T('uploading') : T('add_capture') }}
+              </button>
+            </template>
+          </div>
           <p v-if="!attachments.length" class="muted">
             {{ T('no_capture') }}
           </p>
           <div v-else class="gallery">
-            <a
-              v-for="a in attachments"
-              :key="a.id"
-              :href="`https://drive.google.com/file/d/${a.drive_file_id}/view`"
-              target="_blank"
-              rel="noopener"
-            >
-              <img :src="thumb(a.drive_file_id)" :alt="a.caption ?? a.file_name ?? ''" />
-            </a>
+            <figure v-for="a in attachments" :key="a.id" class="shot">
+              <a
+                :href="`https://drive.google.com/file/d/${a.drive_file_id}/view`"
+                target="_blank"
+                rel="noopener"
+                :title="a.file_name ?? ''"
+              >
+                <img
+                  :src="thumb(a.drive_file_id)"
+                  :alt="a.caption ?? a.file_name ?? ''"
+                  loading="lazy"
+                />
+              </a>
+              <figcaption>
+                <span class="fname">{{ a.caption ?? a.file_name ?? '' }}</span>
+                <button
+                  v-if="role === 'admin'"
+                  type="button"
+                  class="btn btn-sm btn-link text-danger"
+                  @click="onRemoveAttachment(a)"
+                >
+                  {{ T('remove') }}
+                </button>
+              </figcaption>
+            </figure>
           </div>
         </section>
 
@@ -1194,8 +1288,31 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 }
 .gallery img {
   max-height: 200px;
+  max-width: 320px;
+  object-fit: contain;
   border: 1px solid var(--asm-border);
   border-radius: var(--asm-radius-md);
+  background: var(--asm-muted-20);
+}
+.shot {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 320px;
+}
+.shot figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--asm-fg-muted);
+}
+.shot .fname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .nowrap {
   white-space: nowrap;

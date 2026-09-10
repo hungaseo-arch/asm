@@ -16,6 +16,8 @@ export const MODULE_SLUG = 'csr'
 export const DATA_API_URL = import.meta.env.VITE_CSR_DATA_API_URL ?? ''
 export const AUTH_URL = import.meta.env.VITE_CSR_AUTH_URL ?? ''
 export const UPLOAD_URL = import.meta.env.VITE_CSR_UPLOAD_URL ?? ''
+/** Apps Script 쪽 스크립트 속성 CSR_UPLOAD_TOKEN 과 같은 값. 번들에 들어가므로 비밀은 아니고 오남용 문턱입니다. */
+export const UPLOAD_TOKEN = import.meta.env.VITE_CSR_UPLOAD_TOKEN ?? ''
 
 export const isConfigured = () => Boolean(DATA_API_URL && AUTH_URL)
 

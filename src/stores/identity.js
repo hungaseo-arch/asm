@@ -1,6 +1,5 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { APP_USER } from '@/config/navigation'
 
 /**
  * 헤더에 보일 '지금 누구인가' (Identity / Identitas)
@@ -22,6 +21,21 @@ export const useIdentityStore = defineStore('identity', () => {
   const isSignedIn = computed(() => Boolean(email.value))
 
   /**
+   * 표시 언어 — CSR 국기 토글의 진실. 헤더 계정 메뉴의 문구까지 같은 언어여야 해서
+   * (2026-09-10 「한국어·인니어 혼용」) Neon 을 모르는 이 스토어에 둡니다. 새로고침해도
+   * 유지되도록 localStorage 에 적어 둡니다 — 값은 'id' | 'ko' 둘뿐입니다.
+   */
+  const lang = ref(readLang())
+  function setLang(v) {
+    lang.value = v === 'ko' ? 'ko' : 'id'
+    try {
+      localStorage.setItem(LANG_KEY, lang.value)
+    } catch {
+      // 사생활 모드 등에서 저장이 막혀도 화면 언어는 바뀌어야 합니다.
+    }
+  }
+
+  /**
    * 헤더 계정 메뉴가 부를 동작. CSR 세션 스토어가 로그인 뒤 등록합니다 — 헤더가 Neon 을
    * import 하지 않고도 로그아웃할 수 있게 하는 우회로입니다.
    */
@@ -40,10 +54,19 @@ export const useIdentityStore = defineStore('identity', () => {
     return was
   }
 
-  /** 표시용 — 세션이 있으면 그 사람, 없으면 자리표시자. */
+  /**
+   * 표시용 — 세션이 있으면 그 사람. 없으면 「로그인」 자리만 둡니다. 전에는 APP_USER
+   * (Seo Jonghwan) 를 보여 줬는데 로그아웃 뒤에도 이름이 남아 헷갈렸습니다(2026-09-10).
+   */
   const display = computed(() => {
     if (!isSignedIn.value) {
-      return { ...APP_USER, placeholder: true }
+      return {
+        name: lang.value === 'id' ? 'Masuk' : '로그인',
+        initials: '?',
+        role: '',
+        email: null,
+        placeholder: true,
+      }
     }
     const shown = name.value || email.value
     return {
@@ -67,6 +90,8 @@ export const useIdentityStore = defineStore('identity', () => {
   }
 
   return {
+    lang,
+    setLang,
     name,
     email,
     role,
@@ -82,6 +107,15 @@ export const useIdentityStore = defineStore('identity', () => {
     consumePasswordRequest,
   }
 })
+
+const LANG_KEY = 'csr.lang'
+function readLang() {
+  try {
+    return localStorage.getItem(LANG_KEY) === 'ko' ? 'ko' : 'id'
+  } catch {
+    return 'id'
+  }
+}
 
 /** "Seo Jonghwan" → "SJ", "Lia" → "L", "jhseo@…" → "J" */
 function initialsOf(text) {

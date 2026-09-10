@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { getDb, unwrap } from '../api/neon'
 import { isConfigured } from '../config'
+import { useIdentityStore } from '@/stores/identity'
 
 /** 목록에 필요한 열만 가져옵니다 — 본문(findings_md 등)은 상세에서만 씁니다. */
 const LIST_COLUMNS = [
@@ -48,8 +49,13 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
   const loading = ref(false)
   const error = ref('')
   const filters = ref({ ...EMPTY_FILTERS })
-  /** 화면 언어 — 기본은 현지(인도네시아어), 토글로 한국어 (작업지시서 §1). */
-  const lang = ref('id')
+  /**
+   * 화면 언어 — 기본은 현지(인도네시아어), 토글로 한국어 (작업지시서 §1).
+   * 진실은 identity 스토어에 있습니다(헤더도 같은 언어를 써야 하므로). 여기서는 읽고 쓰는
+   * 통로만 둡니다 — v-model="issues.lang" 이 그대로 동작합니다.
+   */
+  const identity = useIdentityStore()
+  const lang = computed({ get: () => identity.lang, set: (v) => identity.setLang(v) })
 
   async function load() {
     if (!isConfigured()) {

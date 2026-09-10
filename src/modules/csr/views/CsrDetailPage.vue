@@ -28,6 +28,89 @@ const lang = computed(() => issues.lang)
 const L = (key) => label(key, lang.value)
 const V = (value) => pickLang(value, lang.value)
 const role = computed(() => session.role)
+/**
+ * 화면 문구 사전 — 토글 언어 하나만 보여 줍니다(2026-09-10 「상세페이지 전체 언어구분」).
+ * [ko, id] 순. 저장된 본문(현상·회신 등)은 쓴 사람의 언어 그대로이고, 여기서는 화면
+ * 껍데기(절 제목·라벨·버튼·안내·토스트)만 다룹니다.
+ */
+const DICT = {
+  back: ['목록으로', 'Kembali ke daftar'],
+  need_login: ['로그인이 필요합니다', 'Silakan masuk terlebih dahulu'],
+  not_found: ['해당 개선요청을 찾을 수 없습니다', 'Permintaan perbaikan tidak ditemukan'],
+  not_configured: ['Neon 접속 정보가 설정되지 않았습니다', 'Koneksi Neon belum dikonfigurasi'],
+  archived: ['삭제됨', 'Dihapus'],
+  edit: ['편집', 'Ubah'],
+  cancel: ['취소', 'Batal'],
+  save: ['저장', 'Simpan'],
+  saving: ['저장 중…', 'Menyimpan…'],
+  submit: ['등록', 'Kirim'],
+  mine: [
+    '내 권한으로 고칠 수 있는 항목만 보입니다',
+    'Hanya kolom yang boleh Anda ubah yang ditampilkan',
+  ],
+  sec_capture: ['캡쳐', 'Tangkapan layar'],
+  no_capture: [
+    '첨부가 없습니다. Notion 이관분 38건은 Drive 업로드 프록시(Apps Script) 준비 후 옮깁니다.',
+    'Belum ada lampiran. 38 tangkapan dari Notion dipindahkan setelah proksi unggah Drive siap.',
+  ],
+  sec_findings: ['현상', 'Temuan'],
+  sec_reco: ['개선 의견', 'Rekomendasi'],
+  sec_reply: ['IT부서 회신', 'Balasan Tim IT'],
+  add_reply: ['+ 회신 추가', '+ Tambah balasan'],
+  replied_on: ['회신일', 'Tgl. balasan'],
+  decision: ['수용 여부', 'Keputusan'],
+  fix_plan: ['개선 내역', 'Perbaikan'],
+  note: ['추가 설명', 'Penjelasan tambahan'],
+  needs_decision: ['의사결정 사항', 'Hal yang perlu diputuskan'],
+  pic_and_target: ['담당자 · 목표 배포일', 'PIC · target rilis'],
+  no_reply: ['아직 회신이 없습니다.', 'Belum ada balasan.'],
+  sec_answer: ['현업 답변', 'Tanggapan Tim Bisnis'],
+  write_answer: ['+ 답변 작성', '+ Tulis tanggapan'],
+  answered_on: ['답변일', 'Tgl. tanggapan'],
+  no_answer: ['아직 답변이 없습니다.', 'Belum ada tanggapan.'],
+  sec_verif: ['검증 이력', 'Riwayat Verifikasi'],
+  add_verif: ['+ 검증 추가', '+ Tambah verifikasi'],
+  date: ['일자', 'Tanggal'],
+  result: ['결과', 'Hasil'],
+  content: ['내용', 'Keterangan'],
+  no_verif: ['검증 이력이 없습니다.', 'Belum ada riwayat verifikasi.'],
+  log: ['상태 변경 로그', 'Log perubahan status'],
+  expand: ['펼치기', 'Buka'],
+  collapse: ['접기', 'Tutup'],
+  ts: ['일시', 'Waktu'],
+  column: ['컬럼', 'Kolom'],
+  before: ['이전', 'Sebelum'],
+  after: ['이후', 'Sesudah'],
+  by: ['변경자', 'Oleh'],
+  no_log: ['기록이 없습니다.', 'Tidak ada catatan.'],
+  forbidden: ['권한이 없습니다', 'Tidak memiliki izin'],
+  saved: ['저장했습니다', 'Tersimpan'],
+  save_failed: ['저장에 실패했습니다', 'Gagal menyimpan'],
+  reply_added: ['회신을 등록했습니다', 'Balasan tersimpan'],
+  reply_failed: ['회신 등록에 실패했습니다', 'Gagal menyimpan balasan'],
+  result_required: ['결과를 입력하십시오', 'Isi hasil verifikasi'],
+  verif_added: ['검증 이력을 등록했습니다', 'Riwayat verifikasi tersimpan'],
+  verif_failed: ['검증 이력 등록에 실패했습니다', 'Gagal menyimpan riwayat verifikasi'],
+}
+const T = (key) => DICT[key]?.[lang.value === 'id' ? 1 : 0] ?? key
+/**
+ * 값 표시. 화면경로(path_menu)는 예외 — ASM 메뉴 이름(Purchasing > PO > 신규·상세)을 그대로
+ * 적은 것이라 언어 토글을 타지 않습니다(2026-09-10 「메뉴언어와 동일하게」). 나머지 옵션값은
+ * "조치확인 / Terkonfirmasi" 꼴이라 토글 언어 쪽만 보여 줍니다.
+ */
+const VF = (key, value) => (key === 'path_menu' ? (value ?? null) : V(value))
+/**
+ * 화면경로가 여럿이면 " · "(양쪽 공백) 로 이어져 있습니다 — "신규·상세" 처럼 공백 없는 가운뎃점은
+ * 한 경로 안의 구분이라 건드리지 않습니다. 경로마다 칩으로 그려 어디서 끊기는지 보이게
+ * 합니다(2026-09-10 「구분이 잘 되도록」).
+ */
+const splitPaths = (v) =>
+  String(v ?? '')
+    .split(/\s+·\s+/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+/** 제목 앞 "02. " 번호는 뗍니다 — 이슈번호가 바로 위에 따로 있습니다. 저장값은 원문 그대로. */
+const stripNo = (v) => (v ? String(v).replace(/^[0-9]+[.][ ]*/, '') : v)
 const me = computed(() => session.user?.id ?? session.user?.email ?? null)
 
 /**
@@ -36,7 +119,7 @@ const me = computed(() => session.user?.id ?? session.user?.email ?? null)
  */
 async function load() {
   if (!isConfigured()) {
-    error.value = 'Neon 접속 정보가 설정되지 않았습니다'
+    error.value = T('not_configured')
     loading.value = false
     return
   }
@@ -49,7 +132,7 @@ async function load() {
     )
     issue.value = rows?.find((r) => !r.is_archived) ?? rows?.[0] ?? null
     if (!issue.value) {
-      error.value = '해당 개선요청을 찾을 수 없습니다'
+      error.value = T('not_found')
       return
     }
     const id = issue.value.id
@@ -75,8 +158,8 @@ watch(() => route.params.issueNo, load)
 
 /** 실패 사유를 사용자 말로. DB 가 권한으로 막은 것과 그 밖의 오류를 구분합니다. */
 function report(e, fallback) {
-  if (e?.forbidden) toast.error(`권한이 없습니다 — ${e.message}`)
-  else toast.error(e?.message ?? fallback)
+  if (e?.forbidden) toast.error(`${T('forbidden')} — ${e.message}`)
+  else toast.error(e?.message ?? T(fallback))
 }
 
 // ─── 속성 편집 ───────────────────────────────────────────────────────────────
@@ -165,9 +248,10 @@ async function saveEdit() {
     issue.value = await updateIssue(issue.value.id, patch)
     statusLog.value = await loadStatusLog(issue.value.id)
     editing.value = false
-    toast.success(`${Object.keys(patch).length}개 항목을 저장했습니다`)
+    const n = Object.keys(patch).length
+    toast.success(lang.value === 'id' ? `${n} kolom tersimpan` : `${n}개 항목을 저장했습니다`)
   } catch (e) {
-    report(e, '저장에 실패했습니다')
+    report(e, 'save_failed')
   } finally {
     saving.value = false
   }
@@ -191,9 +275,9 @@ async function saveMd() {
   try {
     issue.value = await updateIssue(issue.value.id, patch)
     mdEditing.value = null
-    toast.success('저장했습니다')
+    toast.success(T('saved'))
   } catch (e) {
-    report(e, '저장에 실패했습니다')
+    report(e, 'save_failed')
   } finally {
     saving.value = false
   }
@@ -228,9 +312,9 @@ async function submitReply() {
     replies.value = [row, ...replies.value]
     replyOpen.value = false
     Object.assign(replyDraft, EMPTY_REPLY())
-    toast.success('회신을 등록했습니다')
+    toast.success(T('reply_added'))
   } catch (e) {
-    report(e, '회신 등록에 실패했습니다')
+    report(e, 'reply_failed')
   } finally {
     saving.value = false
   }
@@ -241,7 +325,7 @@ const verifyOpen = ref(false)
 const verifyDraft = reactive({ verified_on: today(), result: '', note: '' })
 async function submitVerification() {
   if (!verifyDraft.result.trim()) {
-    toast.error('결과를 입력하십시오')
+    toast.error(T('result_required'))
     return
   }
   saving.value = true
@@ -258,15 +342,31 @@ async function submitVerification() {
     verifications.value = [row, ...verifications.value]
     verifyOpen.value = false
     Object.assign(verifyDraft, { verified_on: today(), result: '', note: '' })
-    toast.success('검증 이력을 등록했습니다')
+    toast.success(T('verif_added'))
   } catch (e) {
-    report(e, '검증 이력 등록에 실패했습니다')
+    report(e, 'verif_failed')
   } finally {
     saving.value = false
   }
 }
 
 /** 최신이 위로 — 회차가 쌓이면 아래로 스크롤해서 찾게 됩니다. */
+/**
+ * 회신 카드에 보일 항목(2026-09-10 「내용 배치 재구성」). 빈 항목은 '—' 로 자리를 차지하던 것을
+ * 빼고, 긴 글(개선 내역·추가 설명)은 전폭, 짧은 것(의사결정·담당자)은 나란히 둡니다.
+ * 수용 여부는 카드 머리의 배지로 올립니다.
+ */
+const REPLY_FIELDS = [
+  { key: 'fix_plan', wide: true },
+  { key: 'note', wide: true },
+  { key: 'needs_decision' },
+  { key: 'pic_and_target' },
+]
+/** Notion 이관분은 빈 칸을 '—' · '-' · '(tidak dicantumkan)' · '(미기재)' 로 적어 두었습니다 — 빈 것으로 칩니다. */
+const isBlank = (v) =>
+  !v || /^[\s—–\-]*$|^\((tidak dicantumkan|미기재|없음)\)$/i.test(String(v).trim())
+const replyFields = (r) => REPLY_FIELDS.filter((f) => !isBlank(r[f.key]))
+
 const byDateDesc = (k) => (a, b) => String(b[k]).localeCompare(String(a[k]))
 const sortedReplies = computed(() => [...replies.value].sort(byDateDesc('replied_on')))
 const sortedVerifications = computed(() => [...verifications.value].sort(byDateDesc('verified_on')))
@@ -281,12 +381,12 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   <DefaultLayout>
     <section class="csr-detail">
       <button type="button" class="btn btn-sm btn-link back" @click="router.push('/csr')">
-        ← {{ lang === 'id' ? 'Kembali ke daftar' : '목록으로' }}
+        ← {{ T('back') }}
       </button>
 
       <div v-if="loading" class="asm-panel state">{{ L('loading') }}</div>
       <div v-else-if="error" class="asm-panel state err">{{ error }}</div>
-      <div v-else-if="!session.isAuthenticated" class="asm-panel state">로그인이 필요합니다</div>
+      <div v-else-if="!session.isAuthenticated" class="asm-panel state">{{ T('need_login') }}</div>
 
       <template v-else-if="issue">
         <!-- 속성 카드 (작업지시서 §5-2 상단 — 역할별 편집 가능 필드만 활성) -->
@@ -299,7 +399,9 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             >
               {{ issue.it_status }}
             </span>
-            <span v-if="issue.is_archived" class="asm-badge asm-badge--neutral">삭제됨</span>
+            <span v-if="issue.is_archived" class="asm-badge asm-badge--neutral">{{
+              T('archived')
+            }}</span>
             <span class="asm-pill ms-auto">{{ role }}</span>
             <a
               v-if="issue.notion_url"
@@ -316,17 +418,25 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               class="btn btn-sm btn-outline-primary"
               @click="startEdit"
             >
-              {{ lang === 'id' ? 'Ubah' : '편집' }}
+              {{ T('edit') }}
             </button>
           </div>
 
           <template v-if="!editing">
-            <h1>{{ pickPair(issue.title_ko, issue.title_id, lang) }}</h1>
+            <h1>{{ stripNo(pickPair(issue.title_ko, issue.title_id, lang)) }}</h1>
             <!-- 값은 한 줄 고정 — 화면경로처럼 긴 값이 카드를 세로로 늘리던 것을 막습니다. 전체는 툴팁. -->
             <dl class="props">
-              <div v-for="f in FIELDS" :key="f.key">
+              <!-- 화면경로는 길어서 격자 한 줄을 통째로 씁니다 — 잘라 보이면 어느 화면인지 모릅니다. -->
+              <div v-for="f in FIELDS" :key="f.key" :class="{ 'full-row': f.key === 'path_menu' }">
                 <dt>{{ L(f.label) }}</dt>
-                <dd :title="V(issue[f.key]) ?? ''">{{ V(issue[f.key]) ?? '—' }}</dd>
+                <dd v-if="f.key === 'path_menu' && issue.path_menu" class="paths">
+                  <span v-for="(pth, i) in splitPaths(issue.path_menu)" :key="i" class="path-chip">
+                    {{ pth }}
+                  </span>
+                </dd>
+                <dd v-else :title="VF(f.key, issue[f.key]) ?? ''">
+                  {{ VF(f.key, issue[f.key]) ?? '—' }}
+                </dd>
               </div>
             </dl>
           </template>
@@ -336,13 +446,16 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             DB 컬럼 가드가 다시 판정하므로, 개발자 도구로 풀어도 42501 로 거부됩니다.
           -->
           <form v-else class="edit-form" @submit.prevent="saveEdit">
+            <!--
+              내 권한 밖 컬럼은 폼에서 숨깁니다(2026-09-10 「자기 부분만 편집」). 비활성으로만
+              두면 '왜 안 되지' 가 되고, 숨기면 '내 몫이 이것' 이 됩니다. 읽기 모드에는 전부 보입니다.
+            -->
+            <p class="muted mine">
+              {{ T('mine') }}
+              — <b>{{ role }}</b>
+            </p>
             <div class="grid">
-              <label
-                v-for="f in FIELDS"
-                :key="f.key"
-                class="field"
-                :class="{ locked: !editable(f.key) }"
-              >
+              <label v-for="f in FIELDS.filter((x) => editable(x.key))" :key="f.key" class="field">
                 <span>{{ L(f.label) }}<em v-if="f.it" class="tag">IT</em></span>
                 <select
                   v-if="f.type === 'select'"
@@ -370,7 +483,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             </div>
 
             <!-- 두 언어 텍스트는 KO·ID 를 나란히 둡니다 — 한쪽만 고치고 다른 쪽을 잊지 않도록. -->
-            <div v-for="p in TEXT_PAIRS" :key="p.ko" class="pair">
+            <div v-for="p in TEXT_PAIRS.filter((x) => editable(x.ko))" :key="p.ko" class="pair">
               <span class="pair-label">{{ L(p.label) }}<em v-if="p.it" class="tag">IT</em></span>
               <div class="grid">
                 <label class="field" :class="{ locked: !editable(p.ko) }">
@@ -400,10 +513,10 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 class="btn btn-outline-secondary btn-sm"
                 @click="editing = false"
               >
-                취소
+                {{ T('cancel') }}
               </button>
               <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">
-                {{ saving ? '저장 중…' : '저장' }}
+                {{ saving ? T('saving') : T('save') }}
               </button>
             </div>
           </form>
@@ -411,9 +524,9 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 
         <!-- §1 캡쳐 -->
         <section class="asm-panel sec">
-          <h2 class="asm-title">1. 캡쳐 · Screen Shot</h2>
+          <h2 class="asm-title">1. {{ T('sec_capture') }}</h2>
           <p v-if="!attachments.length" class="muted">
-            첨부가 없습니다. Notion 이관분 38건은 Drive 업로드 프록시(Apps Script) 준비 후 옮깁니다.
+            {{ T('no_capture') }}
           </p>
           <div v-else class="gallery">
             <a
@@ -431,8 +544,8 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
         <!-- §2 · §3 본문 — business · admin 편집 -->
         <section
           v-for="sec in [
-            { key: 'findings_md', title: '2. 현상 · Findings' },
-            { key: 'recommendation_md', title: '3. 개선 의견 · Recommendation' },
+            { key: 'findings_md', title: '2. ' + T('sec_findings') },
+            { key: 'recommendation_md', title: '3. ' + T('sec_reco') },
           ]"
           :key="sec.key"
           class="asm-panel sec"
@@ -445,7 +558,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               class="btn btn-sm btn-link"
               @click="startMd(sec.key)"
             >
-              편집
+              {{ T('edit') }}
             </button>
           </div>
           <template v-if="mdEditing === sec.key">
@@ -456,7 +569,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 class="btn btn-outline-secondary btn-sm"
                 @click="mdEditing = null"
               >
-                취소
+                {{ T('cancel') }}
               </button>
               <button
                 type="button"
@@ -464,7 +577,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 :disabled="saving"
                 @click="saveMd"
               >
-                저장
+                {{ T('save') }}
               </button>
             </div>
           </template>
@@ -482,21 +595,21 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
         <!-- §5 IT부서 회신 (회차별) — it_dept · admin 추가 -->
         <section class="asm-panel sec">
           <div class="sec-head">
-            <h2 class="asm-title">5. IT부서 회신 · Balasan Tim IT</h2>
+            <h2 class="asm-title">5. {{ T('sec_reply') }}</h2>
             <button
               v-if="canAdd(role, 'it_replies') && !replyOpen"
               type="button"
               class="btn btn-sm btn-outline-primary"
               @click="replyOpen = true"
             >
-              + 회신 추가
+              {{ T('add_reply') }}
             </button>
           </div>
 
           <form v-if="replyOpen" class="sub-form" @submit.prevent="submitReply">
             <div class="grid">
               <label class="field">
-                <span>회신일</span>
+                <span>{{ T('replied_on') }}</span>
                 <input
                   v-model="replyDraft.replied_on"
                   type="date"
@@ -505,11 +618,11 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 />
               </label>
               <label class="field">
-                <span>수용 여부 · Keputusan</span>
+                <span>{{ T('decision') }}</span>
                 <input v-model="replyDraft.decision" class="form-control form-control-sm" />
               </label>
               <label class="field wide">
-                <span>개선 내역 · Perbaikan</span>
+                <span>{{ T('fix_plan') }}</span>
                 <textarea
                   v-model="replyDraft.fix_plan"
                   class="form-control form-control-sm"
@@ -517,7 +630,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 ></textarea>
               </label>
               <label class="field wide">
-                <span>추가 설명 · Penjelasan tambahan</span>
+                <span>{{ T('note') }}</span>
                 <textarea
                   v-model="replyDraft.note"
                   class="form-control form-control-sm"
@@ -525,11 +638,11 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 ></textarea>
               </label>
               <label class="field">
-                <span>의사결정 사항 · Hal yang perlu diputuskan</span>
+                <span>{{ T('needs_decision') }}</span>
                 <input v-model="replyDraft.needs_decision" class="form-control form-control-sm" />
               </label>
               <label class="field">
-                <span>담당자 · 목표 배포일</span>
+                <span>{{ T('pic_and_target') }}</span>
                 <input v-model="replyDraft.pic_and_target" class="form-control form-control-sm" />
               </label>
             </div>
@@ -539,37 +652,28 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 class="btn btn-outline-secondary btn-sm"
                 @click="replyOpen = false"
               >
-                취소
+                {{ T('cancel') }}
               </button>
-              <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">등록</button>
+              <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">
+                {{ T('submit') }}
+              </button>
             </div>
           </form>
 
-          <p v-if="!sortedReplies.length" class="muted">아직 회신이 없습니다.</p>
+          <p v-if="!sortedReplies.length" class="muted">{{ T('no_reply') }}</p>
           <article v-for="r in sortedReplies" :key="r.id" class="reply">
-            <h3>{{ r.replied_on }}</h3>
-            <dl>
-              <div>
-                <dt>수용 여부</dt>
-                <dd>{{ r.decision ?? '—' }}</dd>
-              </div>
-              <div>
-                <dt>개선 내역</dt>
-                <dd>{{ r.fix_plan ?? '—' }}</dd>
-              </div>
-              <div>
-                <dt>추가 설명</dt>
-                <dd>{{ r.note ?? '—' }}</dd>
-              </div>
-              <div>
-                <dt>의사결정 사항</dt>
-                <dd>{{ r.needs_decision ?? '—' }}</dd>
-              </div>
-              <div>
-                <dt>담당자 · 목표 배포일</dt>
-                <dd>{{ r.pic_and_target ?? '—' }}</dd>
+            <!-- 머리: 회신일 + 수용 여부 배지. 본문: 채워진 항목만, 긴 글은 전폭. -->
+            <div class="reply-head">
+              <h3>{{ r.replied_on }}</h3>
+              <span v-if="r.decision" class="asm-badge asm-badge--info">{{ r.decision }}</span>
+            </div>
+            <dl v-if="replyFields(r).length" class="reply-body">
+              <div v-for="f in replyFields(r)" :key="f.key" :class="{ wide: f.wide }">
+                <dt>{{ T(f.key) }}</dt>
+                <dd>{{ r[f.key] }}</dd>
               </div>
             </dl>
+            <p v-else class="muted">—</p>
           </article>
         </section>
 
@@ -577,7 +681,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
         <section class="asm-panel sec">
           <div class="sec-head">
             <h2 class="asm-title">
-              6. 현업 답변 · Tanggapan Tim Bisnis
+              6. {{ T('sec_answer') }}
               <small v-if="issue.business_answered_on">({{ issue.business_answered_on }})</small>
             </h2>
             <button
@@ -586,12 +690,12 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               class="btn btn-sm btn-link"
               @click="startMd('business_answer_md')"
             >
-              {{ issue.business_answer_md ? '편집' : '+ 답변 작성' }}
+              {{ issue.business_answer_md ? T('edit') : T('write_answer') }}
             </button>
           </div>
           <template v-if="mdEditing === 'business_answer_md'">
             <label class="field date-field">
-              <span>답변일</span>
+              <span>{{ T('answered_on') }}</span>
               <input v-model="mdDate" type="date" class="form-control form-control-sm" />
             </label>
             <textarea v-model="mdDraft" class="form-control md-edit" rows="6"></textarea>
@@ -601,7 +705,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 class="btn btn-outline-secondary btn-sm"
                 @click="mdEditing = null"
               >
-                취소
+                {{ T('cancel') }}
               </button>
               <button
                 type="button"
@@ -609,32 +713,32 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 :disabled="saving"
                 @click="saveMd"
               >
-                저장
+                {{ T('save') }}
               </button>
             </div>
           </template>
           <pre v-else-if="issue.business_answer_md" class="md">{{ issue.business_answer_md }}</pre>
-          <p v-else class="muted">아직 답변이 없습니다.</p>
+          <p v-else class="muted">{{ T('no_answer') }}</p>
         </section>
 
         <!-- §7 검증 이력 — business · admin 추가 -->
         <section class="asm-panel sec">
           <div class="sec-head">
-            <h2 class="asm-title">7. 검증 이력 · Riwayat Verifikasi</h2>
+            <h2 class="asm-title">7. {{ T('sec_verif') }}</h2>
             <button
               v-if="canAdd(role, 'verifications') && !verifyOpen"
               type="button"
               class="btn btn-sm btn-outline-primary"
               @click="verifyOpen = true"
             >
-              + 검증 추가
+              {{ T('add_verif') }}
             </button>
           </div>
 
           <form v-if="verifyOpen" class="sub-form" @submit.prevent="submitVerification">
             <div class="grid">
               <label class="field">
-                <span>일자</span>
+                <span>{{ T('date') }}</span>
                 <input
                   v-model="verifyDraft.verified_on"
                   type="date"
@@ -643,11 +747,11 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 />
               </label>
               <label class="field">
-                <span>결과 · Hasil</span>
+                <span>{{ T('result') }}</span>
                 <input v-model="verifyDraft.result" class="form-control form-control-sm" required />
               </label>
               <label class="field wide">
-                <span>내용 · Keterangan</span>
+                <span>{{ T('content') }}</span>
                 <textarea
                   v-model="verifyDraft.note"
                   class="form-control form-control-sm"
@@ -661,26 +765,28 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 class="btn btn-outline-secondary btn-sm"
                 @click="verifyOpen = false"
               >
-                취소
+                {{ T('cancel') }}
               </button>
-              <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">등록</button>
+              <button type="submit" class="btn btn-primary btn-sm" :disabled="saving">
+                {{ T('submit') }}
+              </button>
             </div>
           </form>
 
-          <p v-if="!sortedVerifications.length" class="muted">검증 이력이 없습니다.</p>
-          <table v-else class="table asm-table">
+          <p v-if="!sortedVerifications.length" class="muted">{{ T('no_verif') }}</p>
+          <table v-else class="table asm-table verif">
             <thead>
               <tr>
-                <th>일자</th>
-                <th>결과</th>
-                <th>내용</th>
+                <th>{{ T('date') }}</th>
+                <th>{{ T('result') }}</th>
+                <th>{{ T('content') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="v in sortedVerifications" :key="v.id">
                 <td class="nowrap">{{ v.verified_on }}</td>
                 <td class="nowrap">{{ v.result }}</td>
-                <td>{{ v.note }}</td>
+                <td class="wrap">{{ v.note }}</td>
               </tr>
             </tbody>
           </table>
@@ -695,31 +801,31 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             @click="logOpen = !logOpen"
           >
             <h2 class="asm-title">
-              상태 변경 로그 <small>({{ statusLog.length }})</small>
+              {{ T('log') }} <small>({{ statusLog.length }})</small>
             </h2>
-            <span>{{ logOpen ? '접기' : '펼치기' }}</span>
+            <span>{{ logOpen ? T('collapse') : T('expand') }}</span>
           </button>
           <table v-if="logOpen && statusLog.length" class="table asm-table mt-2">
             <thead>
               <tr>
-                <th>일시</th>
-                <th>컬럼</th>
-                <th>이전</th>
-                <th>이후</th>
-                <th>변경자</th>
+                <th>{{ T('ts') }}</th>
+                <th>{{ T('column') }}</th>
+                <th>{{ T('before') }}</th>
+                <th>{{ T('after') }}</th>
+                <th>{{ T('by') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="l in statusLog" :key="l.id">
                 <td class="nowrap">{{ fmtTs(l.changed_at) }}</td>
                 <td class="nowrap">{{ l.column_name }}</td>
-                <td>{{ V(l.old_value) ?? '—' }}</td>
-                <td>{{ V(l.new_value) ?? '—' }}</td>
+                <td class="wrap">{{ VF(l.column_name, l.old_value) ?? '—' }}</td>
+                <td class="wrap">{{ VF(l.column_name, l.new_value) ?? '—' }}</td>
                 <td class="nowrap muted">{{ l.changed_by ?? '—' }}</td>
               </tr>
             </tbody>
           </table>
-          <p v-else-if="logOpen" class="muted mt-2">기록이 없습니다.</p>
+          <p v-else-if="logOpen" class="muted mt-2">{{ T('no_log') }}</p>
         </section>
       </template>
     </section>
@@ -779,10 +885,45 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 .props div {
   min-width: 0;
 }
+.props .full-row {
+  grid-column: 1 / -1;
+}
+/* 화면경로 — 한 줄에 전부. 정말 길면 잘라 보이는 대신 그 칸만 가로 스크롤합니다. */
+.props .full-row dd {
+  overflow-x: auto;
+  text-overflow: clip;
+}
+.paths {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.path-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--asm-border);
+  border-radius: var(--asm-radius-sm);
+  background: var(--asm-card);
+  white-space: nowrap;
+}
+.mine {
+  margin: 0 0 8px;
+}
+/*
+ * 라벨과 값의 구분(2026-09-10 「메뉴와 내용 구분 시인성」) — 라벨은 작은 대문자 느낌의
+ * 회색 굵은 글씨, 값은 본문색. 칸마다 옅은 바탕을 깔아 어느 값이 어느 라벨의 것인지 보이게.
+ */
+.props > div {
+  background: var(--asm-muted-20);
+  border-left: 3px solid var(--asm-primary-10);
+  border-radius: var(--asm-radius-sm);
+  padding: 6px 10px;
+}
 .props dt {
   font-size: 11px;
   color: var(--asm-fg-muted);
-  font-weight: 500;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 /*
  * 값은 한 줄 고정(2026-09-10 요청) — 화면경로처럼 긴 값이 세 줄로 접혀 카드를 늘리던 것을
@@ -790,8 +931,9 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
  * 칸 안에서 말줄임이 먹습니다.
  */
 .props dd {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
   font-size: 13px;
+  color: var(--asm-fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -911,25 +1053,55 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   padding-top: 0;
   margin-top: 0;
 }
+.reply-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
 .reply h3 {
   font-size: 13px;
   font-weight: 700;
   color: var(--asm-primary);
-  margin: 0 0 8px;
+  margin: 0;
 }
-.reply dl {
+/* 짧은 항목은 나란히, 긴 글(.wide)은 전폭 — 세로로 라벨·값이 번갈아 늘어지던 것을 접습니다. */
+.reply-body {
   margin: 0;
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px 24px;
+}
+.reply-body .wide {
+  grid-column: 1 / -1;
 }
 .reply dt {
   font-size: 11px;
+  font-weight: 700;
   color: var(--asm-fg-muted);
 }
 .reply dd {
   margin: 2px 0 0;
   font-size: 13px;
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+/*
+ * 테마의 .table td 는 한 줄 고정(목록 화면용)이라 검증 내용처럼 긴 문장이 패널 밖으로
+ * 넘쳤습니다(2026-09-10 「글자넘침」). 본문 칸만 접어 씁니다.
+ */
+.asm-table td.wrap {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* 본문이 두 줄이 되면 일자·결과가 세로 가운데로 떠 보입니다 — 행 전체를 위쪽 정렬(2026-09-10). */
+.verif td,
+.verif th {
+  vertical-align: top;
+}
+.verif {
+  table-layout: auto;
+  width: 100%;
 }
 .gallery {
   display: flex;

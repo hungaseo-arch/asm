@@ -28,7 +28,6 @@ const t = (ko, id) => (lang.value === 'id' ? id : ko)
 const V = (v) => pickLang(v, lang.value)
 
 const users = ref([])
-const authUsers = ref([]) // neon_auth 는 Data API 밖이라 못 읽습니다 — 이메일은 손으로 넣습니다.
 const log = ref([])
 const loading = ref(true)
 const error = ref('')
@@ -162,6 +161,10 @@ async function removeUser(u) {
  */
 const pwTarget = ref(null)
 const pwValue = ref('')
+function startPw(u) {
+  pwTarget.value = u
+  pwValue.value = ''
+}
 async function resetPassword() {
   if (pwValue.value.length < 8) {
     toast.error(t('8자 이상이어야 합니다', 'Minimal 8 karakter'))
@@ -342,14 +345,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                   <button type="button" class="btn btn-sm btn-link" @click="startEdit(u)">
                     {{ t('편집', 'Ubah') }}
                   </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-link"
-                    @click="
-                      pwTarget = u
-                      pwValue = ''
-                    "
-                  >
+                  <button type="button" class="btn btn-sm btn-link" @click="startPw(u)">
                     {{ t('비밀번호', 'Kata sandi') }}
                   </button>
                   <button

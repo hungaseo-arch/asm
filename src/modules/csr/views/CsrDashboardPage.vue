@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useCsrSessionStore } from '../stores/session'
@@ -34,6 +34,21 @@ onMounted(async () => {
 })
 
 const live = computed(() => issues.rows.filter((r) => !r.is_archived))
+
+/**
+ * 두 목록은 10건씩 끊어 보입니다(2026-09-10 요청). 34건·22건이 한 번에 늘어지면 두 패널의
+ * 높이가 달라 화면이 기웁니다. 페이지는 목록마다 따로 셉니다.
+ */
+const PAGE_SIZE = 10
+const page = reactive({ pending: 1, noreply: 1 })
+const pageCount = (list) => Math.max(1, Math.ceil(list.length / PAGE_SIZE))
+const slicePage = (list, key) => {
+  // 필터가 바뀌어 페이지 수가 줄면 마지막 페이지로 되돌립니다.
+  if (page[key] > pageCount(list)) page[key] = pageCount(list)
+  return list.slice((page[key] - 1) * PAGE_SIZE, page[key] * PAGE_SIZE)
+}
+const pagedPending = computed(() => slicePage(pendingVerify.value, 'pending'))
+const pagedNoReply = computed(() => slicePage(noReply.value, 'noreply'))
 const c = computed(() => issues.counts)
 
 /** 현업검증 옵션은 데이터에서 뽑습니다 — 하드코딩하면 새 값이 표에서 빠집니다. */
@@ -51,12 +66,15 @@ const cross = computed(() => {
 const rowTotal = (s) => live.value.filter((r) => r.it_status === s).length
 const colTotal = (v) => live.value.filter((r) => r.verification_result === v).length
 
-/** 오픈 前 필수인데 아직 Verified 가 아닌 것 — 오픈을 막는 목록입니다. */
-const preGoLive = computed(() =>
+/**
+ * 검증 대기 — IT 가 Completed 로 회신했는데 현업이 아직 Verified 로 닫지 않은 것.
+ * 목록 화면의 「검증 대기」 프리셋(itStatus = Completed)과 같은 기준입니다. 「오픈 前 필수
+ * 잔여」 자리에 두던 것을 이 목록으로 바꿨습니다(2026-09-10 요청) — 현업이 지금 해야 할 일이
+ * 오픈 구분보다 급합니다.
+ */
+const pendingVerify = computed(() =>
   live.value
-    .filter(
-      (r) => /오픈 前|Wajib Sebelum/.test(r.go_live_category ?? '') && r.it_status !== 'Verified',
-    )
+    .filter((r) => r.it_status === 'Completed')
     .sort((a, b) => a.issue_no.localeCompare(b.issue_no, undefined, { numeric: true })),
 )
 /** IT부서가 아직 답하지 않은 것 */
@@ -78,6 +96,16 @@ const byPic = computed(() => {
   return [...m.entries()]
     .map(([pic, v]) => ({ pic, ...v, total: v.open + v.ongoing }))
     .sort((a, b) => b.total - a.total || a.pic.localeCompare(b.pic))
+})
+
+/**
+ * 담당자 표를 두 열로(2026-09-10 「우측 공백 활용」). 한 열 최대 520px 라 오른쪽 절반이 비어
+ * 있었습니다. 홀수면 왼쪽이 한 줄 더 가집니다 — 합계 큰 순서가 위→아래, 왼→오른쪽으로 흐릅니다.
+ */
+const byPicCols = computed(() => {
+  const rows = byPic.value
+  const half = Math.ceil(rows.length / 2)
+  return rows.length > 4 ? [rows.slice(0, half), rows.slice(half)] : [rows]
 })
 
 const stripNo = (s) => (s ? String(s).replace(/^[0-9]+[.][ ]*/, '') : s)
@@ -162,15 +190,15 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
         </section>
 
         <div class="two-col">
-          <!-- 오픈 前 필수 잔여 -->
+          <!-- 검증 대기 (Completed · 현업 검증 필요) -->
           <section class="asm-panel sec">
             <h2 class="asm-title">
-              {{ t('오픈 前 필수 잔여', 'Wajib sebelum Go-Live — tersisa') }}
-              <span class="count-pill">{{ formatInt(preGoLive.length) }}</span>
+              {{ L('preset_pending') }}
+              <span class="count-pill">{{ formatInt(pendingVerify.length) }}</span>
             </h2>
-            <p v-if="!preGoLive.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>
+            <p v-if="!pendingVerify.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>
             <ul v-else class="list">
-              <li v-for="r in preGoLive" :key="r.id" @click="open(r)">
+              <li v-for="r in pagedPending" :key="r.id" @click="open(r)">
                 <span class="no">{{ r.issue_no }}</span>
                 <span
                   class="asm-badge"
@@ -181,6 +209,25 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
                 <span class="pic">{{ r.it_pic ?? '—' }}</span>
               </li>
             </ul>
+            <nav v-if="pendingVerify.length > PAGE_SIZE" class="pager" aria-label="pagination">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                :disabled="page.pending <= 1"
+                @click="page.pending--"
+              >
+                ‹
+              </button>
+              <span>{{ page.pending }} / {{ pageCount(pendingVerify) }}</span>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                :disabled="page.pending >= pageCount(pendingVerify)"
+                @click="page.pending++"
+              >
+                ›
+              </button>
+            </nav>
           </section>
 
           <!-- 미회신 -->
@@ -191,7 +238,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
             </h2>
             <p v-if="!noReply.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>
             <ul v-else class="list">
-              <li v-for="r in noReply" :key="r.id" @click="open(r)">
+              <li v-for="r in pagedNoReply" :key="r.id" @click="open(r)">
                 <span class="no">{{ r.issue_no }}</span>
                 <span
                   class="asm-badge"
@@ -202,6 +249,25 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
                 <span class="pic">{{ V(r.priority) ?? '' }}</span>
               </li>
             </ul>
+            <nav v-if="noReply.length > PAGE_SIZE" class="pager" aria-label="pagination">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                :disabled="page.noreply <= 1"
+                @click="page.noreply--"
+              >
+                ‹
+              </button>
+              <span>{{ page.noreply }} / {{ pageCount(noReply) }}</span>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                :disabled="page.noreply >= pageCount(noReply)"
+                @click="page.noreply++"
+              >
+                ›
+              </button>
+            </nav>
           </section>
         </div>
 
@@ -210,24 +276,26 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
           <h2 class="asm-title">
             {{ t('담당자별 진행 중', 'Berjalan per PIC') }} <small>Open + Ongoing</small>
           </h2>
-          <table class="table asm-table pic-table">
-            <thead>
-              <tr>
-                <th>{{ L('it_pic') }}</th>
-                <th class="num">Open</th>
-                <th class="num">Ongoing</th>
-                <th class="num total">{{ t('합계', 'Total') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="p in byPic" :key="p.pic">
-                <td>{{ p.pic }}</td>
-                <td class="num">{{ p.open || '' }}</td>
-                <td class="num">{{ p.ongoing || '' }}</td>
-                <td class="num total">{{ p.total }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="pic-cols">
+            <table v-for="(col, i) in byPicCols" :key="i" class="table asm-table pic-table">
+              <thead>
+                <tr>
+                  <th>{{ L('it_pic') }}</th>
+                  <th class="num">Open</th>
+                  <th class="num">Ongoing</th>
+                  <th class="num total">{{ t('합계', 'Total') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="p in col" :key="p.pic">
+                  <td>{{ p.pic }}</td>
+                  <td class="num">{{ p.open || '' }}</td>
+                  <td class="num">{{ p.ongoing || '' }}</td>
+                  <td class="num total">{{ p.total }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
       </template>
     </section>
@@ -364,7 +432,24 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
   color: var(--asm-fg-muted);
   white-space: nowrap;
 }
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--asm-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* 두 열 — 좁은 화면(두 표가 나란히 못 서는 폭)에서는 자동으로 한 열로 접힙니다. */
+.pic-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 0 32px;
+  align-items: start;
+}
 .pic-table {
-  max-width: 520px;
+  margin: 0;
 }
 </style>

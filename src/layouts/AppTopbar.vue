@@ -17,6 +17,13 @@ const router = useRouter()
  */
 const identity = useIdentityStore()
 const who = computed(() => identity.display)
+/** 계정 메뉴 문구 — CSR 국기 토글과 같은 언어 하나만(2026-09-10 「한국어·인니어 혼용」). */
+const t = (ko, id) => (identity.lang === 'id' ? id : ko)
+/** 로그아웃 상태의 계정 버튼은 로그인 화면(/csr)으로 가는 문입니다. */
+function onAccountClick() {
+  if (who.value.placeholder) router.push('/csr')
+  else accountOpen.value = !accountOpen.value
+}
 /** 종의 빨간 점 — CSR 화면이 localStorage 에 남긴 비트만 읽습니다(Neon 을 직접 묻지 않음). */
 const unread = computed(() => {
   void route.path // 화면이 바뀔 때마다 다시 읽습니다
@@ -166,8 +173,7 @@ async function signOut() {
           :title="who.email ?? ''"
           :aria-haspopup="who.placeholder ? undefined : 'menu'"
           :aria-expanded="accountOpen"
-          :disabled="who.placeholder"
-          @click="accountOpen = !accountOpen"
+          @click="onAccountClick"
         >
           <span class="avatar">{{ who.initials }}</span>
           <b class="d-none d-md-block">{{ who.name }}</b>
@@ -181,10 +187,10 @@ async function signOut() {
             <span v-if="who.role" class="asm-pill">{{ who.role }}</span>
           </div>
           <button type="button" class="dropdown-item" role="menuitem" @click="changePassword">
-            비밀번호 변경 · Ubah kata sandi
+            {{ t('비밀번호 변경', 'Ubah kata sandi') }}
           </button>
           <button type="button" class="dropdown-item" role="menuitem" @click="signOut">
-            로그아웃 · Keluar
+            {{ t('로그아웃', 'Keluar') }}
           </button>
         </div>
       </div>

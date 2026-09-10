@@ -24,7 +24,7 @@
  * (workOrder.md §6 — 초기 청크 500 KB 제한).
  */
 import { createAuthClient } from 'better-auth/client'
-import { jwtClient } from 'better-auth/client/plugins'
+import { adminClient, jwtClient } from 'better-auth/client/plugins'
 import { NeonPostgrestClient, fetchWithToken } from '@neondatabase/postgrest-js'
 import { AUTH_URL, DATA_API_URL, isConfigured } from '../config'
 
@@ -45,7 +45,9 @@ export function getAuth() {
   authClient ??= createAuthClient({
     baseURL: AUTH_URL,
     basePath: '',
-    plugins: [jwtClient()],
+    // admin: 관리 화면의 비밀번호 초기화(/admin/set-user-password). 호출자가 Neon Auth 쪽
+    // admin 역할이어야 서버가 받아 줍니다 — 플러그인은 경로만 열어 줄 뿐입니다.
+    plugins: [jwtClient(), adminClient()],
     fetchOptions: { credentials: 'include' },
   })
   return authClient

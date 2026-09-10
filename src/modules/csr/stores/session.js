@@ -54,12 +54,16 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
       }
 
       /*
-       * 역할 조회. RLS 때문에 자기 행만 보이므로 조건 없이 한 건만 집으면 됩니다
-       * (csr_user_roles_select 정책 = csr_role() IS NOT NULL).
+       * 역할 조회 — 반드시 내 user_id 로 좁힙니다. business·it_dept 는 RLS 가 자기 행만
+       * 보여 주지만 admin 은 전원이 보여, 조건 없이 첫 행을 집으면 남의 이름(Alya)이
+       * 헤더에 올라갔습니다(2026-09-10 「계정과 이름 불일치」).
        * 등록되지 않았으면 0행이 돌아옵니다 — 오류가 아니라 정상적인 '미등록' 상태입니다.
        */
       const rows = unwrap(
-        await getDb().from('csr_user_roles').select('role,email,display_name,department'),
+        await getDb()
+          .from('csr_user_roles')
+          .select('role,email,display_name,department')
+          .eq('user_id', user.value.id),
       )
       profile.value = rows?.[0] ?? null
       role.value = profile.value?.role ?? null

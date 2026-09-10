@@ -282,17 +282,36 @@ async function saveEdit() {
 
 // ─── 본문(마크다운) 편집 — findings · recommendation · 현업 답변 ───────────────
 const today = () => new Date().toISOString().slice(0, 10)
+/*
+ * 본문은 010 이후 _ko/_id 쌍으로 저장됩니다(원문 컬럼은 보존). 표시는 토글 언어 쪽, 없으면 반대쪽,
+ * 그것도 없으면 원문 컬럼 — 010 을 아직 안 돌린 DB 에서도 그대로 보입니다.
+ */
+const bodyOf = (key) => {
+  const i = issue.value
+  if (!i) return null
+  const [a, b] =
+    lang.value === 'id' ? [i[key + '_id'], i[key + '_ko']] : [i[key + '_ko'], i[key + '_id']]
+  return a || b || i[key] || null
+}
 const mdEditing = ref(null)
-const mdDraft = ref('')
+const mdDraft = reactive({ ko: '', id: '' })
 const mdDate = ref('')
 function startMd(key) {
-  mdDraft.value = issue.value[key] ?? ''
-  if (key === 'business_answer_md') mdDate.value = issue.value.business_answered_on ?? today()
+  const i = issue.value
+  // 쌍이 비어 있으면 원문을 원문 언어 쪽 칸에 채워 줍니다 — 010 전 데이터도 편집 가능하게.
+  const legacy = i[key] ?? ''
+  const legacyIsKo = /[가-힣]/.test(legacy)
+  mdDraft.ko = i[key + '_ko'] ?? (legacyIsKo ? legacy : '')
+  mdDraft.id = i[key + '_id'] ?? (legacyIsKo ? '' : legacy)
+  if (key === 'business_answer_md') mdDate.value = i.business_answered_on ?? today()
   mdEditing.value = key
 }
 async function saveMd() {
   const key = mdEditing.value
-  const patch = { [key]: nullIfBlank(mdDraft.value) }
+  const ko = nullIfBlank(mdDraft.ko)
+  const id = nullIfBlank(mdDraft.id)
+  // 원문 컬럼도 함께 갱신(한국어 우선) — 쌍을 모르는 곳(대시보드·내보내기)이 옛 값을 보지 않도록.
+  const patch = { [key + '_ko']: ko, [key + '_id']: id, [key]: ko ?? id }
   if (key === 'business_answer_md') patch.business_answered_on = nullIfBlank(mdDate.value)
   saving.value = true
   try {
@@ -585,7 +604,16 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             </button>
           </div>
           <template v-if="mdEditing === sec.key">
-            <textarea v-model="mdDraft" class="form-control md-edit" rows="10"></textarea>
+            <div class="md-pair">
+              <label class="field">
+                <span>KO</span>
+                <textarea v-model="mdDraft.ko" class="form-control md-edit" rows="10"></textarea>
+              </label>
+              <label class="field">
+                <span>ID</span>
+                <textarea v-model="mdDraft.id" class="form-control md-edit" rows="10"></textarea>
+              </label>
+            </div>
             <div class="actions">
               <button
                 type="button"
@@ -604,7 +632,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               </button>
             </div>
           </template>
-          <pre v-else-if="issue[sec.key]" class="md">{{ md(issue[sec.key]) }}</pre>
+          <pre v-else-if="bodyOf(sec.key)" class="md">{{ md(bodyOf(sec.key)) }}</pre>
           <p v-else class="muted">—</p>
         </section>
 
@@ -713,7 +741,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               class="btn btn-sm btn-link"
               @click="startMd('business_answer_md')"
             >
-              {{ issue.business_answer_md ? T('edit') : T('write_answer') }}
+              {{ bodyOf('business_answer_md') ? T('edit') : T('write_answer') }}
             </button>
           </div>
           <template v-if="mdEditing === 'business_answer_md'">
@@ -721,7 +749,16 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               <span>{{ T('answered_on') }}</span>
               <input v-model="mdDate" type="date" class="form-control form-control-sm" />
             </label>
-            <textarea v-model="mdDraft" class="form-control md-edit" rows="6"></textarea>
+            <div class="md-pair">
+              <label class="field">
+                <span>KO</span>
+                <textarea v-model="mdDraft.ko" class="form-control md-edit" rows="6"></textarea>
+              </label>
+              <label class="field">
+                <span>ID</span>
+                <textarea v-model="mdDraft.id" class="form-control md-edit" rows="6"></textarea>
+              </label>
+            </div>
             <div class="actions">
               <button
                 type="button"
@@ -740,8 +777,8 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               </button>
             </div>
           </template>
-          <pre v-else-if="issue.business_answer_md" class="md">{{
-            md(issue.business_answer_md)
+          <pre v-else-if="bodyOf('business_answer_md')" class="md">{{
+            md(bodyOf('business_answer_md'))
           }}</pre>
           <p v-else class="muted">{{ T('no_answer') }}</p>
         </section>
@@ -1062,6 +1099,12 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   font-family: inherit;
   font-size: 13px;
   line-height: 1.7;
+}
+/* 본문 편집은 KO·ID 나란히 — 한쪽만 고치고 다른 쪽을 잊지 않도록(TEXT_PAIRS 와 같은 이유). */
+.md-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 10px 16px;
 }
 .md-edit {
   font-family: inherit;

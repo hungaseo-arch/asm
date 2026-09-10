@@ -14,8 +14,9 @@ Pages 로 배포하므로 **`main` 이 곧 배포본**입니다.
 
 - **CSR §1 캡쳐(사진 첨부)** — Apps Script 업로드 프록시(`scripts/apps_script/`) + 상세 화면
   업로드 UI + Notion 이관분 38건 `csr_attachments` 적재. 미착수
-- **DB 적용 대기** — `db/008_path_menu_english.sql`(화면경로 한글 → 실제 ASM 사이트 용어).
-  콘솔 SQL Editor 에서 실행 후 남은 한글 0행 확인
+- **DB 적용 대기(순서대로)** — `db/008`(화면경로 영어화 v3 — v1·v2 는 편집기에서 미적용),
+  `db/009`(auth 스키마 GRANT — 이것 없이는 앱의 csr_issues UPDATE 가 전부 42501),
+  `db/010`(본문 3종 KO/ID 쌍 — 60건 번역, 검수 대상)
 
 ### 2026-09-10 (CSR 화면 정리 · 미배포)
 

@@ -8,7 +8,7 @@ import { addReply, addVerification, loadStatusLog, nullIfBlank, updateIssue } fr
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { IT_STATUSES, OPTIONS, STATUS_TONE, canAdd, canEditColumn, isConfigured } from '../config'
-import { label, pickLang, pickPair } from '../i18n'
+import { label, pathToEnglish, pickLang, pickPair } from '../i18n'
 
 const route = useRoute()
 const router = useRouter()
@@ -98,7 +98,7 @@ const T = (key) => DICT[key]?.[lang.value === 'id' ? 1 : 0] ?? key
  * 적은 것이라 언어 토글을 타지 않습니다(2026-09-10 「메뉴언어와 동일하게」). 나머지 옵션값은
  * "조치확인 / Terkonfirmasi" 꼴이라 토글 언어 쪽만 보여 줍니다.
  */
-const VF = (key, value) => (key === 'path_menu' ? (value ?? null) : V(value))
+const VF = (key, value) => (key === 'path_menu' ? pathToEnglish(value) : V(value))
 /**
  * 본문(마크다운) 표시. 본문은 이슈마다 한 언어로 쓰여 있고(한국어 37건 · 인니어 26건) 번역본
  * 컬럼은 없어 그대로 보여 줍니다. 다만 "**재현 절차 / Langkah reproduksi**" 처럼 **한 줄 안에
@@ -128,7 +128,7 @@ const md = (text) =>
  * 합니다(2026-09-10 「구분이 잘 되도록」).
  */
 const splitPaths = (v) =>
-  String(v ?? '')
+  String(pathToEnglish(v) ?? '')
     .split(/\s+·\s+/)
     .map((x) => x.trim())
     .filter(Boolean)
@@ -972,6 +972,9 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   display: flex;
   gap: 6px;
   align-items: center;
+  flex-wrap: wrap; /* 2칸 폭에 못 들어가면 다음 줄로 — 잘린 채 스크롤되는 것보다 낫습니다 */
+  white-space: normal;
+  overflow: visible;
 }
 .path-chip {
   display: inline-block;

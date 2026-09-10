@@ -67,3 +67,66 @@ const LABELS = {
 }
 
 export const label = (key, lang) => LABELS[key]?.[lang] ?? LABELS[key]?.ko ?? key
+
+/**
+ * 화면경로 한글 토큰 → 실제 ASM 사이트 용어(영어). db/008_path_menu_english.sql 의 표와 같은 순서·같은
+ * 내용입니다(긴 토큰 먼저). 저장값은 008 이 고치고, 여기서는 **표시만** 같은 규칙으로 바꿉니다 —
+ * 008 이 아직 안 돌아간 DB 에서도 화면은 사이트 메뉴와 같게 보이도록(2026-09-10 요청 3회).
+ * 표를 고칠 때는 두 곳을 함께 고치십시오.
+ */
+export const PATH_TOKENS = [
+  [
+    'Purchasing > Payment Plan 신설 — PO 연결, 지급조건 · 예정일 · 실제 지급일 · 환율 · 잔액, PPC → 지급 → Shipment 상태 연동, 월별 지급 예정 · 미지급 리포트',
+    'Purchasing > Payment Plan (new menu)',
+  ],
+  ['전 화면 (금액 · 수량 · 단가 표기)', 'All screens (amount · qty · unit price format)'],
+  ['전 화면 (목록 · 상세 레이아웃)', 'All screens (list · detail layout)'],
+  ['전 입력 화면 (저장 시 검증)', 'All input screens (validation on save)'],
+  ['전 화면 날짜 입력란', 'All screens date input'],
+  ['전 목록 화면', 'All list screens'],
+  ['전 화면', 'All screens'],
+  ['로그인 화면', 'Login screen'],
+  ['메뉴 트리', 'Menu tree'],
+  ['신규·상세 (재고 연동)', 'New·Detail (stock link)'],
+  ['신규·상세', 'New·Detail'],
+  ['목록·상세', 'List·Detail'],
+  ['신규 (창고 선택)', 'New (warehouse selection)'],
+  ['신규 (단가 입력)', 'New (unit price input)'],
+  ['신규 (품목 입력)', 'New (item input)'],
+  ['신규 (품목 행)', 'New (item row)'],
+  ['신규 (합계 블록)', 'New (total block)'],
+  ['신규 (배송지', 'New (shipping address'],
+  ['신규(LOCAL) 공급사 드롭다운', 'New (LOCAL) supplier dropdown'],
+  ['신규(LOCAL)', 'New (LOCAL)'],
+  ['신규(IMPORT · LOCAL)', 'New (IMPORT · LOCAL)'],
+  ['승인 팝업', 'Approval popup'],
+  ['출력(GRPO)', 'Print (GRPO)'],
+  ['(신설 요청)', '(new menu request)'],
+  ['(신설)', '(new menu)'],
+  ['(메뉴 권한)', '(menu permission)'],
+  ['(Confirm 권한)', '(Confirm permission)'],
+  ['등 목록', 'etc. list'],
+  ['ACTUAL 탭', 'ACTUAL tab'],
+  ['ESTIMATED 탭', 'ESTIMATED tab'],
+  ['명칭 변경 확인', 'name change check'],
+  ['Est. Delivery Date 정렬', 'Est. Delivery Date sort'],
+  ['PO Date · Delivery Date 변경', 'PO Date · Delivery Date change'],
+  ['Delivery Note 운송 정보', 'Delivery Note shipping info'],
+  ['직원 마스터 DEPARTMENT', 'staff master DEPARTMENT'],
+  ['GRPO 출력물', 'GRPO printout'],
+  ['신규', 'New'],
+  ['상세', 'Detail'],
+  ['목록', 'List'],
+  ['승인', 'Approve'],
+  ['확정', 'Confirm'],
+  ['출력', 'Print'],
+  ['신설', 'new menu'],
+]
+
+export function pathToEnglish(value) {
+  if (value == null) return value
+  let s = String(value)
+  if (!/[가-힣]/.test(s)) return s
+  for (const [ko, en] of PATH_TOKENS) s = s.split(ko).join(en)
+  return s
+}

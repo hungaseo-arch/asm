@@ -621,114 +621,121 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
           </form>
         </header>
 
-        <!-- §1 캡쳐 -->
-        <section class="asm-panel sec">
-          <div class="sec-head">
-            <h2 class="asm-title">1. {{ T('sec_capture') }}</h2>
-            <!-- 업로드 — 현업·admin. 파일 선택 즉시 올라갑니다(별도 저장 단계 없음). -->
-            <template v-if="canUpload">
-              <input
-                ref="fileInput"
-                type="file"
-                accept="image/*,application/pdf"
-                multiple
-                hidden
-                @change="onPickFiles"
-              />
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-primary"
-                :disabled="uploading"
-                @click="fileInput?.click()"
-              >
-                {{ uploading ? T('uploading') : T('add_capture') }}
-              </button>
-            </template>
-          </div>
-          <p v-if="!attachments.length" class="muted">
-            {{ T('no_capture') }}
-          </p>
-          <div v-else class="gallery">
-            <figure v-for="a in attachments" :key="a.id" class="shot">
-              <a
-                :href="`https://drive.google.com/file/d/${a.drive_file_id}/view`"
-                target="_blank"
-                rel="noopener"
-                :title="a.file_name ?? ''"
-              >
-                <img
-                  :src="thumb(a.drive_file_id)"
-                  :alt="a.caption ?? a.file_name ?? ''"
-                  loading="lazy"
+        <!--
+          §1 캡쳐 · §2 현상 을 한 행 두 열로(2026-09-10 요청). 캡쳐는 왼쪽 열을 꽉 채우고, 현상은 오른쪽.
+          §3 은 같은 격자에서 전폭(full). 992px 미만은 한 열로 접힙니다.
+        -->
+        <div class="sec-grid">
+          <!-- §1 캡쳐 -->
+          <section class="asm-panel sec">
+            <div class="sec-head">
+              <h2 class="asm-title">1. {{ T('sec_capture') }}</h2>
+              <!-- 업로드 — 현업·admin. 파일 선택 즉시 올라갑니다(별도 저장 단계 없음). -->
+              <template v-if="canUpload">
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  multiple
+                  hidden
+                  @change="onPickFiles"
                 />
-              </a>
-              <figcaption>
-                <span class="fname">{{ a.caption ?? a.file_name ?? '' }}</span>
                 <button
-                  v-if="role === 'admin'"
                   type="button"
-                  class="btn btn-sm btn-link text-danger"
-                  @click="onRemoveAttachment(a)"
+                  class="btn btn-sm btn-outline-primary"
+                  :disabled="uploading"
+                  @click="fileInput?.click()"
                 >
-                  {{ T('remove') }}
+                  {{ uploading ? T('uploading') : T('add_capture') }}
                 </button>
-              </figcaption>
-            </figure>
-          </div>
-        </section>
+              </template>
+            </div>
+            <p v-if="!attachments.length" class="muted">
+              {{ T('no_capture') }}
+            </p>
+            <div v-else class="gallery">
+              <figure v-for="a in attachments" :key="a.id" class="shot">
+                <a
+                  :href="`https://drive.google.com/file/d/${a.drive_file_id}/view`"
+                  target="_blank"
+                  rel="noopener"
+                  :title="a.file_name ?? ''"
+                >
+                  <img
+                    :src="thumb(a.drive_file_id)"
+                    :alt="a.caption ?? a.file_name ?? ''"
+                    loading="lazy"
+                  />
+                </a>
+                <figcaption>
+                  <span class="fname">{{ a.caption ?? a.file_name ?? '' }}</span>
+                  <button
+                    v-if="role === 'admin'"
+                    type="button"
+                    class="btn btn-sm btn-link text-danger"
+                    @click="onRemoveAttachment(a)"
+                  >
+                    {{ T('remove') }}
+                  </button>
+                </figcaption>
+              </figure>
+            </div>
+          </section>
 
-        <!-- §2 · §3 본문 — business · admin 편집 -->
-        <section
-          v-for="sec in [
-            { key: 'findings_md', title: '2. ' + T('sec_findings') },
-            { key: 'recommendation_md', title: '3. ' + T('sec_reco') },
-          ]"
-          :key="sec.key"
-          class="asm-panel sec"
-        >
-          <div class="sec-head">
-            <h2 class="asm-title">{{ sec.title }}</h2>
-            <button
-              v-if="editable(sec.key) && mdEditing !== sec.key"
-              type="button"
-              class="btn btn-sm btn-link"
-              @click="startMd(sec.key)"
-            >
-              {{ T('edit') }}
-            </button>
-          </div>
-          <template v-if="mdEditing === sec.key">
-            <div class="md-pair">
-              <label class="field">
-                <span>KO</span>
-                <textarea v-model="mdDraft.ko" class="form-control md-edit" rows="10"></textarea>
-              </label>
-              <label class="field">
-                <span>ID</span>
-                <textarea v-model="mdDraft.id" class="form-control md-edit" rows="10"></textarea>
-              </label>
-            </div>
-            <div class="actions">
+          <!-- §2 · §3 본문 — business · admin 편집 -->
+          <section
+            v-for="sec in [
+              { key: 'findings_md', title: '2. ' + T('sec_findings') },
+              { key: 'recommendation_md', title: '3. ' + T('sec_reco') },
+            ]"
+            :key="sec.key"
+            class="asm-panel sec"
+            :class="{ full: sec.key === 'recommendation_md' }"
+          >
+            <div class="sec-head">
+              <h2 class="asm-title">{{ sec.title }}</h2>
               <button
+                v-if="editable(sec.key) && mdEditing !== sec.key"
                 type="button"
-                class="btn btn-outline-secondary btn-sm"
-                @click="mdEditing = null"
+                class="btn btn-sm btn-link"
+                @click="startMd(sec.key)"
               >
-                {{ T('cancel') }}
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary btn-sm"
-                :disabled="saving"
-                @click="saveMd"
-              >
-                {{ T('save') }}
+                {{ T('edit') }}
               </button>
             </div>
-          </template>
-          <pre v-else-if="bodyOf(sec.key)" class="md">{{ md(bodyOf(sec.key)) }}</pre>
-          <p v-else class="muted">—</p>
-        </section>
+            <template v-if="mdEditing === sec.key">
+              <div class="md-pair">
+                <label class="field">
+                  <span>KO</span>
+                  <textarea v-model="mdDraft.ko" class="form-control md-edit" rows="10"></textarea>
+                </label>
+                <label class="field">
+                  <span>ID</span>
+                  <textarea v-model="mdDraft.id" class="form-control md-edit" rows="10"></textarea>
+                </label>
+              </div>
+              <div class="actions">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  @click="mdEditing = null"
+                >
+                  {{ T('cancel') }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  :disabled="saving"
+                  @click="saveMd"
+                >
+                  {{ T('save') }}
+                </button>
+              </div>
+            </template>
+            <pre v-else-if="bodyOf(sec.key)" class="md">{{ md(bodyOf(sec.key)) }}</pre>
+            <p v-else class="muted">—</p>
+          </section>
+        </div>
 
         <section class="asm-panel sec">
           <h2 class="asm-title">4. {{ L('acceptance') }}</h2>
@@ -1281,15 +1288,28 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   table-layout: auto;
   width: 100%;
 }
+/* §1·§2 두 열 + §3 전폭 */
+.sec-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.sec-grid .full {
+  grid-column: 1 / -1;
+}
+@media (max-width: 991.98px) {
+  .sec-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .gallery {
   display: flex;
+  flex-direction: column;
   gap: 12px;
-  flex-wrap: wrap;
 }
 .gallery img {
-  max-height: 200px;
-  max-width: 320px;
-  object-fit: contain;
+  width: 100%;
+  height: auto;
   border: 1px solid var(--asm-border);
   border-radius: var(--asm-radius-md);
   background: var(--asm-muted-20);
@@ -1299,7 +1319,6 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-width: 320px;
 }
 .shot figcaption {
   display: flex;

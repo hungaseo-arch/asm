@@ -48,7 +48,7 @@ const LABELS = {
   search: { ko: '이슈번호 · 제목 검색', id: 'Cari no. isu · judul' },
   preset_it: { ko: 'IT부서용', id: 'Untuk Tim IT' },
   preset_pending: { ko: '검증 대기', id: 'Menunggu verifikasi' },
-  reset: { ko: '초기화', id: 'Reset' },
+  reset: { ko: '전체', id: 'Semua' },
   list_title: { ko: '개선요청', id: 'Permintaan Perbaikan' },
   empty: { ko: '조건에 맞는 개선요청이 없습니다', id: 'Tidak ada permintaan yang cocok' },
   loading: { ko: '불러오는 중…', id: 'Memuat…' },

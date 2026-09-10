@@ -111,24 +111,27 @@ watch(
 <template>
   <DefaultLayout>
     <section class="csr-list">
-      <p class="asm-eyebrow">Manajemen Permintaan Perbaikan · 개선요청 관리</p>
-
       <!--
-        고정 공지 스트립 — 작업지시서 §5-4a 의 회신 안내를 포함해, 관리자가 고정한 공지를
-        목록 맨 위에 한 줄씩 보여 줍니다. 문구를 코드에 박지 않고 공지 체계 하나로
-        일원화했습니다(2026-09-10). 누르면 공지 화면으로 갑니다.
+        머리줄 — 좌: 눈썹 제목, 우: 고정 공지 한 줄(2026-09-10 「우측상단으로 이동하고 1행으로」).
+        고정 공지는 작업지시서 §5-4a 의 회신 안내를 포함해 관리자가 고정한 것이며, 문구를
+        코드에 박지 않고 공지 체계 하나로 일원화했습니다. 여러 건이면 첫 건만 보이고 나머지는
+        개수로 접습니다 — 머리줄은 한 줄이어야 합니다. 누르면 공지 화면으로 갑니다.
       -->
-      <button
-        v-for="n in pinned"
-        :key="n.id"
-        type="button"
-        class="asm-footnote notice"
-        :title="n.title"
-        @click="router.push('/csr/notices')"
-      >
-        <Bell :size="13" />
-        <span>{{ n.title }}</span>
-      </button>
+      <div class="headline">
+        <p class="asm-eyebrow">Manajemen Permintaan Perbaikan · 개선요청 관리</p>
+        <button
+          v-if="pinned.length"
+          type="button"
+          class="notice"
+          :title="pinned.map((n) => n.title).join('
+')"
+          @click="router.push('/csr/notices')"
+        >
+          <Bell :size="13" />
+          <span class="notice-text">{{ pinned[0].title }}</span>
+          <span v-if="pinned.length > 1" class="notice-more">+{{ pinned.length - 1 }}</span>
+        </button>
+      </div>
 
       <!-- 설정 누락 · 미로그인 · 미등록은 각각 다른 안내가 필요합니다. -->
       <div v-if="!isConfigured()" class="asm-panel state">
@@ -277,24 +280,54 @@ watch(
  * 하단 여백(1rem)이 남아 있으면 그 아래만 32px 로 벌어져 위아래가 고르지 않았습니다
  * (2026-09-10). 안내 상자도 같은 이유로 여백을 없앱니다.
  */
-.csr-list > .asm-eyebrow,
-.csr-list > .notice {
-  margin: 0;
-}
-.notice {
-  font-size: 12px;
+.headline {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  text-align: left;
-  border: 0;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 28px;
+}
+.headline .asm-eyebrow {
+  margin: 0;
+  flex: none;
+}
+/* 고정 공지 — 머리줄 우측 한 줄. 남는 폭만 쓰고 넘치면 말줄임, 전체는 툴팁. */
+.notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 60%;
+  padding: 4px 10px;
+  border: 1px solid var(--asm-border);
+  border-radius: 9999px;
+  background: var(--asm-secondary);
+  color: var(--asm-fg);
+  font-size: 12px;
   cursor: pointer;
 }
-.notice span {
+.notice:hover {
+  background: var(--asm-primary-10);
+  border-color: var(--asm-primary-40);
+}
+.notice-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.notice-more {
+  flex: none;
+  font-weight: 700;
+  color: var(--asm-primary);
+}
+@media (max-width: 767.98px) {
+  /* 좁은 화면에서는 두 줄로 — 한 줄에 두면 눈썹 제목이 밀려 잘립니다. */
+  .headline {
+    flex-wrap: wrap;
+  }
+  .notice {
+    max-width: 100%;
+  }
 }
 .state {
   padding: 24px;

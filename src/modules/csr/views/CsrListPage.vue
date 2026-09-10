@@ -48,6 +48,20 @@ onMounted(async () => {
 })
 
 const lang = computed(() => issues.lang)
+
+/** 표 열 — 라벨 키와 정렬 컬럼. 제목은 토글 언어 쪽 컬럼으로 정렬합니다. */
+const COLUMNS = computed(() => [
+  { key: 'issue_no', sortKey: 'issue_no' },
+  { key: 'title', sortKey: lang.value === 'id' ? 'title_id' : 'title_ko' },
+  { key: 'it_status', sortKey: 'it_status' },
+  { key: 'verification_result', sortKey: 'verification_result' },
+  { key: 'it_decision', sortKey: 'it_decision' },
+  { key: 'it_pic', sortKey: 'it_pic' },
+  { key: 'target_release_on', sortKey: 'target_release_on' },
+])
+const sortMark = (k) => (issues.sort.key !== k ? '' : issues.sort.dir === 'asc' ? '▲' : '▼')
+const ariaSort = (k) =>
+  issues.sort.key !== k ? 'none' : issues.sort.dir === 'asc' ? 'ascending' : 'descending'
 /** 표시 언어에 맞춘 라벨·값. 저장값은 원문 그대로이고 화면에서만 가릅니다(§8). */
 const L = (key) => label(key, lang.value)
 const V = (value) => pickLang(value, lang.value)
@@ -197,7 +211,7 @@ watch(
             >
               {{ L('preset_pending') }}
             </button>
-            <button type="button" class="btn btn-sm btn-link" @click="issues.reset()">
+            <button type="button" class="btn btn-sm btn-outline-secondary" @click="issues.reset()">
               {{ L('reset') }}
             </button>
             <span class="vr"></span>
@@ -238,14 +252,19 @@ watch(
           <div class="table-scroll">
             <table class="table asm-table">
               <thead>
+                <!-- 헤더 클릭 정렬(2026-09-10 요청): 오름 → 내림 → 기본. 제목은 표시 언어 열로 정렬. -->
                 <tr>
-                  <th>{{ L('issue_no') }}</th>
-                  <th>{{ L('title') }}</th>
-                  <th>{{ L('it_status') }}</th>
-                  <th>{{ L('verification_result') }}</th>
-                  <th>{{ L('it_decision') }}</th>
-                  <th>{{ L('it_pic') }}</th>
-                  <th>{{ L('target_release_on') }}</th>
+                  <th
+                    v-for="c in COLUMNS"
+                    :key="c.key"
+                    class="sortable"
+                    :class="{ active: issues.sort.key === c.sortKey }"
+                    :aria-sort="ariaSort(c.sortKey)"
+                    @click="issues.toggleSort(c.sortKey)"
+                  >
+                    {{ L(c.key) }}
+                    <span class="sort-mark" aria-hidden="true">{{ sortMark(c.sortKey) }}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -394,6 +413,23 @@ watch(
   display: flex;
   align-items: center;
   gap: 6px;
+}
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sortable:hover {
+  color: var(--asm-primary);
+}
+.sortable.active {
+  color: var(--asm-primary);
+}
+.sort-mark {
+  display: inline-block;
+  width: 1em;
+  font-size: 9px;
+  vertical-align: middle;
 }
 .table-scroll {
   overflow-x: auto;

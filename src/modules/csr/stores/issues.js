@@ -92,6 +92,17 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
     verification: uniqueValues('verification_result'),
   }))
 
+  /**
+   * 열 정렬(2026-09-10 요청). key 가 null 이면 기본(이슈번호 순). 같은 열을 다시 누르면
+   * 방향이 뒤집히고, 세 번째에는 기본으로 돌아갑니다 — 정렬을 풀 별도 버튼이 없어도 되게.
+   */
+  const sort = ref({ key: null, dir: 'asc' })
+  function toggleSort(key) {
+    if (sort.value.key !== key) sort.value = { key, dir: 'asc' }
+    else if (sort.value.dir === 'asc') sort.value = { key, dir: 'desc' }
+    else sort.value = { key: null, dir: 'asc' }
+  }
+
   const filtered = computed(() => {
     const f = filters.value
     const q = f.search.trim().toLowerCase()
@@ -113,10 +124,26 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
       return true
     })
 
-    return out.sort((a, b) => {
+    const byNo = (a, b) => {
       const x = issueNoRank(a.issue_no)
       const y = issueNoRank(b.issue_no)
       return x[0] - y[0] || x[1] - y[1] || x[2].localeCompare(y[2])
+    }
+    const { key, dir } = sort.value
+    if (!key) return out.sort(byNo)
+    // 빈 값은 방향과 무관하게 맨 뒤 — '목표배포일 없음' 이 위로 올라오면 정렬한 의미가 없습니다.
+    const sign = dir === 'asc' ? 1 : -1
+    return out.sort((a, b) => {
+      const av = a[key] ?? ''
+      const bv = b[key] ?? ''
+      if (av === '' && bv === '') return byNo(a, b)
+      if (av === '') return 1
+      if (bv === '') return -1
+      const c =
+        key === 'issue_no'
+          ? byNo(a, b)
+          : String(av).localeCompare(String(bv), undefined, { numeric: true })
+      return c * sign || byNo(a, b)
     })
   })
 
@@ -157,6 +184,8 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
     lang,
     options,
     filtered,
+    sort,
+    toggleSort,
     counts,
     load,
     reset,

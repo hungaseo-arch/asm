@@ -334,10 +334,14 @@ async function signOut() {
  * 구분선은 border-left 로 그려 로고 영역(BS 02 최소 공간규정)을 침범하지 않도록
  * 12px 씩 띄웁니다.
  */
+/*
+ * 화면 제목 — 대분류(대문자 · 700 · 본문색)와 확실히 다르게: 13px · 400 · muted. 같은 크기·색이면
+ * 'Customer PO' 가 대분류처럼 읽혔습니다(2026-09-10 요청). 이건 '지금 어디' 표시일 뿐 버튼이 아닙니다.
+ */
 .page-title {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--asm-fg);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--asm-fg-muted);
   border-left: 1px solid var(--asm-border);
   padding-left: 12px;
   margin-left: 2px;

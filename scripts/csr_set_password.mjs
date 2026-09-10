@@ -45,13 +45,18 @@ const OUT_DIR = opt('--out', 'import/out')
  */
 function emailsFromSeed() {
   const sql = readFileSync('db/004_seed_roles.sql', 'utf8')
-  const block = sql.slice(sql.indexOf('INSERT INTO csr_seed'), sql.indexOf('-- ─────', sql.indexOf('INSERT INTO csr_seed')))
+  const block = sql.slice(
+    sql.indexOf('INSERT INTO csr_seed'),
+    sql.indexOf('-- ─────', sql.indexOf('INSERT INTO csr_seed')),
+  )
   return [...block.matchAll(/\('([^']+@[^']+)'/g)].map((m) => m[1])
 }
 
 const emails = many('--email').length ? many('--email') : emailsFromSeed()
 if (!emails.length) {
-  console.error('대상 이메일을 찾지 못했습니다. db/004_seed_roles.sql 을 확인하거나 --email 로 지정하십시오.')
+  console.error(
+    '대상 이메일을 찾지 못했습니다. db/004_seed_roles.sql 을 확인하거나 --email 로 지정하십시오.',
+  )
   process.exit(1)
 }
 

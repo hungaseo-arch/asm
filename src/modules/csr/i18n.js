@@ -6,6 +6,8 @@
  * 토글이 인니어면 뒤쪽, 한국어면 앞쪽을 보여 줍니다. 구분자가 없는 값(S2 Major · Open)은
  * 그대로 냅니다.
  */
+import { DECISION_TONE, RESULT_TONE } from './config'
+
 const SEP = ' / '
 
 const HANGUL = /[가-힣]/
@@ -67,6 +69,53 @@ const LABELS = {
 }
 
 export const label = (key, lang) => LABELS[key]?.[lang] ?? LABELS[key]?.ko ?? key
+
+/**
+ * 정해진 값의 용어 사전 — 검증 이력의 결과(result) · IT 회신의 수용 여부(decision).
+ * 저장값은 Notion 원문(한 언어)이라 컬럼을 늘리지 않고 표시만 바꿉니다. 「수용 — Completed」 처럼
+ * " — " 로 이어진 값은 조각마다 사전을 적용합니다(Completed 같은 영어 상태값은 그대로).
+ * 사전에 없는 값은 그대로 보여 줍니다 — 잘못 바꾸느니 원문이 낫습니다.
+ */
+const TERMS = [
+  ['최초 발견', 'Temuan awal'],
+  ['최초 제안', 'Usulan awal'],
+  ['최초 접수', 'Diterima pertama kali'],
+  ['조치확인', 'Terkonfirmasi'],
+  ['부분조치', 'Sebagian'],
+  ['미조치', 'Belum ditindaklanjuti'],
+  ['미검증', 'Belum diverifikasi'],
+  ['Completed 부적정', 'Completed tidak sesuai'],
+  ['수용', 'Diterima'],
+  ['조건부 수용', 'Diterima Bersyarat'],
+  ['결정요청', 'Perlu Keputusan'],
+  ['보류', 'Ditunda'],
+  ['반려', 'Ditolak'],
+  ['미회신', 'Belum Ada Balasan'],
+]
+const TERM_TO_ID = new Map(TERMS.map(([ko, id]) => [ko, id]))
+const TERM_TO_KO = new Map(TERMS.map(([ko, id]) => [id.toLowerCase(), ko]))
+
+/** 결정사항 값의 배지 톤 — kind 는 'it_decision' | 'verification_result'. 모르는 값은 neutral. */
+export function toneOf(kind, value) {
+  if (!value) return 'neutral'
+  const table = kind === 'it_decision' ? DECISION_TONE : RESULT_TONE
+  const head = termLang(value, 'ko').split(' — ')[0].trim()
+  return table[head] ?? 'neutral'
+}
+
+export function termLang(value, lang) {
+  if (value == null) return value
+  // "미검증 (Belum diverifikasi)" · "조치확인 / Terkonfirmasi" 꼴은 먼저 한쪽만 남기고
+  const base = pickLang(value, lang)
+  return String(base)
+    .split(' — ')
+    .map((part) => {
+      const p = part.trim()
+      if (lang === 'id') return TERM_TO_ID.get(p) ?? p
+      return TERM_TO_KO.get(p.toLowerCase()) ?? p
+    })
+    .join(' — ')
+}
 
 /**
  * 화면경로 한글 토큰 → 실제 ASM 사이트 용어(영어). db/008_path_menu_english.sql 의 표와 같은 순서·같은

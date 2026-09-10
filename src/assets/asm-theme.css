@@ -600,6 +600,12 @@ thead .asm-sticky-col {
   color: var(--asm-neutral);
   border-color: var(--asm-neutral-border);
 }
+/* Verified(현업 검증 완료) — 강조색. STATUS_TONE 이 쓰는데 정의가 없어 맨색으로 보이던 것. */
+.asm-badge--primary {
+  background: var(--asm-primary-soft);
+  color: var(--asm-primary-soft-fg);
+  border-color: var(--asm-primary-10);
+}
 
 /*
  * 점(dot) 상태 — 배경 없이 8px 점 + 12px 글자.

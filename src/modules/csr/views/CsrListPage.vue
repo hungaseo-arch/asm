@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { STATUS_TONE, isConfigured } from '../config'
-import { label, pickLang, pickPair } from '../i18n'
+import { label, pickLang, pickPair, toneOf } from '../i18n'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import CsrSignIn from '../components/CsrSignIn.vue'
 
@@ -294,8 +294,24 @@ watch(
                       {{ row.it_status }}
                     </span>
                   </td>
-                  <td class="nowrap">{{ V(row.verification_result) }}</td>
-                  <td class="nowrap">{{ V(row.it_decision) }}</td>
+                  <td class="nowrap">
+                    <span
+                      v-if="row.verification_result"
+                      class="asm-badge"
+                      :class="`asm-badge--${toneOf('verification_result', row.verification_result)}`"
+                    >
+                      {{ V(row.verification_result) }}
+                    </span>
+                  </td>
+                  <td class="nowrap">
+                    <span
+                      v-if="row.it_decision"
+                      class="asm-badge"
+                      :class="`asm-badge--${toneOf('it_decision', row.it_decision)}`"
+                    >
+                      {{ V(row.it_decision) }}
+                    </span>
+                  </td>
                   <td class="nowrap">{{ row.it_pic }}</td>
                   <td class="nowrap">{{ row.target_release_on ?? '—' }}</td>
                 </tr>

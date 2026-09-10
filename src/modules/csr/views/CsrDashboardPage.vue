@@ -5,7 +5,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { IT_STATUSES, STATUS_TONE, isConfigured } from '../config'
-import { label, pickLang } from '../i18n'
+import { label, pickLang, toneOf } from '../i18n'
 import { formatInt } from '@/utils/format'
 import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrLangToggle from '../components/CsrLangToggle.vue'
@@ -171,7 +171,14 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
               <thead>
                 <tr>
                   <th></th>
-                  <th v-for="v in verifValues" :key="v" class="nowrap">{{ V(v) }}</th>
+                  <th v-for="v in verifValues" :key="v" class="nowrap">
+                    <span
+                      class="asm-badge"
+                      :class="`asm-badge--${toneOf('verification_result', v)}`"
+                    >
+                      {{ V(v) }}
+                    </span>
+                  </th>
                   <th class="nowrap total">{{ t('합계', 'Total') }}</th>
                 </tr>
               </thead>

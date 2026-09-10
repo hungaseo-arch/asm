@@ -8,7 +8,7 @@ import { addReply, addVerification, loadStatusLog, nullIfBlank, updateIssue } fr
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { IT_STATUSES, OPTIONS, STATUS_TONE, canAdd, canEditColumn, isConfigured } from '../config'
-import { label, pathToEnglish, pickLang, pickPair } from '../i18n'
+import { label, pathToEnglish, pickLang, pickPair, termLang, toneOf } from '../i18n'
 import { isUploadConfigured, removeAttachment, uploadCapture } from '../api/upload'
 
 const route = useRoute()
@@ -112,6 +112,23 @@ const T = (key) => DICT[key]?.[lang.value === 'id' ? 1 : 0] ?? key
  * "조치확인 / Terkonfirmasi" 꼴이라 토글 언어 쪽만 보여 줍니다.
  */
 const VF = (key, value) => (key === 'path_menu' ? pathToEnglish(value) : V(value))
+/** 검증 결과 · 수용 여부 같은 정해진 값 — 용어 사전으로 토글 언어 표시. */
+const VT = (value) => termLang(value, lang.value)
+/** 속성 격자에서 배지로 보이는 항목 — IT상태 · IT수용여부 · 현업검증 (결정사항 색 구분). */
+const BADGE_KEYS = new Set(['it_status', 'it_decision', 'verification_result'])
+const badgeTone = (key, value) =>
+  key === 'it_status' ? (STATUS_TONE[value] ?? 'neutral') : toneOf(key, value)
+/**
+ * 회신·검증의 자유 텍스트 — 014 이후 <col>_ko/_id 쌍. 토글 언어 → 반대쪽 → 원문 순으로 되돌아가므로
+ * 014 전 DB 나 화면에서 새로 쓴 행(원문만 있음)도 그대로 보입니다.
+ */
+const pairOf = (row, key) => {
+  const [a, b] =
+    lang.value === 'id'
+      ? [row[key + '_id'], row[key + '_ko']]
+      : [row[key + '_ko'], row[key + '_id']]
+  return a || b || row[key] || null
+}
 /**
  * 본문(마크다운) 표시. 본문은 이슈마다 한 언어로 쓰여 있고(한국어 37건 · 인니어 26건) 번역본
  * 컬럼은 없어 그대로 보여 줍니다. 다만 "**재현 절차 / Langkah reproduksi**" 처럼 **한 줄 안에
@@ -420,7 +437,7 @@ const REPLY_FIELDS = [
 /** Notion 이관분은 빈 칸을 '—' · '-' · '(tidak dicantumkan)' · '(미기재)' 로 적어 두었습니다 — 빈 것으로 칩니다. */
 const isBlank = (v) =>
   !v || /^[\s—–\-]*$|^\((tidak dicantumkan|미기재|없음)\)$/i.test(String(v).trim())
-const replyFields = (r) => REPLY_FIELDS.filter((f) => !isBlank(r[f.key]))
+const replyFields = (r) => REPLY_FIELDS.filter((f) => !isBlank(pairOf(r, f.key)))
 
 const byDateDesc = (k) => (a, b) => String(b[k]).localeCompare(String(a[k]))
 const sortedReplies = computed(() => [...replies.value].sort(byDateDesc('replied_on')))
@@ -545,6 +562,11 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 <dd v-if="f.key === 'path_menu' && issue.path_menu" class="paths">
                   <span v-for="(pth, i) in splitPaths(issue.path_menu)" :key="i" class="path-chip">
                     {{ pth }}
+                  </span>
+                </dd>
+                <dd v-else-if="BADGE_KEYS.has(f.key) && issue[f.key]">
+                  <span class="asm-badge" :class="`asm-badge--${badgeTone(f.key, issue[f.key])}`">
+                    {{ VF(f.key, issue[f.key]) }}
                   </span>
                 </dd>
                 <dd v-else :title="VF(f.key, issue[f.key]) ?? ''">
@@ -837,12 +859,17 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               <!-- 머리: 회신일 + 수용 여부 배지. 본문: 채워진 항목만, 긴 글은 전폭. -->
               <div class="reply-head">
                 <h3>{{ r.replied_on }}</h3>
-                <span v-if="r.decision" class="asm-badge asm-badge--info">{{ V(r.decision) }}</span>
+                <span
+                  v-if="r.decision"
+                  class="asm-badge"
+                  :class="`asm-badge--${toneOf('it_decision', r.decision)}`"
+                  >{{ VT(r.decision) }}</span
+                >
               </div>
               <dl v-if="replyFields(r).length" class="reply-body">
                 <div v-for="f in replyFields(r)" :key="f.key" :class="{ wide: f.wide }">
                   <dt>{{ T(f.key) }}</dt>
-                  <dd>{{ r[f.key] }}</dd>
+                  <dd>{{ pairOf(r, f.key) }}</dd>
                 </div>
               </dl>
               <p v-else class="muted">—</p>
@@ -969,8 +996,16 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             <tbody>
               <tr v-for="v in sortedVerifications" :key="v.id">
                 <td class="nowrap">{{ v.verified_on }}</td>
-                <td class="nowrap">{{ V(v.result) }}</td>
-                <td class="wrap">{{ v.note }}</td>
+                <td class="nowrap">
+                  <span
+                    v-if="v.result"
+                    class="asm-badge"
+                    :class="`asm-badge--${toneOf('verification_result', v.result)}`"
+                  >
+                    {{ VT(v.result) }}
+                  </span>
+                </td>
+                <td class="wrap">{{ pairOf(v, 'note') }}</td>
               </tr>
             </tbody>
           </table>
@@ -1298,7 +1333,14 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   margin: 0;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 8px 24px;
+  gap: 8px 16px;
+}
+/* 라벨과 값의 구분(2026-09-10 요청) — 속성 격자와 같은 칸 모양: 옅은 바탕 · 왼쪽 띠 · 라벨 작고 굵게 · 값 본문색 */
+.reply-body > div {
+  background: var(--asm-muted-20);
+  border-left: 3px solid var(--asm-primary-10);
+  border-radius: var(--asm-radius-sm);
+  padding: 6px 10px;
 }
 .reply-body .wide {
   grid-column: 1 / -1;
@@ -1306,11 +1348,13 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 .reply dt {
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--asm-fg-muted);
 }
 .reply dd {
-  margin: 2px 0 0;
-  font-size: 13px;
+  margin: 3px 0 0;
+  font-size: 14px;
+  color: var(--asm-fg);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

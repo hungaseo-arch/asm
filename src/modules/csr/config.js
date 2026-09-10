@@ -105,6 +105,31 @@ export const STATUS_TONE = {
 }
 
 /**
+ * 결정사항 색 (2026-09-10 「IT부서 · 현업부서 각각 결정사항에 따라 색상 구분」)
+ * 키는 한국어 용어(i18n.termLang 으로 정규화한 뒤 " — " 앞 조각) — "수용 / Diterima" · "Diterima" ·
+ * "수용 — Completed" 모두 같은 색이 됩니다. 톤은 다섯 가지뿐이라 뜻이 가까운 값끼리 나눠 씁니다.
+ */
+export const DECISION_TONE = {
+  수용: 'success',
+  '조건부 수용': 'info',
+  결정요청: 'warning',
+  보류: 'neutral',
+  반려: 'danger',
+  미회신: 'neutral',
+}
+export const RESULT_TONE = {
+  조치확인: 'success',
+  부분조치: 'warning',
+  미조치: 'danger',
+  미검증: 'neutral',
+  'Completed 부적정': 'danger',
+  // 검증 이력의 첫 행(발견·제안·접수) — 결과라기보다 기록이라 안내색
+  '최초 발견': 'info',
+  '최초 제안': 'info',
+  '최초 접수': 'info',
+}
+
+/**
  * 편집 권한 (작업지시서 §5-3)
  *
  * ⚠️ 이것은 **화면 표시용**입니다. 실제 차단은 DB 가 합니다 —

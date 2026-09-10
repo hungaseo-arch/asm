@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { STATUS_TONE, isConfigured } from '../config'
+import { label, pickLang, pickPair } from '../i18n'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrPasswordDialog from '../components/CsrPasswordDialog.vue'
@@ -19,28 +20,49 @@ onMounted(async () => {
   if (session.isAuthenticated && !session.isUnregistered) await issues.load()
 })
 
+const lang = computed(() => issues.lang)
+/** 표시 언어에 맞춘 라벨·값. 저장값은 원문 그대로이고 화면에서만 가릅니다(§8). */
+const L = (key) => label(key, lang.value)
+const V = (value) => pickLang(value, lang.value)
+
 /**
- * 제목은 화면 언어에 따라 고릅니다 — 한쪽이 비어 있으면 다른 쪽으로 떨어집니다.
- * 앞의 "02. " 같은 번호는 뗍니다 — 이슈번호 열이 따로 있어 두 번 보입니다(2026-09-10 요청).
- * 표시만 바꿉니다. 저장된 제목은 Notion 원문 그대로입니다(작업지시서 §8).
+ * 제목 — 화면 언어에 맞는 쪽을 고르고, 앞의 "02. " 번호는 뗍니다. 이슈번호 열이 따로 있어
+ * 두 번 보였습니다(2026-09-10 요청). 표시만 바꿉니다. 저장된 제목은 Notion 원문 그대로입니다.
+ * 정규식에 백슬래시를 쓰지 않는 이유: 셸 heredoc 을 거치며 유실된 적이 있습니다.
  */
-const stripNo = (t) => (t ? String(t).replace(/^d+.s*/, '') : t)
-const title = (row) =>
-  stripNo(issues.lang === 'id' ? (row.title_id ?? row.title_ko) : (row.title_ko ?? row.title_id))
+const stripNo = (t) => (t ? String(t).replace(/^[0-9]+[.][ ]*/, '') : t)
+const title = (row) => stripNo(pickPair(row.title_ko, row.title_id, lang.value))
 
 // 요약 카드는 헤더의 브랜드 메뉴 → 「요약」 으로 열리는 좌측 드로어에 실립니다.
-provideSidebarSummary(() => [
-  { label: 'Total', value: formatInt(issues.counts.total), note: '아카이브 제외' },
-  { label: 'Open', value: formatInt(issues.counts.open), tone: 'danger', note: '미착수' },
-  { label: 'Ongoing', value: formatInt(issues.counts.ongoing), tone: 'warning', note: '진행 중' },
-  {
-    label: 'Completed',
-    value: formatInt(issues.counts.completed),
-    tone: 'success',
-    note: '검증 대기',
-  },
-  { label: 'Verified', value: formatInt(issues.counts.verified), note: '완료' },
-])
+provideSidebarSummary(() => {
+  const id = lang.value === 'id'
+  return [
+    {
+      label: 'Total',
+      value: formatInt(issues.counts.total),
+      note: id ? 'tanpa arsip' : '아카이브 제외',
+    },
+    {
+      label: 'Open',
+      value: formatInt(issues.counts.open),
+      tone: 'danger',
+      note: id ? 'belum mulai' : '미착수',
+    },
+    {
+      label: 'Ongoing',
+      value: formatInt(issues.counts.ongoing),
+      tone: 'warning',
+      note: id ? 'berjalan' : '진행 중',
+    },
+    {
+      label: 'Completed',
+      value: formatInt(issues.counts.completed),
+      tone: 'success',
+      note: id ? 'menunggu verifikasi' : '검증 대기',
+    },
+    { label: 'Verified', value: formatInt(issues.counts.verified), note: id ? 'selesai' : '완료' },
+  ]
+})
 
 const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)}`)
 
@@ -54,8 +76,8 @@ const passwordOpen = ref(false)
       <p class="asm-eyebrow">Manajemen Permintaan Perbaikan · 개선요청 관리</p>
 
       <!--
-        고정 안내 (작업지시서 §5-4a) — 회신 주기를 목록 맨 위에 늘 띄웁니다.
-        현업이 '언제 답이 오는지' 를 묻는 문의가 반복되던 것을 화면에서 먼저 답합니다.
+        고정 안내 (작업지시서 §5-4a) — 회신 주기를 목록 맨 위에 늘 띄웁니다. 두 언어를 함께
+        적으라고 지시서가 문구까지 정해 두었으므로 토글과 무관하게 병기합니다.
       -->
       <div class="asm-footnote notice">
         IT부서 회신 갱신: 매주 금 17:00 WIB / Pembaruan balasan Tim IT: setiap Jumat 17:00 WIB
@@ -70,7 +92,7 @@ const passwordOpen = ref(false)
         </p>
       </div>
 
-      <div v-else-if="session.loading" class="asm-panel state">불러오는 중…</div>
+      <div v-else-if="session.loading" class="asm-panel state">{{ L('loading') }}</div>
 
       <CsrSignIn v-else-if="!session.isAuthenticated" />
 
@@ -79,7 +101,7 @@ const passwordOpen = ref(false)
         그냥 '결과 없음' 으로 두면 사용자는 데이터가 없는 줄 압니다.
       -->
       <div v-else-if="session.isUnregistered" class="asm-panel state">
-        <h2 class="asm-title">접근 권한이 없습니다</h2>
+        <h2 class="asm-title">접근 권한이 없습니다 · Tidak memiliki akses</h2>
         <p>
           계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다({{ session.user?.email }}).
           관리자에게 역할 등록을 요청하십시오.
@@ -101,24 +123,24 @@ const passwordOpen = ref(false)
               v-model="issues.filters.search"
               type="search"
               class="form-control search"
-              placeholder="이슈번호 · 제목 검색"
+              :placeholder="L('search')"
             />
             <button
               type="button"
               class="btn btn-sm btn-outline-secondary"
               @click="issues.applyPreset('it')"
             >
-              IT부서용
+              {{ L('preset_it') }}
             </button>
             <button
               type="button"
               class="btn btn-sm btn-outline-secondary"
               @click="issues.applyPreset('pending')"
             >
-              검증 대기
+              {{ L('preset_pending') }}
             </button>
             <button type="button" class="btn btn-sm btn-link" @click="issues.reset()">
-              초기화
+              {{ L('reset') }}
             </button>
           </div>
 
@@ -130,17 +152,17 @@ const passwordOpen = ref(false)
               :title="session.user?.email"
               @click="passwordOpen = true"
             >
-              비밀번호 변경
+              {{ lang === 'id' ? 'Ubah kata sandi' : '비밀번호 변경' }}
             </button>
             <button type="button" class="btn btn-sm btn-link" @click="session.signOut()">
-              로그아웃
+              {{ lang === 'id' ? 'Keluar' : '로그아웃' }}
             </button>
             <!-- 언어 토글 — 기본 인도네시아어, 필요할 때 한국어 (작업지시서 §1) -->
-            <div class="btn-group btn-group-sm" role="group" aria-label="언어">
+            <div class="btn-group btn-group-sm" role="group" aria-label="언어 · Bahasa">
               <button
                 type="button"
                 class="btn"
-                :class="issues.lang === 'id' ? 'btn-primary' : 'btn-outline-secondary'"
+                :class="lang === 'id' ? 'btn-primary' : 'btn-outline-secondary'"
                 @click="issues.lang = 'id'"
               >
                 ID
@@ -148,7 +170,7 @@ const passwordOpen = ref(false)
               <button
                 type="button"
                 class="btn"
-                :class="issues.lang === 'ko' ? 'btn-primary' : 'btn-outline-secondary'"
+                :class="lang === 'ko' ? 'btn-primary' : 'btn-outline-secondary'"
                 @click="issues.lang = 'ko'"
               >
                 한국어
@@ -159,11 +181,11 @@ const passwordOpen = ref(false)
 
         <section class="asm-panel table-panel">
           <div class="table-toolbar">
-            <h2 class="asm-title">개선요청</h2>
+            <h2 class="asm-title">{{ L('list_title') }}</h2>
             <span class="count-pill">{{ formatInt(issues.filtered.length) }}</span>
             <label class="archived">
               <input v-model="issues.filters.showArchived" type="checkbox" />
-              아카이브 표시
+              {{ L('archived') }}
             </label>
           </div>
 
@@ -171,24 +193,24 @@ const passwordOpen = ref(false)
             <table class="table asm-table">
               <thead>
                 <tr>
-                  <th>이슈번호</th>
-                  <th>제목</th>
-                  <th>IT상태</th>
-                  <th>현업검증</th>
-                  <th>IT수용여부</th>
-                  <th>담당자</th>
-                  <th>목표배포일</th>
+                  <th>{{ L('issue_no') }}</th>
+                  <th>{{ L('title') }}</th>
+                  <th>{{ L('it_status') }}</th>
+                  <th>{{ L('verification_result') }}</th>
+                  <th>{{ L('it_decision') }}</th>
+                  <th>{{ L('it_pic') }}</th>
+                  <th>{{ L('target_release_on') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="issues.loading">
-                  <td colspan="7" class="empty-row">불러오는 중…</td>
+                  <td colspan="7" class="empty-row">{{ L('loading') }}</td>
                 </tr>
                 <tr v-else-if="issues.error">
                   <td colspan="7" class="empty-row err">{{ issues.error }}</td>
                 </tr>
                 <tr v-else-if="!issues.filtered.length">
-                  <td colspan="7" class="empty-row">조건에 맞는 개선요청이 없습니다</td>
+                  <td colspan="7" class="empty-row">{{ L('empty') }}</td>
                 </tr>
                 <tr
                   v-for="row in issues.filtered"
@@ -199,7 +221,8 @@ const passwordOpen = ref(false)
                   @click="openDetail(row)"
                 >
                   <td class="no-col">{{ row.issue_no }}</td>
-                  <td class="title-col">{{ title(row) }}</td>
+                  <!-- 말줄임 — 전체 제목은 title 툴팁으로. 겹침의 원인이던 넘침을 여기서 막습니다. -->
+                  <td class="title-col" :title="title(row)">{{ title(row) }}</td>
                   <td>
                     <span
                       class="asm-badge"
@@ -208,10 +231,10 @@ const passwordOpen = ref(false)
                       {{ row.it_status }}
                     </span>
                   </td>
-                  <td>{{ row.verification_result }}</td>
-                  <td>{{ row.it_decision }}</td>
-                  <td>{{ row.it_pic }}</td>
-                  <td>{{ row.target_release_on ?? '—' }}</td>
+                  <td class="nowrap">{{ V(row.verification_result) }}</td>
+                  <td class="nowrap">{{ V(row.it_decision) }}</td>
+                  <td class="nowrap">{{ row.it_pic }}</td>
+                  <td class="nowrap">{{ row.target_release_on ?? '—' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -278,12 +301,22 @@ const passwordOpen = ref(false)
 .table-scroll {
   overflow-x: auto;
 }
-/* 제목은 길어서 표를 밀어냅니다 — 폭을 묶고 넘치면 잘라 둡니다. */
+/*
+ * 제목 말줄임 — max-width 만 두면 표 셀은 내용을 자르지 않고 옆 열 위로 흘러 나옵니다
+ * (IT상태 배지와 글자가 겹치던 원인, 2026-09-10). overflow·nowrap·ellipsis 세 가지가
+ * 함께 있어야 표 셀에서 말줄임이 동작합니다.
+ */
 .title-col {
   max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .no-col {
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.nowrap {
   white-space: nowrap;
 }
 .row-link {

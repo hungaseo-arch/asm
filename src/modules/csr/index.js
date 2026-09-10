@@ -15,6 +15,18 @@ export const csrRoutes = [
     meta: { requiresAuth: false, title: 'CSR 개선요청' },
   },
   {
+    path: '/csr/dashboard',
+    name: 'csr-dashboard',
+    component: () => import('./views/CsrDashboardPage.vue'),
+    meta: { requiresAuth: false, title: 'CSR 대시보드' },
+  },
+  {
+    path: '/csr/admin',
+    name: 'csr-admin',
+    component: () => import('./views/CsrAdminPage.vue'),
+    meta: { requiresAuth: false, title: 'CSR 관리' },
+  },
+  {
     path: '/csr/notices',
     name: 'csr-notices',
     component: () => import('./views/CsrNoticesPage.vue'),

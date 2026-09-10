@@ -191,6 +191,22 @@ watch(
             <button type="button" class="btn btn-sm btn-link" @click="issues.reset()">
               {{ L('reset') }}
             </button>
+            <span class="vr"></span>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              @click="router.push('/csr/dashboard')"
+            >
+              {{ lang === 'id' ? 'Dasbor' : '대시보드' }}
+            </button>
+            <button
+              v-if="session.isAdmin"
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              @click="router.push('/csr/admin')"
+            >
+              {{ lang === 'id' ? 'Administrasi' : '관리' }}
+            </button>
           </div>
 
           <div class="d-flex align-items-center gap-2">

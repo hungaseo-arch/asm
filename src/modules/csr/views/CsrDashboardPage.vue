@@ -1,0 +1,370 @@
+<script setup>
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import { useCsrSessionStore } from '../stores/session'
+import { useCsrIssuesStore } from '../stores/issues'
+import { IT_STATUSES, STATUS_TONE, isConfigured } from '../config'
+import { label, pickLang } from '../i18n'
+import { formatInt } from '@/utils/format'
+import CsrSignIn from '../components/CsrSignIn.vue'
+
+/**
+ * 대시보드 (작업지시서 §5-2)
+ *   카드: 전체 · Open · Ongoing · Completed(검증 대기) · Verified
+ *   표 1: IT상태 × 현업검증 교차
+ *   목록 1: 오픈 前 필수 잔여 (Verified 가 아닌 것)
+ *   목록 2: 미회신 (IT수용여부 = 미회신)
+ *   표 2: 담당자별 Open + Ongoing
+ *
+ * 목록 스토어의 63건을 그대로 집계합니다 — 63건 규모에서 서버 집계를 따로 두면
+ * 두 곳의 숫자가 어긋날 여지만 생깁니다. 아카이브(삭제) 3건은 전부 제외합니다.
+ */
+const router = useRouter()
+const session = useCsrSessionStore()
+const issues = useCsrIssuesStore()
+const lang = computed(() => issues.lang)
+const L = (k) => label(k, lang.value)
+const V = (v) => pickLang(v, lang.value)
+const t = (ko, id) => (lang.value === 'id' ? id : ko)
+
+onMounted(async () => {
+  await session.refresh()
+  if (session.isAuthenticated && !session.isUnregistered && !issues.rows.length) await issues.load()
+})
+
+const live = computed(() => issues.rows.filter((r) => !r.is_archived))
+const c = computed(() => issues.counts)
+
+/** 현업검증 옵션은 데이터에서 뽑습니다 — 하드코딩하면 새 값이 표에서 빠집니다. */
+const verifValues = computed(() =>
+  [...new Set(live.value.map((r) => r.verification_result).filter(Boolean))].sort(),
+)
+const cross = computed(() => {
+  const m = {}
+  for (const r of live.value) {
+    const k = `${r.it_status}|${r.verification_result ?? ''}`
+    m[k] = (m[k] ?? 0) + 1
+  }
+  return m
+})
+const rowTotal = (s) => live.value.filter((r) => r.it_status === s).length
+const colTotal = (v) => live.value.filter((r) => r.verification_result === v).length
+
+/** 오픈 前 필수인데 아직 Verified 가 아닌 것 — 오픈을 막는 목록입니다. */
+const preGoLive = computed(() =>
+  live.value
+    .filter(
+      (r) => /오픈 前|Wajib Sebelum/.test(r.go_live_category ?? '') && r.it_status !== 'Verified',
+    )
+    .sort((a, b) => a.issue_no.localeCompare(b.issue_no, undefined, { numeric: true })),
+)
+/** IT부서가 아직 답하지 않은 것 */
+const noReply = computed(() =>
+  live.value
+    .filter((r) => /미회신|Belum Ada Balasan/.test(r.it_decision ?? ''))
+    .sort((a, b) => a.issue_no.localeCompare(b.issue_no, undefined, { numeric: true })),
+)
+/** 담당자별 진행 중(Open + Ongoing) — 담당자 미지정은 '—' 로 묶습니다. */
+const byPic = computed(() => {
+  const m = new Map()
+  for (const r of live.value) {
+    if (!['Open', 'Ongoing'].includes(r.it_status)) continue
+    const k = r.it_pic?.trim() || '—'
+    const v = m.get(k) ?? { open: 0, ongoing: 0 }
+    v[r.it_status === 'Open' ? 'open' : 'ongoing']++
+    m.set(k, v)
+  }
+  return [...m.entries()]
+    .map(([pic, v]) => ({ pic, ...v, total: v.open + v.ongoing }))
+    .sort((a, b) => b.total - a.total || a.pic.localeCompare(b.pic))
+})
+
+const stripNo = (s) => (s ? String(s).replace(/^[0-9]+[.][ ]*/, '') : s)
+const title = (r) =>
+  stripNo(lang.value === 'id' ? (r.title_id ?? r.title_ko) : (r.title_ko ?? r.title_id))
+const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
+</script>
+
+<template>
+  <DefaultLayout>
+    <section class="dash">
+      <div class="headline">
+        <p class="asm-eyebrow">Dasbor · 대시보드</p>
+        <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">
+          ← {{ t('개선요청 목록', 'Daftar permintaan') }}
+        </button>
+      </div>
+
+      <div v-if="!isConfigured()" class="asm-panel state">설정이 필요합니다</div>
+      <div v-else-if="session.loading || issues.loading" class="asm-panel state">
+        {{ L('loading') }}
+      </div>
+      <CsrSignIn v-else-if="!session.isAuthenticated" />
+      <div v-else-if="session.isUnregistered" class="asm-panel state">
+        {{ t('접근 권한이 없습니다', 'Tidak memiliki akses') }}
+      </div>
+
+      <template v-else>
+        <!-- 카드 5장 — 가이드 8-3 KPI 규격(.asm-kpi-*) -->
+        <div class="cards">
+          <article class="asm-panel card">
+            <span class="asm-kpi-label">Total</span>
+            <strong class="asm-kpi-value">{{ formatInt(c.total) }}</strong>
+            <small class="asm-kpi-delta">{{ t('아카이브 제외', 'tanpa arsip') }}</small>
+          </article>
+          <article
+            v-for="s in ['Open', 'Ongoing', 'Completed', 'Verified']"
+            :key="s"
+            class="asm-panel card"
+            :class="`tone-${STATUS_TONE[s]}`"
+          >
+            <span class="asm-kpi-label">{{ s }}</span>
+            <strong class="asm-kpi-value">{{ formatInt(c[s.toLowerCase()]) }}</strong>
+            <small v-if="s === 'Completed'" class="asm-kpi-delta">{{
+              t('검증 대기', 'menunggu verifikasi')
+            }}</small>
+          </article>
+        </div>
+
+        <!-- 교차표 — IT상태 × 현업검증 -->
+        <section class="asm-panel sec">
+          <h2 class="asm-title">{{ L('it_status') }} × {{ L('verification_result') }}</h2>
+          <div class="table-scroll">
+            <table class="table asm-table cross">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th v-for="v in verifValues" :key="v" class="nowrap">{{ V(v) }}</th>
+                  <th class="nowrap total">{{ t('합계', 'Total') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="s in IT_STATUSES.filter((x) => rowTotal(x))" :key="s">
+                  <th class="nowrap">
+                    <span class="asm-badge" :class="`asm-badge--${STATUS_TONE[s]}`">{{ s }}</span>
+                  </th>
+                  <td v-for="v in verifValues" :key="v" class="num">
+                    {{ cross[`${s}|${v}`] ?? '' }}
+                  </td>
+                  <td class="num total">{{ rowTotal(s) }}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th>{{ t('합계', 'Total') }}</th>
+                  <td v-for="v in verifValues" :key="v" class="num">{{ colTotal(v) }}</td>
+                  <td class="num total">{{ c.total }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+
+        <div class="two-col">
+          <!-- 오픈 前 필수 잔여 -->
+          <section class="asm-panel sec">
+            <h2 class="asm-title">
+              {{ t('오픈 前 필수 잔여', 'Wajib sebelum Go-Live — tersisa') }}
+              <span class="count-pill">{{ formatInt(preGoLive.length) }}</span>
+            </h2>
+            <p v-if="!preGoLive.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>
+            <ul v-else class="list">
+              <li v-for="r in preGoLive" :key="r.id" @click="open(r)">
+                <span class="no">{{ r.issue_no }}</span>
+                <span
+                  class="asm-badge"
+                  :class="`asm-badge--${STATUS_TONE[r.it_status] ?? 'neutral'}`"
+                  >{{ r.it_status }}</span
+                >
+                <span class="ttl" :title="title(r)">{{ title(r) }}</span>
+                <span class="pic">{{ r.it_pic ?? '—' }}</span>
+              </li>
+            </ul>
+          </section>
+
+          <!-- 미회신 -->
+          <section class="asm-panel sec">
+            <h2 class="asm-title">
+              {{ t('IT부서 미회신', 'Belum ada balasan Tim IT') }}
+              <span class="count-pill">{{ formatInt(noReply.length) }}</span>
+            </h2>
+            <p v-if="!noReply.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>
+            <ul v-else class="list">
+              <li v-for="r in noReply" :key="r.id" @click="open(r)">
+                <span class="no">{{ r.issue_no }}</span>
+                <span
+                  class="asm-badge"
+                  :class="`asm-badge--${STATUS_TONE[r.it_status] ?? 'neutral'}`"
+                  >{{ r.it_status }}</span
+                >
+                <span class="ttl" :title="title(r)">{{ title(r) }}</span>
+                <span class="pic">{{ V(r.priority) ?? '' }}</span>
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <!-- 담당자별 Open + Ongoing -->
+        <section class="asm-panel sec">
+          <h2 class="asm-title">
+            {{ t('담당자별 진행 중', 'Berjalan per PIC') }} <small>Open + Ongoing</small>
+          </h2>
+          <table class="table asm-table pic-table">
+            <thead>
+              <tr>
+                <th>{{ L('it_pic') }}</th>
+                <th class="num">Open</th>
+                <th class="num">Ongoing</th>
+                <th class="num total">{{ t('합계', 'Total') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in byPic" :key="p.pic">
+                <td>{{ p.pic }}</td>
+                <td class="num">{{ p.open || '' }}</td>
+                <td class="num">{{ p.ongoing || '' }}</td>
+                <td class="num total">{{ p.total }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </template>
+    </section>
+  </DefaultLayout>
+</template>
+
+<style scoped>
+.dash {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.headline .asm-eyebrow {
+  margin: 0;
+}
+.state {
+  padding: 24px;
+}
+.muted {
+  color: var(--asm-fg-muted);
+  font-size: 12px;
+  margin: 0;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.card .asm-kpi-value {
+  font-size: 24px;
+  line-height: 1.3;
+}
+/* 톤 — 가이드 3-3 상태색을 좌측 3px 띠로 */
+.tone-danger {
+  border-left: 3px solid var(--asm-danger);
+}
+.tone-info {
+  border-left: 3px solid var(--asm-primary);
+}
+.tone-success {
+  border-left: 3px solid var(--asm-success);
+}
+.tone-primary {
+  border-left: 3px solid var(--asm-primary);
+}
+.sec {
+  padding: 20px 24px;
+}
+.sec > h2 {
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec small {
+  font-weight: 500;
+  color: var(--asm-fg-muted);
+}
+.count-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--asm-primary);
+  background: var(--asm-primary-soft);
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.total {
+  font-weight: 700;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.cross th:first-child {
+  white-space: nowrap;
+}
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 16px;
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.list li {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-top: 1px solid var(--asm-border);
+  cursor: pointer;
+  font-size: 13px;
+}
+.list li:first-child {
+  border-top: 0;
+}
+.list li:hover {
+  background: var(--asm-primary-6);
+}
+.list .no {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 2.2em;
+}
+.list .ttl {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.list .pic {
+  font-size: 12px;
+  color: var(--asm-fg-muted);
+  white-space: nowrap;
+}
+.pic-table {
+  max-width: 520px;
+}
+</style>

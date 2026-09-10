@@ -123,8 +123,7 @@ watch(
           v-if="pinned.length"
           type="button"
           class="notice"
-          :title="pinned.map((n) => n.title).join('
-')"
+          :title="pinned.map((n) => n.title).join(' · ')"
           @click="router.push('/csr/notices')"
         >
           <Bell :size="13" />

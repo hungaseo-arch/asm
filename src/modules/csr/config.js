@@ -22,6 +22,13 @@ export const isConfigured = () => Boolean(DATA_API_URL && AUTH_URL)
 /** 역할 (Roles / Peran) — db/001_schema.sql 의 CHECK 제약과 같은 값입니다. */
 export const ROLES = ['admin', 'it_dept', 'business']
 
+/**
+ * 신규 계정의 초기 비밀번호(2026-09-10 확정). 관리 화면에서 사용자를 만들면 이 값으로
+ * Neon Auth 계정이 생기고, 본인이 로그인 뒤 바꿉니다(CsrPasswordDialog). scripts/csr_set_password.mjs
+ * 의 기본값과 같아야 합니다.
+ */
+export const INITIAL_PASSWORD = 'ascendo123'
+
 /** IT상태 (Status) — db/001_schema.sql 의 CHECK 제약과 같은 순서입니다. */
 export const IT_STATUSES = ['Open', 'Ongoing', 'Completed', 'Verified', 'On Hold', 'N/A']
 

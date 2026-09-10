@@ -12,16 +12,25 @@ Pages 로 배포하므로 **`main` 이 곧 배포본**입니다.
 
 ### 진행 중
 
-- **CSR 모듈 Phase 2** — Notion 63건 이관. 속성 63건은 SQL 생성 완료, 본문(§2·§3·§5·§6·§7)은
-  Notion 내보내기(Markdown & CSV · Include content: Everything) 대기 중
-- **CSR 모듈 Phase 3** — `/csr` 화면 4종(목록·상세·대시보드·관리) 미착수
-- §1 캡쳐 이미지 이관 — 원본이 300초 만료 S3 서명 URL 이라 Apps Script 업로드 프록시
-  (Phase 3) 준비 후 처리
+- **CSR §1 캡쳐(사진 첨부)** — Apps Script 업로드 프록시(`scripts/apps_script/`) + 상세 화면
+  업로드 UI + Notion 이관분 38건 `csr_attachments` 적재. 미착수
+- **DB 적용 대기** — `db/008_path_menu_english.sql`(화면경로 한글 → 실제 ASM 사이트 용어).
+  콘솔 SQL Editor 에서 실행 후 남은 한글 0행 확인
 
-### 보류
+### 2026-09-10 (CSR 화면 정리 · 미배포)
 
-- CSR 로그인 계정 3종(admin · it_dept · business) — 소스너가 나중에 생성 예정.
-  `db/004_seed_roles.sql` 상단 TODO 유지. Phase 2 를 막지 않습니다
+- 계정·이름 불일치 수정 — 세션이 `csr_user_roles` 를 `user_id` 로 좁혀 읽음(admin 은 RLS 로
+  전원이 보여 첫 행이 헤더에 올라갔음). 0건이면 0.7초 뒤 재시도, 미등록 화면에 「다시 확인」
+- 로그아웃 상태 헤더는 「로그인 / Masuk」만 — APP_USER 자리표시자 제거
+- 표시 언어를 `stores/identity.js` 로 이동(localStorage 유지) — 헤더 계정 메뉴까지 한 언어
+- 상세: 문구 사전(`DICT`)으로 절 제목·라벨·버튼·토스트 전부 KO/ID 분리, 제목 번호 제거,
+  잠긴 필드는 편집 폼에서 숨김, 화면경로 전폭 1행 + 경로별 칩(언어 토글 미적용),
+  IT 회신 카드 재배치(수용 여부 배지 · 빈 값 숨김), 검증표 줄바꿈·상단 정렬
+- 대시보드: 목록 10건 페이지네이션, 「오픈 前 필수」→「검증 대기」, 담당자 표 2열
+- 관리: 사용자 추가 시 Neon Auth 계정을 함께 생성(admin 플러그인 `createUser`, 초기 비밀번호
+  `ascendo123`) — 콘솔에서 User ID 를 복사하던 입력란 제거. 이미 있는 이메일은 `listUsers`
+  로 id 조회. 「제외」 시 계정까지 지울지 선택(`removeUser`)
+- 로그인 카드 가운데 정렬
 
 ---
 

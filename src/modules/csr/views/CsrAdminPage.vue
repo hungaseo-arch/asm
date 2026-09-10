@@ -7,7 +7,7 @@ import { authApi, getDb, unwrap } from '../api/neon'
 import { nullIfBlank } from '../api/issues'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
-import { ROLES, isConfigured } from '../config'
+import { INITIAL_PASSWORD, ROLES, isConfigured } from '../config'
 import { pickLang } from '../i18n'
 import CsrSignIn from '../components/CsrSignIn.vue'
 
@@ -93,10 +93,29 @@ function startEdit(u) {
   editing.value = true
 }
 /**
- * 신규 등록에는 Neon Auth 의 User ID 가 필요합니다. Data API 는 neon_auth 스키마를 노출하지
- * 않아 이메일로 자동 조회할 수 없습니다(004 는 SQL 이라 가능했습니다). 콘솔 Auth → Users
- * 에서 ID 를 복사해 붙여 넣는 방식으로 둡니다 — 새 사용자는 드물어 그 정도가 맞습니다.
+ * Neon Auth 계정을 이메일로 찾거나 만듭니다 — 관리자가 콘솔을 열지 않아도 되게(2026-09-10
+ * 「웹페이지에서 사용자 추가하면 네온에도 입력되도록」).
+ *
+ * 순서: 이미 있는 계정이면 그 id(예전에 콘솔에서 만든 계정, 또는 역할만 지웠던 사람),
+ * 없으면 초기 비밀번호로 생성. 둘 다 admin 플러그인 엔드포인트라 호출자가 Neon Auth 쪽
+ * Admin(콘솔 Users 의 Admin 배지)이어야 합니다 — 아니면 401/403 이 옵니다.
  */
+async function findOrCreateAuthUser({ email, name }) {
+  const admin = authApi()?.admin
+  if (!admin?.createUser) throw new Error('admin 플러그인이 클라이언트에 없습니다')
+  const found = await admin.listUsers({
+    query: { searchValue: email, searchField: 'email', searchOperator: 'contains', limit: 10 },
+  })
+  if (found?.error) throw new Error(found.error.message ?? found.error.statusText ?? 'list-users')
+  const hit = (found?.data?.users ?? []).find((u) => u.email?.toLowerCase() === email)
+  if (hit) return { id: hit.id, created: false }
+  const made = await admin.createUser({ email, name: name ?? email, password: INITIAL_PASSWORD })
+  if (made?.error) throw new Error(made.error.message ?? made.error.statusText ?? 'create-user')
+  const id = made?.data?.user?.id
+  if (!id) throw new Error('계정은 만들어졌으나 id 를 받지 못했습니다')
+  return { id, created: true }
+}
+
 async function saveUser() {
   const row = {
     user_id: form.user_id.trim(),
@@ -105,15 +124,28 @@ async function saveUser() {
     department: nullIfBlank(form.department),
     display_name: nullIfBlank(form.display_name),
   }
-  if (!row.user_id || !row.email) {
-    toast.error(t('User ID 와 이메일은 필수입니다', 'User ID dan email wajib diisi'))
+  if (!row.email) {
+    toast.error(t('이메일은 필수입니다', 'Email wajib diisi'))
     return
   }
   saving.value = true
   try {
     const db = getDb()
-    if (isNew.value) unwrap(await db.from('csr_user_roles').insert(row).select('user_id'))
-    else {
+    if (isNew.value) {
+      // 계정 → 역할 순. 계정이 만들어지고 역할 INSERT 가 실패해도 다음 시도에서 '이미 있는
+      // 계정' 으로 잡혀 중복 생성되지 않습니다.
+      const acct = await findOrCreateAuthUser({ email: row.email, name: row.display_name })
+      row.user_id = acct.id
+      unwrap(await db.from('csr_user_roles').insert(row).select('user_id'))
+      if (acct.created)
+        toast.info(
+          t(
+            `계정을 만들었습니다 — 초기 비밀번호 ${INITIAL_PASSWORD}. 본인이 로그인 뒤 바꾸게 하십시오.`,
+            `Akun dibuat — kata sandi awal ${INITIAL_PASSWORD}. Minta pengguna menggantinya setelah masuk.`,
+          ),
+          { duration: 8000 },
+        )
+    } else {
       const { user_id, ...patch } = row
       unwrap(await db.from('csr_user_roles').update(patch).eq('user_id', user_id).select('user_id'))
     }
@@ -133,18 +165,28 @@ async function removeUser(u) {
   }
   if (
     !window.confirm(
-      t(
-        `${u.email} 을(를) CSR 사용자에서 제외할까요? 로그인은 되지만 아무것도 보지 못하게 됩니다.`,
-        `Hapus ${u.email} dari pengguna CSR?`,
-      ),
+      t(`${u.email} 을(를) CSR 사용자에서 제외할까요?`, `Hapus ${u.email} dari pengguna CSR?`),
     )
   )
     return
+  // 계정까지 지울지는 따로 묻습니다 — 역할만 지우면 로그인은 되지만 아무것도 못 봅니다(퇴사면 계정도).
+  const dropAccount = window.confirm(
+    t(
+      `Neon 로그인 계정도 삭제할까요? [확인] 계정까지 삭제 · [취소] 역할만 제외(로그인은 유지)`,
+      `Hapus juga akun login Neon? [OK] hapus akun · [Cancel] hanya peran`,
+    ),
+  )
   saving.value = true
   try {
     unwrap(await getDb().from('csr_user_roles').delete().eq('user_id', u.user_id).select('user_id'))
+    if (dropAccount) {
+      const r = await authApi()?.admin?.removeUser?.({ userId: u.user_id })
+      if (r?.error) throw new Error(`역할은 제외했으나 계정 삭제 실패: ${r.error.message ?? ''}`)
+    }
     await load()
-    toast.success(t('제외했습니다', 'Dihapus'))
+    toast.success(
+      dropAccount ? t('계정까지 삭제했습니다', 'Akun dihapus') : t('제외했습니다', 'Dihapus'),
+    )
   } catch (e) {
     report(e, '삭제에 실패했습니다')
   } finally {
@@ -254,25 +296,12 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
           <form v-if="editing" class="sub-form" @submit.prevent="saveUser">
             <div class="grid">
               <label class="field">
-                <span
-                  >User ID
-                  <small class="muted"
-                    >({{ t('콘솔 Auth → Users 에서 복사', 'salin dari konsol') }})</small
-                  ></span
-                >
-                <input
-                  v-model="form.user_id"
-                  class="form-control form-control-sm"
-                  :disabled="!isNew"
-                  required
-                />
-              </label>
-              <label class="field">
                 <span>Email</span>
                 <input
                   v-model="form.email"
                   type="email"
                   class="form-control form-control-sm"
+                  :disabled="!isNew"
                   required
                 />
               </label>
@@ -302,6 +331,17 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                   'Peran hanya admin · it_dept · business. Bagian hanya untuk tampilan.',
                 )
               }}
+              <template v-if="isNew">
+                {{
+                  t(
+                    `저장하면 Neon 로그인 계정이 함께 만들어집니다(초기 비밀번호 ${INITIAL_PASSWORD}). 이미 있는 이메일이면 그 계정에 역할만 붙입니다.`,
+                    `Akun login Neon dibuat otomatis (kata sandi awal ${INITIAL_PASSWORD}); email yang sudah ada hanya diberi peran.`,
+                  )
+                }}
+              </template>
+              <template v-else>
+                <span class="mono">ID {{ form.user_id }}</span>
+              </template>
             </p>
             <div class="actions">
               <button
@@ -468,6 +508,10 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
 .muted {
   color: var(--asm-fg-muted);
   font-size: 12px;
+}
+.mono {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
 }
 .hint {
   margin: 8px 0 0;

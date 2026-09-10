@@ -10,3 +10,6 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Notion 내보내기 원본 (작업지시서 §4-1) — 원본 데이터는 커밋하지 않습니다.
+import/

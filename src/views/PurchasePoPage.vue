@@ -52,12 +52,11 @@ provideSidebarSummary(() => [
 <template>
   <DefaultLayout>
     <!--
-      화면 제목은 사이드바 활성 항목과 중복돼 시각적으로 표시하지 않습니다(2026-09-04).
-      문서 구조상 h1 은 필요해 스크린리더 전용으로만 남깁니다.
+      화면 제목 + 부제를 한 줄로(2026-09-10 요청) — 공통 규칙은 asm-theme.css 의 .page-titles.
     -->
     <section class="page-heading">
-      <div>
-        <h1 class="visually-hidden">Purchase PO</h1>
+      <div class="page-titles">
+        <h1 class="page-title">Purchase PO</h1>
         <p class="page-sub mb-0">Pesanan Pembelian · 자사 구매발주서 관리</p>
       </div>
       <button type="button" class="btn btn-sm btn-primary" @click="showNewDialog = true">

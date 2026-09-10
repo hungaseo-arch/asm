@@ -216,13 +216,12 @@ const primaryLabel = computed(() => {
 
 <template>
   <!--
-    화면 제목은 헤더·본문 모두에서 시각적으로 표시하지 않습니다 — 좌측 사이드바의
-    활성 항목 강조와 중복되기 때문입니다(2026-09-04 반영). 문서 구조상 h1 은 필요해
-    스크린리더 전용으로만 남깁니다.
+    화면 제목 + 부제를 한 줄로(2026-09-10 요청). 제목은 헤더 로고 옆 → 본문 상단으로 옮겼다가
+    부제와 같은 행에 붙였습니다. 공통 규칙은 asm-theme.css 의 .page-titles / .page-title.
   -->
   <section class="page-heading">
-    <div>
-      <h1 class="visually-hidden">{{ screen.title }}</h1>
+    <div class="page-titles">
+      <h1 class="page-title">{{ screen.title }}</h1>
       <p class="page-sub mb-0">{{ screen.subtitle }}</p>
     </div>
     <div class="page-actions">
@@ -429,7 +428,6 @@ const primaryLabel = computed(() => {
 .page-sub {
   font-size: 14px;
   color: var(--asm-fg-muted);
-  margin-top: 4px;
 }
 .page-actions {
   display: flex;

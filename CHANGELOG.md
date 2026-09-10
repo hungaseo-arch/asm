@@ -12,16 +12,10 @@ Pages 로 배포하므로 **`main` 이 곧 배포본**입니다.
 
 ### 진행 중
 
-- **CSR §1 캡쳐(사진 첨부)** — 코드 완료(2026-09-10), **사용자 작업 대기**:
-  ① `scripts/apps_script/csr_upload.gs` 를 Drive 폴더 소유자 계정으로 웹앱 배포(실행: 나 · 액세스: 모든 사용자)
-  ② 웹앱 URL 을 로컬 `.env` + Actions Variables 의 `VITE_CSR_UPLOAD_URL` 에 등록
-  ③ `node scripts/csr_migrate_captures.mjs` → Notion 이관 캡쳐 32건 Drive 업로드 + `db/012_attachments_seed.sql` 생성 → 콘솔 실행
-  (Notion 원문의 38건 중 로컬에 남은 파일은 32건 — 나머지 6건은 만료된 S3 서명 URL 이라 복구 불가)
-- **DB 적용 완료(2026-09-10)** — `db/008`(화면경로 영어화 54행) · `009`(auth GRANT) · `010`(본문 KO/ID
-  쌍 60건) · `011`(가드 콘솔 통과). Data API 로 실측: 화면경로 한글 잔존 0 · 본문 쌍 누락 0.
-  010 번역은 검수 대상(화면 편집으로 수정 가능)
-- **배포본 동작 확인(2026-09-10)** — Actions Variables 주입 + Neon Auth Domains 등록 후
-  https://hungaseo-arch.github.io/asm/csr 로그인·대시보드 정상
+- **CSR §1 캡쳐(사진 첨부) 완료(2026-09-10)** — Apps Script 웹앱 배포(실행: 소유자 · 액세스: 모든 사용자),
+  `VITE_CSR_UPLOAD_URL` 로컬·Actions 등록, Notion 이관 캡쳐 32건 Drive 업로드 + `db/012` 적용(INSERT 32).
+  상세 §1 썸네일·「+ 캡쳐 추가」·admin 삭제 동작 확인. Notion 원문 38건 중 6건은 만료된 S3 URL 이라
+  복구 불가(필요 시 화면에서 재업로드)
 
 ### 2026-09-10 (CSR 화면 정리 · 미배포)
 

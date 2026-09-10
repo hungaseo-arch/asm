@@ -1,5 +1,5 @@
 -- =============================================================================
--- ASM CSR — Notion 이관 캡쳐 32건 → csr_attachments (2026-09-10)
+-- ASM CSR — Notion 이관 캡쳐 38건 → csr_attachments (2026-09-10)
 --   생성: node scripts/csr_migrate_captures.mjs   (Drive 업로드는 이미 끝났고 여기서는 행만 넣습니다)
 --   001~011 적용 후 실행. 재실행 안전(같은 drive_file_id 는 건너뜀).
 -- =============================================================================
@@ -21,6 +21,18 @@ SELECT i.id, '1DF9XnC6tTsCzR3PZZRrjAuRigYX1Lr-I', '03_PO__PPC_수량_금액_대�
   FROM public.csr_issues i
  WHERE i.issue_no = '03' AND NOT i.is_archived
    AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = '1DF9XnC6tTsCzR3PZZRrjAuRigYX1Lr-I');
+
+INSERT INTO public.csr_attachments (issue_id, drive_file_id, file_name, caption, sort_order, uploaded_by)
+SELECT i.id, '154i8zr1KvKp9EsqE_4i6IeK3dkrESLcD', '04_PO_NO._채번_규칙_부재_및_테스트_전표_혼재.jpeg', NULL, 0, 'notion'
+  FROM public.csr_issues i
+ WHERE i.issue_no = '04' AND NOT i.is_archived
+   AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = '154i8zr1KvKp9EsqE_4i6IeK3dkrESLcD');
+
+INSERT INTO public.csr_attachments (issue_id, drive_file_id, file_name, caption, sort_order, uploaded_by)
+SELECT i.id, '16xhQIIf40s75IlqirVQGxnvDgO_KCx4_', '05_단가_입력_천_단위_구분기호_미표시.jpeg', NULL, 0, 'notion'
+  FROM public.csr_issues i
+ WHERE i.issue_no = '05' AND NOT i.is_archived
+   AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = '16xhQIIf40s75IlqirVQGxnvDgO_KCx4_');
 
 INSERT INTO public.csr_attachments (issue_id, drive_file_id, file_name, caption, sort_order, uploaded_by)
 SELECT i.id, '1EgwPPKnsElxJQsE6bfkjWYWgonz8WWRi', '06_입고일_실제도착일_선후관계_검증_부재.jpeg', NULL, 0, 'notion'
@@ -143,6 +155,12 @@ SELECT i.id, '1XYbWVFWfKf0QOh68SP5hZLeA_eb9tXw4', '25_입력_검증_미입력_�
    AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = '1XYbWVFWfKf0QOh68SP5hZLeA_eb9tXw4');
 
 INSERT INTO public.csr_attachments (issue_id, drive_file_id, file_name, caption, sort_order, uploaded_by)
+SELECT i.id, '1TY58eOY-IwpsfUCsQqws6I9Z3daswq1d', '26_정적_자원_404_및_도메인_혼재.jpeg', NULL, 0, 'notion'
+  FROM public.csr_issues i
+ WHERE i.issue_no = '26' AND NOT i.is_archived
+   AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = '1TY58eOY-IwpsfUCsQqws6I9Z3daswq1d');
+
+INSERT INTO public.csr_attachments (issue_id, drive_file_id, file_name, caption, sort_order, uploaded_by)
 SELECT i.id, '115oOwkroO-PIniPdJeaJSgkdwJ3olBC9', '27_결제조건_Payment_Term_전표_간_전이_불일.jpeg', NULL, 0, 'notion'
   FROM public.csr_issues i
  WHERE i.issue_no = '27' AND NOT i.is_archived
@@ -195,6 +213,24 @@ SELECT i.id, '1GS84ZABSSBBGKVVBnNBHUPdryymlrD5o', '35_SO_신규_재고_연동_�
   FROM public.csr_issues i
  WHERE i.issue_no = '35' AND NOT i.is_archived
    AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = '1GS84ZABSSBBGKVVBnNBHUPdryymlrD5o');
+
+INSERT INTO public.csr_attachments (issue_id, drive_file_id, file_name, caption, sort_order, uploaded_by)
+SELECT i.id, '1eSYvmBzvOl4eg23hiMwpDr3U0-f05hsv', '36_발주_신규_LOCAL_공급사_목록에_PT_Techk.jpeg', NULL, 0, 'notion'
+  FROM public.csr_issues i
+ WHERE i.issue_no = '36' AND NOT i.is_archived
+   AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = '1eSYvmBzvOl4eg23hiMwpDr3U0-f05hsv');
+
+INSERT INTO public.csr_attachments (issue_id, drive_file_id, file_name, caption, sort_order, uploaded_by)
+SELECT i.id, '1gpuEOz36MNucL7T-MOGl7Xnlw8bhIJYD', '37_발주_신규_LOCAL_결제조건_Payment_Ter.jpeg', NULL, 0, 'notion'
+  FROM public.csr_issues i
+ WHERE i.issue_no = '37' AND NOT i.is_archived
+   AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = '1gpuEOz36MNucL7T-MOGl7Xnlw8bhIJYD');
+
+INSERT INTO public.csr_attachments (issue_id, drive_file_id, file_name, caption, sort_order, uploaded_by)
+SELECT i.id, '1iQ7Tr8Juxp1WjvDr1CGPJYQ_--Ebgy1O', '38_입고_신규_IMPORT_LOCAL_AQL_Defec.jpeg', NULL, 0, 'notion'
+  FROM public.csr_issues i
+ WHERE i.issue_no = '38' AND NOT i.is_archived
+   AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = '1iQ7Tr8Juxp1WjvDr1CGPJYQ_--Ebgy1O');
 
 -- 확인 — 이슈별 첨부 수
 SELECT i.issue_no, count(a.id) AS captures

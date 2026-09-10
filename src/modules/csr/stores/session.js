@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { authApi, getDb, unwrap } from '../api/neon'
 import { isConfigured } from '../config'
+import { useIdentityStore } from '@/stores/identity'
 
 /**
  * CSR 세션 (Session / Sesi)
@@ -16,8 +17,12 @@ import { isConfigured } from '../config'
  * 안내를 띄우려고 역할을 별도로 조회합니다.
  */
 export const useCsrSessionStore = defineStore('csr-session', () => {
+  const identity = useIdentityStore()
+  // 헤더 계정 메뉴에서 로그아웃할 수 있도록 동작을 넘겨 둡니다.
+  identity.setActions({ signOut: () => signOut() })
   const user = ref(null)
   const role = ref(null)
+  const profile = ref(null) // csr_user_roles 행 (display_name · department)
   const loading = ref(true)
   const error = ref('')
 
@@ -43,6 +48,8 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
 
       if (!user.value) {
         role.value = null
+        profile.value = null
+        identity.clear()
         return
       }
 
@@ -51,12 +58,24 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
        * (csr_user_roles_select 정책 = csr_role() IS NOT NULL).
        * 등록되지 않았으면 0행이 돌아옵니다 — 오류가 아니라 정상적인 '미등록' 상태입니다.
        */
-      const rows = unwrap(await getDb().from('csr_user_roles').select('role,email,display_name'))
-      role.value = rows?.[0]?.role ?? null
+      const rows = unwrap(
+        await getDb().from('csr_user_roles').select('role,email,display_name,department'),
+      )
+      profile.value = rows?.[0] ?? null
+      role.value = profile.value?.role ?? null
+      // 헤더가 읽는 가벼운 정체성 — 미등록 계정도 이메일은 보여 줍니다.
+      identity.set({
+        name: profile.value?.display_name ?? user.value.name ?? null,
+        email: user.value.email,
+        role: role.value,
+        department: profile.value?.department ?? null,
+      })
     } catch (e) {
       error.value = e.message
       user.value = null
       role.value = null
+      profile.value = null
+      identity.clear()
     } finally {
       loading.value = false
     }
@@ -77,11 +96,14 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
     await authApi()?.signOut?.()
     user.value = null
     role.value = null
+    profile.value = null
+    identity.clear()
   }
 
   return {
     user,
     role,
+    profile,
     loading,
     error,
     isAuthenticated,

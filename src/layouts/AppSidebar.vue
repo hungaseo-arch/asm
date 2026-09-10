@@ -4,7 +4,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { findNavGroup, matchPath, navGroups, topNav } from '@/config/navigation'
 import { useDrawerFocus } from '@/composables/useDrawerFocus'
-const props = defineProps({ open: { type: Boolean, default: false } })
+const props = defineProps({
+  open: { type: Boolean, default: false },
+  /** 열릴 때 펼칠 대분류 key. 헤더의 대분류 버튼이 넘깁니다. null 이면 현재 화면의 대분류. */
+  group: { type: String, default: null },
+})
 const emit = defineEmits(['close'])
 const route = useRoute()
 const router = useRouter()
@@ -27,8 +31,18 @@ const group = computed(
   () => navGroups.find((item) => item.key === browsedKey.value) ?? findNavGroup(route.path),
 )
 const items = computed(() => group.value?.items ?? [])
-// 드로어를 새로 열거나 화면이 바뀌면 다시 '현재 대분류'에서 시작합니다.
-watch([() => props.open, () => route.path], () => (browsedKey.value = null))
+// 드로어를 새로 열면 헤더가 지정한 대분류(없으면 현재 화면의 대분류)에서 시작하고,
+// 화면이 바뀌면 다시 현재 대분류로 돌아갑니다.
+watch(
+  () => props.open,
+  (open) => {
+    if (open) browsedKey.value = props.group
+  },
+)
+watch(
+  () => route.path,
+  () => (browsedKey.value = null),
+)
 
 function openItem(item) {
   if (item.to) {

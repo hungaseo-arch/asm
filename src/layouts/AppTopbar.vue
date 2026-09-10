@@ -1,34 +1,60 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { toast } from 'vue-sonner'
-import { APP_USER, findNavItem, matchPath, topNav } from '@/config/navigation'
+import { findNavItem, matchPath, topNav } from '@/config/navigation'
 import { useSidebarSummary } from '@/composables/useSummaryCards'
+import { useIdentityStore } from '@/stores/identity'
+import { hasUnreadNotices } from '@/modules/csr/notices'
 const emit = defineEmits(['open-sidebar', 'open-summary'])
 /** 요약 드로어는 이번 화면이 요약 카드를 등록했을 때만 열 수 있습니다. */
 const { cards } = useSidebarSummary()
 const route = useRoute()
 const router = useRouter()
+/**
+ * 헤더에 보일 사람 — CSR 세션이 있으면 그 계정, 없으면 표시 전용 자리표시자.
+ * Neon 클라이언트를 여기서 직접 부르지 않습니다(초기 청크 500 KB 한도) — 세션 스토어가
+ * stores/identity.js 에 이름·소속만 올려 두고 헤더는 그것만 읽습니다.
+ */
+const identity = useIdentityStore()
+const who = computed(() => identity.display)
+/** 종의 빨간 점 — CSR 화면이 localStorage 에 남긴 비트만 읽습니다(Neon 을 직접 묻지 않음). */
+const unread = computed(() => {
+  void route.path // 화면이 바뀔 때마다 다시 읽습니다
+  return hasUnreadNotices()
+})
+
+const isActive = (item) => {
+  const prefixes = item.match ?? (item.to ? [item.to] : [])
+  return prefixes.some((prefix) => matchPath(route.path, prefix))
+}
+/** 가이드 7-2 좌측 — 로고 뒤 세로 구분선에 이어 붙는 화면 제목(현재 하위메뉴 이름). */
+const pageTitle = computed(() => findNavItem(route.path)?.label ?? '')
+
+/**
+ * 대분류 클릭 = 그 대분류의 하위메뉴 드로어를 엽니다(2026-09-10 요청).
+ * 예전에는 대분류의 첫 화면으로 바로 이동했는데, 그러면 원하는 하위메뉴로 가기 위해
+ * 엉뚱한 화면을 한 번 거쳐야 했습니다. 이동 대신 고를 수 있게 드로어를 엽니다.
+ */
+function openGroup(item) {
+  emit('open-sidebar', item.key)
+}
 
 /*
- * 브랜드 메뉴 (Brand menu / Menu merek)
- *
- * 요약·알림을 헤더에 아이콘으로 늘어놓지 않고 로고 클릭 한 곳으로 모읍니다 —
- * 헤더 좌측이 시그니처 하나로 정리되고(가이드 7-2 "좌측 : 시그니처 로고"), 4-2 가
- * 금지하는 "로고 영역에 겹치는 아이콘·배지"도 자연히 사라집니다.
- * 앱의 다른 오버레이와 같은 방식으로 Vue 상태로만 제어합니다(Bootstrap JS 미사용).
+ * 계정 메뉴 (Account menu / Menu akun) — 아바타를 누르면 열립니다(2026-09-10 요청).
+ * 역할·비밀번호 변경·로그아웃을 목록 툴바에서 이곳으로 옮겼습니다. Vue 상태로만 제어하고
+ * (Bootstrap JS 미사용), 바깥 클릭·Esc·화면 이동 시 닫습니다.
+ * 로그아웃은 identity.actions 를 통해 CSR 세션 스토어에 위임합니다 — 헤더가 Neon 을
+ * import 하지 않기 위해서입니다.
  */
-const brandMenuOpen = ref(false)
-const brandMenu = ref(null)
-/** 알림 미확인 여부 — 백엔드가 없어 표시 전용입니다(예전 벨 아이콘의 빨간 점과 동일). */
-const hasUnread = ref(true)
+const accountOpen = ref(false)
+const accountMenu = ref(null)
 function onPointerdown(event) {
-  if (!brandMenuOpen.value) return
-  if (brandMenu.value?.contains(event.target)) return
-  brandMenuOpen.value = false
+  if (!accountOpen.value) return
+  if (accountMenu.value?.contains(event.target)) return
+  accountOpen.value = false
 }
 function onKeydown(event) {
-  if (event.key === 'Escape') brandMenuOpen.value = false
+  if (event.key === 'Escape') accountOpen.value = false
 }
 onMounted(() => {
   document.addEventListener('pointerdown', onPointerdown)
@@ -38,33 +64,20 @@ onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onPointerdown)
   document.removeEventListener('keydown', onKeydown)
 })
-// 화면을 옮기면 열려 있던 메뉴는 닫습니다.
 watch(
   () => route.path,
-  () => (brandMenuOpen.value = false),
+  () => (accountOpen.value = false),
 )
-function openSummary() {
-  brandMenuOpen.value = false
-  emit('open-summary')
+function changePassword() {
+  accountOpen.value = false
+  identity.requestPasswordChange()
+  // 다이얼로그는 CSR 화면 안에 있습니다 — 다른 화면이면 CSR 로 옮긴 뒤 열립니다.
+  if (!route.path.startsWith('/csr')) router.push('/csr')
 }
-function openNotifications() {
-  brandMenuOpen.value = false
-  // 한 번 열어 본 뒤에도 빨간 점이 남아 있으면 '읽지 않음'이라는 표시가 뜻을 잃습니다.
-  hasUnread.value = false
-  toast.info('알림 화면은 프론트엔드 범위에 포함되지 않습니다')
-}
-const isActive = (item) => {
-  const prefixes = item.match ?? (item.to ? [item.to] : [])
-  return prefixes.some((prefix) => matchPath(route.path, prefix))
-}
-/** 가이드 7-2 좌측 — 로고 뒤 세로 구분선에 이어 붙는 화면 제목(현재 하위메뉴 이름). */
-const pageTitle = computed(() => findNavItem(route.path)?.label ?? '')
-function openItem(item) {
-  if (item.to) {
-    void router.push(item.to)
-    return
-  }
-  toast.info(`${item.label} 워크스페이스는 현재 범위에 포함되지 않습니다`)
+async function signOut() {
+  accountOpen.value = false
+  await identity.actions.signOut?.()
+  if (route.path.startsWith('/csr')) router.replace('/csr')
 }
 </script>
 
@@ -73,51 +86,27 @@ function openItem(item) {
     <!-- 브랜드 (Brand) -->
     <div class="brand">
       <!--
-        시그니처 로고가 곧 브랜드 메뉴 버튼입니다 — 요약·알림은 여기서 열립니다.
+        로고 클릭 = CSR 개선요청 화면으로 직행(2026-09-10 요청). 요약·알림은 우측 액션으로
+        옮겼습니다 — 로고 영역에 아이콘·배지를 겹치지 않는다는 가이드 4-2 는 그대로 지킵니다.
         가이드 4-1 — 시그니처(가로형)는 높이 28px. 640px 미만에서는 워드마크를 숨기고
-        심볼 단독형으로 교체합니다(최소 크기 80px 미만에서는 심볼만 쓴다는 4-2 규정).
-        BS 07 비율 왜곡 금지 — height 만 지정하고 width 는 auto 로 둡니다.
-        로고에는 테두리·그림자·배지를 얹지 않습니다(BS 07 · 4-2) — 미확인 알림 표시는
-        메뉴 안 항목에 둡니다.
+        심볼 단독형으로 교체합니다. BS 07 비율 왜곡 금지 — height 만 지정, width 는 auto.
       -->
-      <div ref="brandMenu" class="brand-menu">
-        <button
-          type="button"
-          class="brand-trigger"
-          aria-haspopup="menu"
-          :aria-expanded="brandMenuOpen"
-          aria-label="브랜드 메뉴 (요약 · 알림)"
-          @click="brandMenuOpen = !brandMenuOpen"
-        >
-          <img src="/img/ascendo-logo-horizontal.png" alt="ASCENDO" class="brand-logo" />
-          <img src="/img/ascendo-symbol.png" alt="ASCENDO" class="brand-symbol" />
-        </button>
-
-        <!-- 드롭다운 규격 — 가이드 7-2: White 배경 · 1px 테두리 · radius-md · shadow-md -->
-        <div v-if="brandMenuOpen" class="dropdown-menu show" role="menu">
-          <button
-            v-if="cards.length"
-            type="button"
-            class="dropdown-item"
-            role="menuitem"
-            @click="openSummary"
-          >
-            <LayoutDashboard :size="15" />
-            요약 (Summary)
-          </button>
-          <button type="button" class="dropdown-item" role="menuitem" @click="openNotifications">
-            <Bell :size="15" />
-            알림 (Notifications)
-            <i v-if="hasUnread" class="unread-dot" aria-label="미확인 알림 있음"></i>
-          </button>
-        </div>
-      </div>
+      <button
+        type="button"
+        class="brand-trigger"
+        aria-label="CSR 개선요청 화면으로"
+        title="CSR (개선요청)"
+        @click="router.push('/csr')"
+      >
+        <img src="/img/ascendo-logo-horizontal.png" alt="ASCENDO" class="brand-logo" />
+        <img src="/img/ascendo-symbol.png" alt="ASCENDO" class="brand-symbol" />
+      </button>
 
       <!-- 가이드 7-2 좌측 — 세로 구분선(1×24px) 뒤 화면 제목 14px / 500 -->
       <span v-if="pageTitle" class="page-title d-none d-md-block">{{ pageTitle }}</span>
     </div>
 
-    <!-- 상단 메뉴 -->
+    <!-- 상단 메뉴 — 대분류. 클릭하면 우측 드로어가 그 대분류의 하위메뉴를 펼칩니다. -->
     <nav class="topnav d-none d-lg-flex" aria-label="Primary">
       <button
         v-for="item in topNav"
@@ -125,38 +114,91 @@ function openItem(item) {
         type="button"
         class="nav-item"
         :class="{ active: isActive(item) }"
-        @click="openItem(item)"
+        :aria-haspopup="true"
+        @click="openGroup(item)"
       >
         {{ item.label }}
       </button>
     </nav>
 
-    <!-- 우측 액션 — 알림은 로고(브랜드 메뉴) 안으로 옮겼습니다. -->
+    <!-- 우측 액션 -->
     <div class="top-actions">
-      <!--
-        가이드 7-2 우측 배치 순서 — 역할 pill(28px · Blue 10% 배경 · Blue 12px/700) →
-        사용자 아바타(28px 원형) → 이름. 역할을 흐린 보조 텍스트로 두던 것을 8-4 의
-        pill 규격으로 올렸습니다. 같은 절이 규정하는 상태 버튼·로그아웃 아이콘은 이
-        프론트엔드에 백엔드 세션이 없어(로그인 비활성, router/index.js) 두지 않습니다.
-        로그인 기능 비활성 — 표시 전용 사용자 (config/navigation.js APP_USER)
-
-        역할 pill 은 1,400px 이상에서만 내보냅니다(xxl) — 대분류가 8개라 그 아래에서는
-        pill 폭(약 140px)만큼 가운데 열이 모자라 상단 메뉴가 잘렸습니다. 역할은 화면
-        이동에 쓰이지 않는 보조 정보라 좁은 화면에서 먼저 접습니다.
-      -->
-      <span class="asm-pill d-none d-xxl-inline-flex">{{ APP_USER.role }}</span>
-      <div class="profile">
-        <span class="avatar">{{ APP_USER.initials }}</span>
-        <b class="d-none d-md-block">{{ APP_USER.name }}</b>
-      </div>
-
-      <!-- 메뉴 드로어 토글 — 드로어가 오른쪽에서 나오므로 버튼도 헤더 맨 오른쪽입니다. -->
+      <!-- 요약 — 이번 화면이 카드를 등록했을 때만. 좌측 요약 드로어를 엽니다. -->
+      <button
+        v-if="cards.length"
+        type="button"
+        class="asm-icon-btn is-borderless"
+        aria-label="요약 열기"
+        title="요약 (Summary)"
+        @click="$emit('open-summary')"
+      >
+        <LayoutDashboard :size="18" />
+      </button>
+      <!-- 알림 — CSR 공지 화면. 관리자가 쓰고 전원이 봅니다. -->
       <button
         type="button"
-        class="asm-icon-btn"
+        class="asm-icon-btn is-borderless"
+        aria-label="알림"
+        title="알림 (Notifications)"
+        @click="router.push('/csr/notices')"
+      >
+        <Bell :size="18" />
+        <i v-if="unread" class="unread-dot" aria-label="새 공지 있음"></i>
+      </button>
+
+      <!--
+        가이드 7-2 우측 배치 — 역할 pill → 아바타 → 이름. CSR 로그인이 있으면 그 계정의
+        이름·소속을, 없으면 자리표시자를 보여 줍니다(identity.display.placeholder).
+        역할 pill 은 1,400px 이상에서만(xxl) — 대분류 8개와 자리를 다투기 때문입니다.
+      -->
+      <span
+        v-if="who.role"
+        class="asm-pill d-none d-xxl-inline-flex"
+        :class="{ 'is-placeholder': who.placeholder }"
+      >
+        {{ who.role }}
+      </span>
+      <div ref="accountMenu" class="account">
+        <button
+          type="button"
+          class="profile"
+          :class="{ 'is-placeholder': who.placeholder }"
+          :title="who.email ?? ''"
+          :aria-haspopup="who.placeholder ? undefined : 'menu'"
+          :aria-expanded="accountOpen"
+          :disabled="who.placeholder"
+          @click="accountOpen = !accountOpen"
+        >
+          <span class="avatar">{{ who.initials }}</span>
+          <b class="d-none d-md-block">{{ who.name }}</b>
+        </button>
+
+        <!-- 드롭다운 규격 — 가이드 7-2: White 배경 · 1px 테두리 · radius-md · shadow-md -->
+        <div v-if="accountOpen" class="dropdown-menu dropdown-menu-end show" role="menu">
+          <div class="account-head">
+            <b>{{ who.name }}</b>
+            <small>{{ who.email }}</small>
+            <span v-if="who.role" class="asm-pill">{{ who.role }}</span>
+          </div>
+          <button type="button" class="dropdown-item" role="menuitem" @click="changePassword">
+            비밀번호 변경 · Ubah kata sandi
+          </button>
+          <button type="button" class="dropdown-item" role="menuitem" @click="signOut">
+            로그아웃 · Keluar
+          </button>
+        </div>
+      </div>
+
+      <!--
+        메뉴 드로어 토글 — 데스크톱에서는 없앴습니다(대분류 클릭이 드로어를 엽니다).
+        992px 미만에서는 상단 대분류가 숨겨져 이 버튼이 유일한 진입로라 남깁니다.
+      -->
+      <button
+        type="button"
+        class="asm-icon-btn d-lg-none"
         aria-label="메뉴 열기"
         title="메뉴 (Menu)"
-        @click="$emit('open-sidebar')"
+        @click="$emit('open-sidebar', null)"
       >
         <Menu :size="18" />
       </button>
@@ -167,8 +209,6 @@ function openItem(item) {
 <style scoped>
 /*
  * 가이드 7-2 좌측 — 로고 → 세로 구분선 → 화면 제목. 좌우 패딩 20px.
- * 메뉴(사이드바)가 화면 우측으로 옮겨간 뒤로 활성 항목이 시선에서 멀어져, 지금 보고
- * 있는 화면 이름이 어디에도 보이지 않았습니다. 가이드 규정대로 헤더 좌측에 되돌립니다.
  */
 .brand {
   grid-column: 1;
@@ -182,8 +222,7 @@ function openItem(item) {
 /*
  * 로고 — ASCENDO BI 가로형 로고 원본(public/img/ascendo-logo-horizontal.png,
  * 640×127 PNG). 가이드 7-2 규격(Full Color 가로형, 높이 28px)대로 원본 그대로
- * 표시합니다(BS 07 — 형태·비율·색 변형 금지). 로고 자체에 회사명이 있어 별도
- * "ASM" 문구는 두지 않습니다.
+ * 표시합니다(BS 07 — 형태·비율·색 변형 금지).
  */
 .brand-logo {
   height: 28px;
@@ -197,14 +236,6 @@ function openItem(item) {
   flex: none;
   display: none;
 }
-
-/* 드롭다운을 로고 바로 아래에 띄우기 위한 기준 컨테이너 */
-.brand-menu {
-  position: relative;
-  flex: none;
-  display: flex;
-  align-items: center;
-}
 /*
  * 로고 버튼 — 로고에 테두리·그림자를 더하지 않습니다(BS 07). 클릭 가능하다는 신호는
  * 커서와 hover 배경(가이드 7-2 의 헤더 요소 hover = secondary)으로만 줍니다.
@@ -214,6 +245,7 @@ function openItem(item) {
 .brand-trigger {
   display: flex;
   align-items: center;
+  flex: none;
   border: 0;
   background: transparent;
   padding: 6px 8px;
@@ -222,41 +254,12 @@ function openItem(item) {
   cursor: pointer;
   transition: background-color 0.15s;
 }
-.brand-trigger:hover,
-.brand-trigger[aria-expanded='true'] {
+.brand-trigger:hover {
   background: var(--asm-secondary);
 }
 .brand-trigger:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--asm-primary-40);
-}
-
-/* 드롭다운 위치 — 헤더 아래 6px. 색·테두리·그림자는 전역 .dropdown-menu(가이드 7-2). */
-.brand-menu .dropdown-menu {
-  display: block;
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  margin: 0;
-}
-.brand-menu .dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  white-space: nowrap;
-}
-/* 미확인 알림 — 로고가 아니라 메뉴 항목에 붙입니다(가이드 4-2 "알림 배지는 로고 밖"). */
-.unread-dot {
-  width: 8px;
-  height: 8px;
-  margin-left: auto;
-  background: var(--asm-danger);
-  border-radius: 50%;
-  flex: none;
 }
 
 /*
@@ -280,7 +283,7 @@ function openItem(item) {
 /*
  * 가이드 7-2 — 14px / weight 500 / 패딩 6px 12px / radius-md / 항목 간 4px.
  * 헤더가 3열 그리드(auto 1fr auto)라 이 nav 는 가운데 열 전체(남는 공간)를 차지하고,
- * justify-content:center 로 그 안에서 메뉴 자체를 중앙 정렬합니다(2026-09-04 반영).
+ * justify-content:center 로 그 안에서 메뉴 자체를 중앙 정렬합니다.
  */
 .topnav {
   grid-column: 2;
@@ -295,11 +298,7 @@ function openItem(item) {
   align-items: center;
   gap: 4px;
   min-width: 0;
-  /*
-   * 대분류가 8개라 좁은 화면(1,366px 이하)에서는 "MASTER DATA"·"MOCK-UP" 같은 두 단어
-   * 항목이 두 줄로 접혀 헤더 56px 규격(가이드 7-2)을 깨뜨렸습니다. 접히는 대신 가로로
-   * 흐르게 두고, 넘칠 때만 스크롤합니다.
-   */
+  /* 대분류 8개가 두 줄로 접혀 헤더 56px 을 깨뜨리지 않도록 가로로 흐르게 둡니다. */
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -345,14 +344,85 @@ function openItem(item) {
   height: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 0 20px;
 }
+/* 미확인 공지 — 종 아이콘 모서리의 8px 점(가이드 4-2: 배지는 로고 밖). */
+.top-actions .asm-icon-btn {
+  position: relative;
+}
+.unread-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: var(--asm-danger);
+  border-radius: 50%;
+}
+.account {
+  position: relative;
+  margin-left: 4px;
+}
+/* 아바타 버튼 — 테두리 없이 hover 배경만 (가이드 7-2 헤더 요소 hover = secondary) */
 .profile {
   display: flex;
   align-items: center;
   gap: 8px;
   color: var(--asm-fg);
+  border: 0;
+  background: transparent;
+  padding: 4px 8px 4px 4px;
+  border-radius: var(--asm-radius-md);
+  cursor: pointer;
+}
+.profile:not(:disabled):hover,
+.profile[aria-expanded='true'] {
+  background: var(--asm-secondary);
+}
+.profile:disabled {
+  cursor: default;
+}
+.profile:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--asm-primary-40);
+}
+.account .dropdown-menu {
+  display: block;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: auto;
+  margin: 0;
+  min-width: 240px;
+}
+.account .dropdown-item {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  white-space: nowrap;
+}
+.account-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px 10px;
+  border-bottom: 1px solid var(--asm-border);
+  margin-bottom: 6px;
+}
+.account-head b {
+  font-size: 13px;
+}
+.account-head small {
+  font-size: 11px;
+  color: var(--asm-fg-muted);
+  overflow-wrap: anywhere;
+}
+.account-head .asm-pill {
+  align-self: flex-start;
+  margin-top: 4px;
 }
 /* 가이드 7-2 사용자 아바타 — accent 10% 배경 + primary 글자 */
 .profile .avatar {
@@ -365,9 +435,16 @@ function openItem(item) {
   display: grid;
   place-items: center;
   flex: none;
+  font-size: 12px;
 }
 .profile b {
   font-size: 13px;
+  white-space: nowrap;
+}
+/* 자리표시자(로그인 없음)는 흐리게 — 실제 사람으로 오해하지 않도록. */
+.profile.is-placeholder,
+.asm-pill.is-placeholder {
+  opacity: 0.55;
 }
 
 @media (max-width: 991.98px) {
@@ -379,13 +456,11 @@ function openItem(item) {
   }
   .top-actions {
     padding: 0 16px;
-    gap: 8px;
+    gap: 6px;
   }
 }
 /*
  * 가이드 7-5 모바일(< 640px) — 워드마크를 숨기고 심볼 단독형으로 교체합니다.
- * 가로형 시그니처는 폭 140px 안팎이라 이 구간에서 4-2 의 최소 크기(80px)와 여백을
- * 동시에 지키기 어렵습니다.
  */
 @media (max-width: 639.98px) {
   .brand-logo {

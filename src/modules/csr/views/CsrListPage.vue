@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
@@ -8,7 +8,11 @@ import { label, pickLang, pickPair } from '../i18n'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrPasswordDialog from '../components/CsrPasswordDialog.vue'
+import CsrLangToggle from '../components/CsrLangToggle.vue'
 import { formatInt } from '@/utils/format'
+import { noteNotices } from '../notices'
+import { useIdentityStore } from '@/stores/identity'
+import { getDb, unwrap } from '../api/neon'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const router = useRouter()
@@ -17,7 +21,24 @@ const issues = useCsrIssuesStore()
 
 onMounted(async () => {
   await session.refresh()
-  if (session.isAuthenticated && !session.isUnregistered) await issues.load()
+  if (session.isAuthenticated && !session.isUnregistered) {
+    await issues.load()
+    // 헤더 종의 빨간 점 — 마지막으로 본 공지보다 새 공지가 있으면 켭니다. 실패해도 목록과 무관.
+    try {
+      const rows =
+        unwrap(
+          await getDb()
+            .from('csr_notices')
+            .select('id,title,is_pinned,expires_on,updated_at')
+            .order('published_on', { ascending: false }),
+        ) ?? []
+      noteNotices(rows)
+      const today = new Date().toISOString().slice(0, 10)
+      pinned.value = rows.filter((n) => n.is_pinned && (!n.expires_on || n.expires_on >= today))
+    } catch {
+      /* 007 미적용 등 — 스트립과 점만 비어 있을 뿐, 목록과 무관합니다 */
+    }
+  }
 })
 
 const lang = computed(() => issues.lang)
@@ -66,8 +87,25 @@ provideSidebarSummary(() => {
 
 const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)}`)
 
-/** 비밀번호 변경 — 최초 비밀번호(ascendo123)를 그대로 쓰지 않도록 눈에 띄는 곳에 둡니다. */
+/** 목록 상단 스트립에 보일 고정 공지(만료 전). 헤더 종의 미확인 점도 같은 조회로 갱신합니다. */
+const pinned = ref([])
+
+/**
+ * 비밀번호 변경 다이얼로그 — 헤더 계정 메뉴의 「비밀번호 변경」이 identity 스토어에 비트를
+ * 올리면 여기서 엽니다(헤더는 Neon 청크를 모릅니다).
+ */
+const identity = useIdentityStore()
 const passwordOpen = ref(false)
+watch(
+  () => identity.passwordRequested,
+  (v) => {
+    if (v) {
+      passwordOpen.value = true
+      identity.consumePasswordRequest()
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -76,12 +114,21 @@ const passwordOpen = ref(false)
       <p class="asm-eyebrow">Manajemen Permintaan Perbaikan · 개선요청 관리</p>
 
       <!--
-        고정 안내 (작업지시서 §5-4a) — 회신 주기를 목록 맨 위에 늘 띄웁니다. 두 언어를 함께
-        적으라고 지시서가 문구까지 정해 두었으므로 토글과 무관하게 병기합니다.
+        고정 공지 스트립 — 작업지시서 §5-4a 의 회신 안내를 포함해, 관리자가 고정한 공지를
+        목록 맨 위에 한 줄씩 보여 줍니다. 문구를 코드에 박지 않고 공지 체계 하나로
+        일원화했습니다(2026-09-10). 누르면 공지 화면으로 갑니다.
       -->
-      <div class="asm-footnote notice">
-        IT부서 회신 갱신: 매주 금 17:00 WIB / Pembaruan balasan Tim IT: setiap Jumat 17:00 WIB
-      </div>
+      <button
+        v-for="n in pinned"
+        :key="n.id"
+        type="button"
+        class="asm-footnote notice"
+        :title="n.title"
+        @click="router.push('/csr/notices')"
+      >
+        <Bell :size="13" />
+        <span>{{ n.title }}</span>
+      </button>
 
       <!-- 설정 누락 · 미로그인 · 미등록은 각각 다른 안내가 필요합니다. -->
       <div v-if="!isConfigured()" class="asm-panel state">
@@ -145,37 +192,9 @@ const passwordOpen = ref(false)
           </div>
 
           <div class="d-flex align-items-center gap-2">
-            <span class="asm-pill">{{ session.role }}</span>
-            <button
-              type="button"
-              class="btn btn-sm btn-link"
-              :title="session.user?.email"
-              @click="passwordOpen = true"
-            >
-              {{ lang === 'id' ? 'Ubah kata sandi' : '비밀번호 변경' }}
-            </button>
-            <button type="button" class="btn btn-sm btn-link" @click="session.signOut()">
-              {{ lang === 'id' ? 'Keluar' : '로그아웃' }}
-            </button>
+            <!-- 계정(역할·비밀번호·로그아웃)은 헤더 아바타 메뉴로 옮겼습니다(2026-09-10). -->
             <!-- 언어 토글 — 기본 인도네시아어, 필요할 때 한국어 (작업지시서 §1) -->
-            <div class="btn-group btn-group-sm" role="group" aria-label="언어 · Bahasa">
-              <button
-                type="button"
-                class="btn"
-                :class="lang === 'id' ? 'btn-primary' : 'btn-outline-secondary'"
-                @click="issues.lang = 'id'"
-              >
-                ID
-              </button>
-              <button
-                type="button"
-                class="btn"
-                :class="lang === 'ko' ? 'btn-primary' : 'btn-outline-secondary'"
-                @click="issues.lang = 'ko'"
-              >
-                한국어
-              </button>
-            </div>
+            <CsrLangToggle v-model="issues.lang" />
           </div>
         </div>
 
@@ -253,8 +272,29 @@ const passwordOpen = ref(false)
   flex-direction: column;
   gap: 16px;
 }
+/*
+ * 세로 간격은 .csr-list 의 gap(16px) 하나로만 잡습니다. 눈썹 제목 <p> 에 Bootstrap 기본
+ * 하단 여백(1rem)이 남아 있으면 그 아래만 32px 로 벌어져 위아래가 고르지 않았습니다
+ * (2026-09-10). 안내 상자도 같은 이유로 여백을 없앱니다.
+ */
+.csr-list > .asm-eyebrow,
+.csr-list > .notice {
+  margin: 0;
+}
 .notice {
   font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+}
+.notice span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .state {
   padding: 24px;

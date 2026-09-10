@@ -16,8 +16,11 @@ import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
  */
 const menuOpen = ref(false)
 const summaryOpen = ref(false)
-function openMenu() {
+/** 헤더의 대분류를 눌러 열었을 때 그 대분류를 펼칩니다. null 이면 현재 화면의 대분류. */
+const menuGroup = ref(null)
+function openMenu(groupKey = null) {
   summaryOpen.value = false
+  menuGroup.value = groupKey
   menuOpen.value = true
 }
 function openSummary() {
@@ -77,7 +80,7 @@ watch(
           </footer>
         </div>
       </main>
-      <AppSidebar :open="menuOpen" @close="menuOpen = false" />
+      <AppSidebar :open="menuOpen" :group="menuGroup" @close="menuOpen = false" />
     </div>
   </div>
 </template>

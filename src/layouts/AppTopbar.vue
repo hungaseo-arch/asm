@@ -21,7 +21,7 @@ const who = computed(() => identity.display)
 const t = (ko, id) => (identity.lang === 'id' ? id : ko)
 /** 로그아웃 상태의 계정 버튼은 로그인 화면(/csr)으로 가는 문입니다. */
 function onAccountClick() {
-  if (who.value.placeholder) router.push('/csr')
+  if (who.value.placeholder) router.push('/csr/dashboard')
   else accountOpen.value = !accountOpen.value
 }
 /** 종의 빨간 점 — CSR 화면이 localStorage 에 남긴 비트만 읽습니다(Neon 을 직접 묻지 않음). */
@@ -93,7 +93,7 @@ async function signOut() {
     <!-- 브랜드 (Brand) -->
     <div class="brand">
       <!--
-        로고 클릭 = CSR 개선요청 화면으로 직행(2026-09-10 요청). 요약·알림은 우측 액션으로
+        로고 클릭 = CSR 대시보드로 직행(2026-09-10 요청 — 처음엔 목록이었다가 대시보드로 변경). 요약·알림은 우측 액션으로
         옮겼습니다 — 로고 영역에 아이콘·배지를 겹치지 않는다는 가이드 4-2 는 그대로 지킵니다.
         가이드 4-1 — 시그니처(가로형)는 높이 28px. 640px 미만에서는 워드마크를 숨기고
         심볼 단독형으로 교체합니다. BS 07 비율 왜곡 금지 — height 만 지정, width 는 auto.
@@ -101,9 +101,9 @@ async function signOut() {
       <button
         type="button"
         class="brand-trigger"
-        aria-label="CSR 개선요청 화면으로"
-        title="CSR (개선요청)"
-        @click="router.push('/csr')"
+        aria-label="CSR 대시보드로"
+        title="CSR 대시보드 (Dasbor)"
+        @click="router.push('/csr/dashboard')"
       >
         <img src="/img/ascendo-logo-horizontal.png" alt="ASCENDO" class="brand-logo" />
         <img src="/img/ascendo-symbol.png" alt="ASCENDO" class="brand-symbol" />

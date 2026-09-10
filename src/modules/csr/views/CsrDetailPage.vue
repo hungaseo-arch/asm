@@ -122,7 +122,6 @@ const md = (text) =>
           return open + pick + close
         })
         .join('\n')
-const VF = (key, value) => (key === 'path_menu' ? (value ?? null) : V(value))
 /**
  * 화면경로가 여럿이면 " · "(양쪽 공백) 로 이어져 있습니다 — "신규·상세" 처럼 공백 없는 가운뎃점은
  * 한 경로 안의 구분이라 건드리지 않습니다. 경로마다 칩으로 그려 어디서 끊기는지 보이게

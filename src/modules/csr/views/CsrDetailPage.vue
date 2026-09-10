@@ -847,7 +847,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             <tbody>
               <tr v-for="v in sortedVerifications" :key="v.id">
                 <td class="nowrap">{{ v.verified_on }}</td>
-                <td class="nowrap">{{ v.result }}</td>
+                <td class="nowrap">{{ V(v.result) }}</td>
                 <td class="wrap">{{ v.note }}</td>
               </tr>
             </tbody>

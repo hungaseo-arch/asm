@@ -8,14 +8,26 @@
  */
 const SEP = ' / '
 
+const HANGUL = /[가-힣]/
+/** "미검증 (Belum diverifikasi)" — 검증 이력 결과가 쓰는 괄호 병기. 한쪽만 한글일 때만 두 언어로 봅니다. */
+const PAREN = /^(.+?)s*((.+))s*$/
+
 export function pickLang(value, lang) {
   if (value === null || value === undefined) return value
   const s = String(value)
   const i = s.indexOf(SEP)
-  if (i < 0) return s
-  const ko = s.slice(0, i).trim()
-  const id = s.slice(i + SEP.length).trim()
-  return lang === 'id' ? id || ko : ko || id
+  if (i >= 0) {
+    const ko = s.slice(0, i).trim()
+    const id = s.slice(i + SEP.length).trim()
+    return lang === 'id' ? id || ko : ko || id
+  }
+  // "한국어 (Indonesia)" 꼴 — "Purchasing (LOCAL)" 처럼 양쪽 다 라틴이면 그대로 둡니다.
+  const m = s.match(PAREN)
+  if (m && HANGUL.test(m[1]) !== HANGUL.test(m[2])) {
+    const [ko, id] = HANGUL.test(m[1]) ? [m[1], m[2]] : [m[2], m[1]]
+    return lang === 'id' ? id.trim() : ko.trim()
+  }
+  return s
 }
 
 /** 두 언어 컬럼 쌍(title_ko/title_id 등)에서 하나를 고릅니다 — 비어 있으면 다른 쪽으로. */

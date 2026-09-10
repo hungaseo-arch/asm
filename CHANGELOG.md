@@ -24,6 +24,21 @@ Pages 로 배포하므로 **`main` 이 곧 배포본**입니다.
   Data API 실측: 38행 · 이슈 01~38 각 1건 · 중복 0. 39~60 은 Notion 에도 캡쳐 없음(현지 요청 건).
   상세 §1 썸네일·「+ 캡쳐 추가」·admin 삭제 동작 확인
 
+### 2026-09-10 — 작업지시서 v1.1 (잔여 작업) · DB 015~019 콘솔 적용 대기
+
+- **[A] `csr_issues` UPDATE 403 원인·수정** — 가드가 `auth.user_id()` 를 호출자 권한으로 불러 `permission denied for schema auth`.
+  `db/015`: SECURITY DEFINER 래퍼 `csr_actor_id()` + 컬럼 가드 v2(R&R 2026-09-08: admin·business 는 IT 전용 컬럼 제외,
+  it_status 는 Completed → Verified 만 / it_dept 는 IT 전용 컬럼만, Verified 불가). it_decision 이 IT 전용으로 이관.
+  프론트 `CSR_POLICY`·상세 편집 폼도 같은 규칙
+- **[B] 검증 이력 → 헤더 동기화** — `db/017` AFTER INSERT 트리거(최신 일자만 덮어씀). 화면은 등록 후 서버 재조회 + 목록 행 반영
+- **[C] 현업검증 코드 5종** — `db/016`(legacy 컬럼 보존 · 매핑 · CHECK). 상수 1곳 `status.js`. 배지 = 코드 + 툴팁,
+  REJECTED 주황(`.asm-badge--orange`), 이력 폼 결과 select, 목록 현업검증·담당자 필터, 범례 컴포넌트(목록·상세, 3개 언어),
+  대시보드 교차표 코드 순. 종전 표기도 코드로 읽음(`mapLegacyVerifyStatus`) — 016 적용 전후 모두 동작
+- **[D] 데이터 정정** — `db/018`(08 REJECTED · 09/22 PARTIAL · 최종검증일 09-10 · 60 이력 본문 · 02 담당자 공란)
+- **[E] 신규 CSR-202609-001** — `db/019`
+- **[G]** 검증·회신 일자 기본값 WIB(`dates.js`), 상태 로그 `verified_on` 감시 추가. SPA 404 는 기존 404.html 로 정상
+- 보고: `docs/csr/ASM_CSR_v1.1_완료보고.md` · 원문 `docs/csr/작업지시서_v1.1_잔여작업.md`
+
 ### 2026-09-10 (CSR 화면 정리 · 미배포)
 
 - 계정·이름 불일치 수정 — 세션이 `csr_user_roles` 를 `user_id` 로 좁혀 읽음(admin 은 RLS 로

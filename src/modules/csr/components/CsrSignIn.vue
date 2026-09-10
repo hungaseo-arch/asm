@@ -77,6 +77,7 @@ async function submit() {
 .signin {
   padding: 24px;
   max-width: 420px;
+  margin: 8vh auto 0;
   display: flex;
   flex-direction: column;
   gap: 12px;

@@ -59,12 +59,20 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
        * 헤더에 올라갔습니다(2026-09-10 「계정과 이름 불일치」).
        * 등록되지 않았으면 0행이 돌아옵니다 — 오류가 아니라 정상적인 '미등록' 상태입니다.
        */
-      const rows = unwrap(
-        await getDb()
-          .from('csr_user_roles')
-          .select('role,email,display_name,department')
-          .eq('user_id', user.value.id),
-      )
+      const lookup = async () =>
+        unwrap(
+          await getDb()
+            .from('csr_user_roles')
+            .select('role,email,display_name,department')
+            .eq('user_id', user.value.id),
+        )
+      let rows = await lookup()
+      if (!rows?.length) {
+        // 0건이면 한 번 더 — JWT 가 한 박자 늦게 붙거나(그러면 RLS 가 전부 가립니다) 관리자가
+        // 그 순간 행을 고치는 중이면 잠깐 0건이 되어 '미등록' 화면이 떴습니다(2026-09-10).
+        await new Promise((r) => setTimeout(r, 700))
+        rows = await lookup()
+      }
       profile.value = rows?.[0] ?? null
       role.value = profile.value?.role ?? null
       // 헤더가 읽는 가벼운 정체성 — 미등록 계정도 이메일은 보여 줍니다.

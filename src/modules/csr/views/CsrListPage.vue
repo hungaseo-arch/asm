@@ -7,6 +7,12 @@ import { STATUS_TONE, isConfigured } from '../config'
 import { label, pickLang, pickPair } from '../i18n'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import CsrSignIn from '../components/CsrSignIn.vue'
+
+/** 미등록 화면의 「다시 확인」 — 역할을 다시 읽고, 있으면 바로 목록을 불러옵니다. */
+async function recheck() {
+  await session.refresh()
+  if (session.isAuthenticated && !session.isUnregistered) await issues.load()
+}
 import CsrPasswordDialog from '../components/CsrPasswordDialog.vue'
 import CsrLangToggle from '../components/CsrLangToggle.vue'
 import { formatInt } from '@/utils/format'
@@ -155,6 +161,9 @@ watch(
           계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다({{ session.user?.email }}).
           관리자에게 역할 등록을 요청하십시오.
         </p>
+        <button type="button" class="btn btn-sm btn-primary mt-3 me-2" @click="recheck">
+          다시 확인 · Periksa lagi
+        </button>
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary mt-3"

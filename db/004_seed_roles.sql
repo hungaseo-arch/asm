@@ -84,10 +84,12 @@ SELECT s.email,
 
 -- 해석되지 않은 계정이 있으면 통째로 되돌립니다 — 일부만 등록되면 누가 빠졌는지
 -- 알아채기 어렵습니다.
+-- 변수 이름을 컬럼과 다르게 둡니다 — plpgsql 은 변수 banned 와 컬럼 banned 를 구분하지
+-- 못해 "column reference is ambiguous" 로 실패합니다(2026-09-10 실측).
 DO $check$
 DECLARE
-  missing text;
-  banned  text;
+  missing     text;
+  banned_list text;
 BEGIN
   SELECT string_agg(email, ', ') INTO missing FROM csr_resolved WHERE user_id IS NULL;
   IF missing IS NOT NULL THEN
@@ -97,9 +99,10 @@ BEGIN
       missing;
   END IF;
 
-  SELECT string_agg(email, ', ') INTO banned FROM csr_resolved WHERE banned;
-  IF banned IS NOT NULL THEN
-    RAISE WARNING 'CSR: 정지(banned) 상태인 계정이 있습니다 → % — 로그인은 막히지만 역할은 등록합니다.', banned;
+  SELECT string_agg(email, ', ') INTO banned_list
+    FROM csr_resolved WHERE COALESCE(banned, false);
+  IF banned_list IS NOT NULL THEN
+    RAISE WARNING 'CSR: 정지(banned) 상태인 계정이 있습니다 → % — 로그인은 막히지만 역할은 등록합니다.', banned_list;
   END IF;
 END;
 $check$;

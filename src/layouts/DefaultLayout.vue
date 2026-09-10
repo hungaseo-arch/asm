@@ -1,10 +1,10 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppTopbar from './AppTopbar.vue'
 import AppSidebar from './AppSidebar.vue'
 import AppSummaryRail from './AppSummaryRail.vue'
-import { APP_VERSION } from '@/config/navigation'
+import { APP_VERSION, findNavItem } from '@/config/navigation'
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
 /**
  * 좌·우 레일은 둘 다 드로어(off-canvas)입니다 — 고정 배치를 걷어냈습니다.
@@ -49,6 +49,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
  * (요약이 없는 화면도 있습니다) 열린 채로 두면 다음 화면에서 엉뚱한 시점에 다시 나타납니다.
  */
 const route = useRoute()
+/** 본문 상단 화면 제목 — 현재 하위메뉴 이름. 헤더 로고 옆에 있던 것을 옮겼습니다(2026-09-10 요청). */
+const pageTitle = computed(() => findNavItem(route.path)?.label ?? '')
 watch(
   () => route.path,
   () => {
@@ -72,6 +74,7 @@ watch(
       <AppSummaryRail :open="summaryOpen" @close="summaryOpen = false" />
       <main class="asm-content">
         <div class="asm-content-inner">
+          <h1 v-if="pageTitle" class="asm-page-heading">{{ pageTitle }}</h1>
           <slot />
           <!-- 푸터 — 가이드 7-1: 상단선 1px · 12px muted · © PT ASCENDO INTERNASIONAL -->
           <footer class="asm-footer">
@@ -116,6 +119,14 @@ watch(
  */
 .asm-content-inner {
   margin: 0 auto;
+}
+/* 화면 제목 — 본문 첫 줄. 아래 오는 각 화면의 eyebrow(12px 대문자 블루)와 짝을 이룹니다. */
+.asm-page-heading {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 8px;
+  color: var(--asm-fg);
 }
 
 @media (max-width: 991.98px) {

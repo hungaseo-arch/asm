@@ -72,6 +72,10 @@ const DICT = {
   ],
   remove: ['삭제', 'Hapus'],
   close: ['닫기', 'Tutup'],
+  thumb_failed: [
+    '미리보기를 불러오지 못했습니다 — 클릭해 Drive 에서 여십시오',
+    'Pratinjau gagal dimuat — klik untuk membuka di Drive',
+  ],
   remove_confirm: [
     '이 캡쳐를 목록에서 지울까요? Drive 파일은 남습니다.',
     'Hapus tangkapan ini dari daftar? File Drive tetap ada.',
@@ -537,7 +541,27 @@ async function onRemoveAttachment(a) {
 }
 
 /** Drive 썸네일 — uc?export=view 는 대용량·권한 문제가 있어 쓰지 않습니다(작업지시서 §8). */
-const thumb = (fileId, w = 1200) => `https://drive.google.com/thumbnail?id=${fileId}&sz=w${w}`
+/*
+ * 썸네일 주소 (2026-09-11 「캡쳐 화면 나오지 않음」)
+ * drive.google.com/thumbnail 은 lh3.googleusercontent.com/d/<id>=w<폭> 으로 리다이렉트합니다. 로그인 없는
+ * 브라우저·curl 에서는 38건 전부 200 이지만, Google 계정에 로그인한 브라우저(특히 서드파티 쿠키 차단)에서는
+ * 그 리다이렉트 단계가 계정 검사에 걸려 이미지가 깨집니다. 그래서 목적지 주소를 바로 쓰고, 그래도 실패하면
+ * Drive 주소로 한 번 더 시도합니다(onThumbError). 둘 다 실패하면 Drive 링크 안내를 보여 줍니다.
+ */
+const THUMB_URLS = (fileId, w) => [
+  `https://lh3.googleusercontent.com/d/${fileId}=w${w}`,
+  `https://drive.google.com/thumbnail?id=${fileId}&sz=w${w}`,
+]
+/** 파일별 시도 단계 — 0: lh3 · 1: drive · 2: 포기(안내) */
+const thumbStage = reactive({})
+const thumb = (fileId, w = 1200) => {
+  const urls = THUMB_URLS(fileId, w)
+  return urls[Math.min(thumbStage[fileId] ?? 0, urls.length - 1)]
+}
+const thumbFailed = (fileId) => (thumbStage[fileId] ?? 0) >= 2
+const onThumbError = (fileId) => {
+  thumbStage[fileId] = (thumbStage[fileId] ?? 0) + 1
+}
 /*
  * 캡쳐 확대 — 새 창(Drive 뷰어) 대신 모달(2026-09-10 요청). 큰 썸네일(w2000)을 띄우고 Esc·바깥 클릭·
  * 화면 이동에 닫습니다. Drive 원본이 필요하면 모달 안의 링크로.
@@ -754,10 +778,15 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                   @click="openLightbox(a)"
                 >
                   <img
+                    v-if="!thumbFailed(a.drive_file_id)"
                     :src="thumb(a.drive_file_id)"
                     :alt="a.caption ?? a.file_name ?? ''"
                     loading="lazy"
+                    @error="onThumbError(a.drive_file_id)"
                   />
+                  <span v-else class="shot-fallback">
+                    {{ T('thumb_failed') }}
+                  </span>
                 </button>
                 <figcaption>
                   <span class="fname">{{ a.caption ?? a.file_name ?? '' }}</span>
@@ -1124,7 +1153,11 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
         @click.self="closeLightbox"
       >
         <div class="lightbox-body">
-          <img :src="thumb(lightbox.drive_file_id, 2000)" :alt="lightbox.file_name ?? ''" />
+          <img
+            :src="thumb(lightbox.drive_file_id, 2000)"
+            :alt="lightbox.file_name ?? ''"
+            @error="onThumbError(lightbox.drive_file_id)"
+          />
           <div class="lightbox-bar">
             <span class="fname">{{ lightbox.caption ?? lightbox.file_name ?? '' }}</span>
             <a
@@ -1484,6 +1517,17 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+.shot-fallback {
+  display: block;
+  padding: 24px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--asm-fg-muted);
+  background: var(--asm-muted-20);
+  border: 1px dashed var(--asm-border);
+  border-radius: var(--asm-radius-sm);
+  text-align: center;
 }
 .shot-open {
   display: block;

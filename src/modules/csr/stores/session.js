@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { authApi, getDb, unwrap } from '../api/neon'
-import { isConfigured } from '../config'
+import { AUTH_URL, isConfigured } from '../config'
 import { useIdentityStore } from '@/stores/identity'
 
 /**
@@ -105,7 +105,26 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
   }
 
   async function signOut() {
-    await authApi()?.signOut?.()
+    /*
+     * 옵셔널 호출 금지(2026-09-11 「로그아웃이 안 됨」): authApi()?.signOut?.() 은 프로덕션 빌드에서
+     * signOut.call(client) 이 되고, better-auth 프록시는 .call 을 API 경로로 읽어 클라이언트를 첫 인자로
+     * 넘깁니다 → GET /fetch-options/method/to-upper-case 404, 실제 sign-out 은 나가지 않았습니다.
+     * 개발 서버(변환 없음)에서는 정상이라 배포 뒤에야 드러났습니다.
+     */
+    const client = authApi()
+    if (client) {
+      try {
+        await client.signOut()
+      } catch {
+        // 서버 sign-out 이 실패해도 아래 직접 호출로 한 번 더 시도합니다.
+      }
+      // 쿠키가 남아 있으면 새로고침 때 다시 로그인되므로 엔드포인트를 직접 한 번 더 부릅니다.
+      try {
+        await fetch(`${AUTH_URL}/sign-out`, { method: 'POST', credentials: 'include' })
+      } catch {
+        // 네트워크 오류 — 로컬 상태는 아래에서 비웁니다.
+      }
+    }
     user.value = null
     role.value = null
     profile.value = null

@@ -66,7 +66,9 @@ async function getJwt() {
   const client = getAuth()
   if (!client) return null
   try {
-    const result = await client.token?.()
+    // ※ 프록시 메서드에 옵셔널 호출(?.())을 쓰지 마십시오 — 프로덕션 빌드가 .call(client) 로 바꾸고
+    //    better-auth 프록시는 .call 을 경로로 읽어 클라이언트 자신을 인자로 넘깁니다(2026-09-11 로그아웃 불가 원인).
+    const result = await client.token()
     const token = result?.data?.token ?? result?.token ?? null
     if (token) return token
   } catch {

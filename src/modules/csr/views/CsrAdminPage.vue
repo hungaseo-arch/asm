@@ -180,7 +180,9 @@ async function removeUser(u) {
   try {
     unwrap(await getDb().from('csr_user_roles').delete().eq('user_id', u.user_id).select('user_id'))
     if (dropAccount) {
-      const r = await authApi()?.admin?.removeUser?.({ userId: u.user_id })
+      // 옵셔널 호출 금지 — 프록시 메서드는 직접 부릅니다(session.js signOut 주석 참고).
+      const admin = authApi()?.admin
+      const r = admin ? await admin.removeUser({ userId: u.user_id }) : null
       if (r?.error) throw new Error(`역할은 제외했으나 계정 삭제 실패: ${r.error.message ?? ''}`)
     }
     await load()

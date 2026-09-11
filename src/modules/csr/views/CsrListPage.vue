@@ -51,15 +51,18 @@ onMounted(async () => {
 
 const lang = computed(() => issues.lang)
 
-/** 표 열 — 라벨 키와 정렬 컬럼. 제목은 토글 언어 쪽 컬럼으로 정렬합니다. */
+/**
+ * 표 열 — 라벨 키와 정렬 컬럼. 제목은 토글 언어 쪽 컬럼으로 정렬합니다.
+ * 순서는 IT 회신 흐름대로 IT수용여부 → IT상태 → 담당자 → 현업검증 (2026-09-11 요청). 목표배포일은 값이 거의
+ * 없어 열에서 뺐습니다 — 상세 속성 격자에는 그대로 있습니다.
+ */
 const COLUMNS = computed(() => [
   { key: 'issue_no', sortKey: 'issue_no' },
   { key: 'title', sortKey: lang.value === 'id' ? 'title_id' : 'title_ko' },
-  { key: 'it_status', sortKey: 'it_status' },
-  { key: 'verification_result', sortKey: 'verification_result' },
   { key: 'it_decision', sortKey: 'it_decision' },
+  { key: 'it_status', sortKey: 'it_status' },
   { key: 'it_pic', sortKey: 'it_pic' },
-  { key: 'target_release_on', sortKey: 'target_release_on' },
+  { key: 'verification_result', sortKey: 'verification_result' },
 ])
 const sortMark = (k) => (issues.sort.key !== k ? '' : issues.sort.dir === 'asc' ? '▲' : '▼')
 const ariaSort = (k) =>
@@ -312,25 +315,6 @@ watch(
                   <td class="no-col">{{ row.issue_no }}</td>
                   <!-- 말줄임 — 전체 제목은 title 툴팁으로. 겹침의 원인이던 넘침을 여기서 막습니다. -->
                   <td class="title-col" :title="title(row)">{{ title(row) }}</td>
-                  <td>
-                    <span
-                      class="asm-badge"
-                      :class="`asm-badge--${STATUS_TONE[row.it_status] ?? 'neutral'}`"
-                      :title="itStatusTitle(row.it_status)"
-                    >
-                      {{ row.it_status }}
-                    </span>
-                  </td>
-                  <td class="nowrap">
-                    <span
-                      v-if="row.verification_result"
-                      class="asm-badge"
-                      :class="`asm-badge--${toneOf('verification_result', row.verification_result)}`"
-                      :title="verifyTitle(row.verification_result)"
-                    >
-                      {{ verifyCodeOf(row.verification_result) }}
-                    </span>
-                  </td>
                   <td class="nowrap">
                     <span
                       v-if="row.it_decision"
@@ -340,8 +324,26 @@ watch(
                       {{ V(row.it_decision) }}
                     </span>
                   </td>
+                  <td>
+                    <span
+                      class="asm-badge"
+                      :class="`asm-badge--${STATUS_TONE[row.it_status] ?? 'neutral'}`"
+                      :title="itStatusTitle(row.it_status, lang)"
+                    >
+                      {{ row.it_status }}
+                    </span>
+                  </td>
                   <td class="nowrap">{{ row.it_pic }}</td>
-                  <td class="nowrap">{{ row.target_release_on ?? '—' }}</td>
+                  <td class="nowrap">
+                    <span
+                      v-if="row.verification_result"
+                      class="asm-badge"
+                      :class="`asm-badge--${toneOf('verification_result', row.verification_result)}`"
+                      :title="verifyTitle(row.verification_result, lang)"
+                    >
+                      {{ verifyCodeOf(row.verification_result) }}
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>

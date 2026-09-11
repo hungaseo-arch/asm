@@ -19,6 +19,7 @@ export const VERIFY_STATUS = [
     ko: '미검증',
     id: 'Menunggu Verifikasi',
     desc: '현업 검증 전 대기 상태',
+    desc_id: 'Menunggu verifikasi oleh pengguna bisnis',
     tone: 'neutral',
     legacy: ['미검증', 'Belum diverifikasi'],
   },
@@ -27,6 +28,7 @@ export const VERIFY_STATUS = [
     ko: '미조치',
     id: 'Belum Diterapkan',
     desc: '검증 결과 실서버에 반영 없음',
+    desc_id: 'Hasil verifikasi: belum diterapkan di server produksi',
     tone: 'danger',
     legacy: ['미조치', 'Belum ditindaklanjuti'],
   },
@@ -35,6 +37,7 @@ export const VERIFY_STATUS = [
     ko: '부분조치',
     id: 'Sebagian Diterapkan',
     desc: '일부만 반영, 잔여 항목 있음',
+    desc_id: 'Baru sebagian diterapkan, masih ada item tersisa',
     tone: 'warning',
     legacy: ['부분조치', 'Sebagian'],
   },
@@ -43,6 +46,7 @@ export const VERIFY_STATUS = [
     ko: '조치확인',
     id: 'Diterima',
     desc: '요청대로 반영됨을 현업이 확인',
+    desc_id: 'Pengguna bisnis mengonfirmasi sudah diterapkan sesuai permintaan',
     tone: 'success',
     legacy: ['조치확인', 'Terkonfirmasi'],
   },
@@ -51,6 +55,7 @@ export const VERIFY_STATUS = [
     ko: 'COMPLETED 부적정',
     id: 'Ditolak',
     desc: 'IT 완료 처리했으나 검증 불합격, 재작업 대상',
+    desc_id: 'IT menandai selesai tetapi verifikasi gagal, perlu pengerjaan ulang',
     tone: 'orange',
     legacy: ['Completed 부적정', 'Completed tidak sesuai'],
   },
@@ -78,6 +83,7 @@ export const IT_STATUS = [
     ko: '접수',
     id: 'Terbuka',
     desc: '개선요청 접수됨, IT부서 착수 전(검토·우선순위 대기)',
+    desc_id: 'Permintaan diterima, Tim IT belum mulai (menunggu tinjauan · prioritas)',
     tone: 'danger',
   },
   {
@@ -86,6 +92,7 @@ export const IT_STATUS = [
     ko: '진행 중',
     id: 'Dalam Proses',
     desc: 'IT부서가 개발·수정 진행 중, 일부 배포 가능',
+    desc_id: 'Tim IT sedang mengembangkan/memperbaiki, sebagian dapat dirilis',
     tone: 'info',
   },
   {
@@ -94,6 +101,7 @@ export const IT_STATUS = [
     ko: '조치 완료',
     id: 'Selesai',
     desc: 'IT부서 기준 조치·배포 완료, 현업 검증 대기',
+    desc_id: 'Perbaikan · rilis selesai menurut Tim IT, menunggu verifikasi bisnis',
     tone: 'success',
   },
   {
@@ -102,6 +110,7 @@ export const IT_STATUS = [
     ko: '검증 완료',
     id: 'Terverifikasi',
     desc: '현업 검증 통과로 최종 종결 (전환 권한: 총괄팀)',
+    desc_id: 'Lolos verifikasi bisnis, ditutup final (wewenang: Tim Umum)',
     tone: 'primary',
   },
   {
@@ -110,6 +119,7 @@ export const IT_STATUS = [
     ko: '보류',
     id: 'Ditunda',
     desc: '진행 보류',
+    desc_id: 'Ditunda',
     tone: 'warning',
   },
   {
@@ -118,6 +128,7 @@ export const IT_STATUS = [
     ko: '해당 없음',
     id: 'Tidak Berlaku',
     desc: '대상 아님',
+    desc_id: 'Tidak termasuk cakupan',
     tone: 'neutral',
   },
 ]
@@ -169,10 +180,13 @@ export const verifyFilterLabel = (code, lang) => {
   const s = VERIFY_STATUS.find((x) => x.code === code)
   return s ? `${s.code} (${lang === 'id' ? s.id : s.ko})` : code
 }
-/** 배지 툴팁 — "미검증 / Menunggu Verifikasi — 설명". */
-export const verifyTitle = (value) => {
+/** 표시 언어에 맞는 이름·설명 (2026-09-11 「범례 한국어/인니어 분리」). */
+export const nameOf = (s, lang) => (lang === 'id' ? s.id : s.ko)
+export const descOf = (s, lang) => (lang === 'id' ? (s.desc_id ?? s.desc) : s.desc)
+/** 배지 툴팁 — 토글 언어 한쪽만: "미검증 — 설명" / "Menunggu Verifikasi — keterangan". */
+export const verifyTitle = (value, lang = 'ko') => {
   const s = verifyMeta(value)
-  return s ? `${s.ko} / ${s.id} — ${s.desc}` : ''
+  return s ? `${nameOf(s, lang)} — ${descOf(s, lang)}` : ''
 }
 /** 기록성 값인가(최초 발견 등) — §7 표에서 코드 옆에 원문을 곁들일지. */
 export const isInitialLegacy = (value) => {
@@ -181,9 +195,9 @@ export const isInitialLegacy = (value) => {
 }
 
 export const itStatusMeta = (value) => IT_STATUS.find((s) => s.value === value) ?? null
-export const itStatusTitle = (value) => {
+export const itStatusTitle = (value, lang = 'ko') => {
   const s = itStatusMeta(value)
-  return s ? `${s.ko} / ${s.id} — ${s.desc}` : ''
+  return s ? `${nameOf(s, lang)} — ${descOf(s, lang)}` : ''
 }
 
 /**

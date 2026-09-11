@@ -197,7 +197,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
                     <span
                       class="asm-badge"
                       :class="`asm-badge--${toneOf('verification_result', v)}`"
-                      :title="verifyTitle(v)"
+                      :title="verifyTitle(v, lang)"
                     >
                       {{ verifyCodeOf(v) }}
                     </span>
@@ -211,7 +211,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
                     <span
                       class="asm-badge"
                       :class="`asm-badge--${STATUS_TONE[s]}`"
-                      :title="itStatusTitle(s)"
+                      :title="itStatusTitle(s, lang)"
                       >{{ s }}</span
                     >
                   </th>

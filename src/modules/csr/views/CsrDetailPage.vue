@@ -141,9 +141,9 @@ const badgeTone = (key, value) =>
 /** 배지 툴팁 — "ko / id — 설명" (§C-2). 수용 여부는 툴팁 없음(용어 사전이 이미 언어를 가릅니다). */
 const badgeTitle = (key, value) =>
   key === 'it_status'
-    ? itStatusTitle(value)
+    ? itStatusTitle(value, lang.value)
     : key === 'verification_result'
-      ? verifyTitle(value)
+      ? verifyTitle(value, lang.value)
       : ''
 /**
  * 회신·검증의 자유 텍스트 — 014 이후 <col>_ko/_id 쌍. 토글 언어 → 반대쪽 → 원문 순으로 되돌아가므로
@@ -601,7 +601,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             <span
               class="asm-badge"
               :class="`asm-badge--${STATUS_TONE[issue.it_status] ?? 'neutral'}`"
-              :title="itStatusTitle(issue.it_status)"
+              :title="itStatusTitle(issue.it_status, lang)"
             >
               {{ issue.it_status }}
             </span>
@@ -1091,7 +1091,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                     v-if="v.result"
                     class="asm-badge"
                     :class="`asm-badge--${toneOf('verification_result', v.result_legacy ?? v.result)}`"
-                    :title="verifyTitle(v.result)"
+                    :title="verifyTitle(v.result, lang)"
                   >
                     {{ verifyCodeOf(v.result) }}
                   </span>

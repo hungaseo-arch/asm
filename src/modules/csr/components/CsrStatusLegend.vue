@@ -2,12 +2,13 @@
 /**
  * 상태 범례 (Legend / Legenda) — 작업지시서 v1.1 §C-2
  *
- * 목록·상세 상단 우측의 「범례」 버튼. 누르면 IT상태 4행 + 현업검증 5행을 한·영·인니·설명 4열로
- * 펼치고, 아래에 전환 규칙을 3개 언어로 둡니다. 내용은 status.js 하나에서 옵니다.
+ * 목록·상세 상단 우측의 「범례」 버튼. 누르면 IT상태 4행 + 현업검증 5행을 Code · 이름 · 설명 3열로
+ * 펼치고, 아래에 전환 규칙을 둡니다. 이름·설명·규칙은 **토글 언어 한쪽만** 보여 줍니다
+ * (2026-09-11 「범례 한국어/인니어 분리」 — 세 언어 병기는 줄이 길고 읽기 어려웠음). 내용은 status.js 하나에서 옵니다.
  * 기본은 접힘 — 매번 보이면 표가 아래로 밀립니다. 바깥 클릭 · Esc 로 닫힘.
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { IT_STATUS, TRANSITION_RULES, VERIFY_STATUS } from '../status'
+import { IT_STATUS, TRANSITION_RULES, VERIFY_STATUS, descOf, nameOf } from '../status'
 
 const props = defineProps({ lang: { type: String, default: 'id' } })
 const open = ref(false)
@@ -60,8 +61,7 @@ onBeforeUnmount(() => {
         <thead>
           <tr>
             <th>Code</th>
-            <th>한국어</th>
-            <th>Bahasa Indonesia</th>
+            <th>{{ t('한국어', 'Bahasa Indonesia') }}</th>
             <th>{{ t('설명', 'Keterangan') }}</th>
           </tr>
         </thead>
@@ -70,9 +70,8 @@ onBeforeUnmount(() => {
             <td class="nowrap">
               <span class="asm-badge" :class="`asm-badge--${s.tone}`">{{ s.code }}</span>
             </td>
-            <td class="nowrap">{{ s.ko }}</td>
-            <td class="nowrap">{{ s.id }}</td>
-            <td class="wrap">{{ s.desc }}</td>
+            <td class="nowrap">{{ nameOf(s, lang) }}</td>
+            <td class="wrap">{{ descOf(s, lang) }}</td>
           </tr>
         </tbody>
       </table>
@@ -85,8 +84,7 @@ onBeforeUnmount(() => {
         <thead>
           <tr>
             <th>Code</th>
-            <th>한국어</th>
-            <th>Bahasa Indonesia</th>
+            <th>{{ t('한국어', 'Bahasa Indonesia') }}</th>
             <th>{{ t('설명', 'Keterangan') }}</th>
           </tr>
         </thead>
@@ -95,20 +93,15 @@ onBeforeUnmount(() => {
             <td class="nowrap">
               <span class="asm-badge" :class="`asm-badge--${s.tone}`">{{ s.code }}</span>
             </td>
-            <td class="nowrap">{{ s.ko }}</td>
-            <td class="nowrap">{{ s.id }}</td>
-            <td class="wrap">{{ s.desc }}</td>
+            <td class="nowrap">{{ nameOf(s, lang) }}</td>
+            <td class="wrap">{{ descOf(s, lang) }}</td>
           </tr>
         </tbody>
       </table>
 
       <h3>{{ t('전환 규칙', 'Aturan transisi') }}</h3>
       <ul class="rules">
-        <li v-for="(r, i) in TRANSITION_RULES" :key="i">
-          <span>{{ r.ko }}</span>
-          <span class="muted">{{ r.en }}</span>
-          <span class="muted">{{ r.id }}</span>
-        </li>
+        <li v-for="(r, i) in TRANSITION_RULES" :key="i">{{ lang === 'id' ? r.id : r.ko }}</li>
       </ul>
     </div>
   </div>
@@ -150,12 +143,6 @@ onBeforeUnmount(() => {
   padding-left: 18px;
 }
 .rules li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
   margin-bottom: 4px;
-}
-.muted {
-  color: var(--asm-fg-muted);
 }
 </style>

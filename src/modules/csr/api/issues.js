@@ -45,6 +45,18 @@ export async function addVerification(issueId, fields, createdBy) {
   )?.[0]
 }
 
+/**
+ * 담당자 선택지 — Neon 에 등록된 사용자의 표시 이름(csr_user_roles.display_name).
+ * 담당자 값은 등록 사용자와 같아야 하므로(2026-09-11 요청) 자유 입력 대신 이 목록에서 고릅니다.
+ */
+export async function loadUserNames() {
+  const rows =
+    unwrap(
+      await getDb().from('csr_user_roles').select('display_name,email').order('display_name'),
+    ) ?? []
+  return [...new Set(rows.map((r) => r.display_name?.trim() || r.email).filter(Boolean))]
+}
+
 /** 상태 변경 로그 — 003 트리거가 쌓은 것. 최신이 위. */
 export async function loadStatusLog(issueId) {
   return (

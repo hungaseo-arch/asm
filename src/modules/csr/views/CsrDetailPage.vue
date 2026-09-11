@@ -4,7 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { getDb, unwrap } from '../api/neon'
-import { addReply, addVerification, loadStatusLog, nullIfBlank, updateIssue } from '../api/issues'
+import {
+  addReply,
+  addVerification,
+  loadStatusLog,
+  loadUserNames,
+  nullIfBlank,
+  updateIssue,
+} from '../api/issues'
 import {
   VERIFY_CODES,
   isInitialLegacy,
@@ -229,8 +236,24 @@ async function load() {
   }
 }
 
+/**
+ * 담당자 선택지 — 등록 사용자 이름. 현재 값이 목록에 없으면(이관 데이터의 'SEO' · 'Lestari' 등) 맨 위에 그대로 두어
+ * 폼을 열자마자 값이 비지 않게 합니다. 바꿀 때는 등록 사용자만 고를 수 있습니다.
+ */
+const userNames = ref([])
+const picOptions = computed(() => {
+  const cur = issue.value?.it_pic?.trim()
+  return cur && !userNames.value.includes(cur) ? [cur, ...userNames.value] : userNames.value
+})
 onMounted(async () => {
   await session.refresh()
+  if (session.isAuthenticated && !session.isUnregistered) {
+    try {
+      userNames.value = await loadUserNames()
+    } catch {
+      userNames.value = [] // 목록을 못 받으면 현재 값만 선택지로 남습니다
+    }
+  }
   if (session.isAuthenticated && !session.isUnregistered) await load()
   else loading.value = false
 })
@@ -273,7 +296,7 @@ const FIELDS = [
   { key: 'role_split', label: 'role_split', type: 'select', options: OPTIONS.role_split },
   { key: 'related_issues', label: 'related_issues', type: 'text' },
   { key: 'it_status', label: 'it_status', type: 'select', options: IT_STATUSES, it: true },
-  { key: 'it_pic', label: 'it_pic', type: 'text', it: true },
+  { key: 'it_pic', label: 'it_pic', type: 'select', it: true }, // 선택지는 picOptions(등록 사용자)
   { key: 'target_release_on', label: 'target_release_on', type: 'date', it: true },
   { key: 'it_decision', label: 'it_decision', type: 'select', options: OPTIONS.it_decision },
   {
@@ -680,7 +703,11 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 >
                   <option value="">—</option>
                   <option
-                    v-for="o in f.key === 'it_status' ? statusOptions : f.options"
+                    v-for="o in f.key === 'it_status'
+                      ? statusOptions
+                      : f.key === 'it_pic'
+                        ? picOptions
+                        : f.options"
                     :key="o"
                     :value="o"
                   >

@@ -169,6 +169,8 @@ export function canEditColumn(role, column, { from, to } = {}) {
   }
 
   if (role === 'admin' || role === 'business') {
+    // 담당자는 admin 도 지정합니다(2026-09-11, db/021 가드 v3). business 는 여전히 불가.
+    if (column === 'it_pic') return role === 'admin'
     if (column === 'it_status') {
       // 검증을 마친 현업이 Completed 를 Verified 로 닫는 경우만 허용합니다.
       if (from === undefined) return true // 전이 여부를 아직 모를 때는 열어 둡니다

@@ -120,7 +120,12 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
       }
       // 쿠키가 남아 있으면 새로고침 때 다시 로그인되므로 엔드포인트를 직접 한 번 더 부릅니다.
       try {
-        await fetch(`${AUTH_URL}/sign-out`, { method: 'POST', credentials: 'include' })
+        await fetch(`${AUTH_URL}/sign-out`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: '{}',
+        })
       } catch {
         // 네트워크 오류 — 로컬 상태는 아래에서 비웁니다.
       }

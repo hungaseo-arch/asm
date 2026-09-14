@@ -69,6 +69,8 @@ const ariaSort = (k) =>
 /** 표시 언어에 맞춘 라벨·값. 저장값은 원문 그대로이고 화면에서만 가릅니다(§8). */
 const L = (key) => label(key, lang.value)
 const V = (value) => pickLang(value, lang.value)
+/** 심각도 표기 — 저장값 「S1 Blocker」를 개선요청서의 「S1 (Blocker)」 꼴로(2026-09-14 요청). */
+const priorityLabel = (p) => String(p).replace(/^(S[0-9]) +(.+)$/, '$1 ($2)')
 
 /**
  * 제목 — 화면 언어에 맞는 쪽을 고르고, 앞의 "02. " 번호는 뗍니다. 이슈번호 열이 따로 있어
@@ -211,26 +213,32 @@ watch(
               class="form-control search"
               :placeholder="L('search')"
             />
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-              @click="issues.applyPreset('it')"
-            >
+            <button type="button" class="btn btn-sm preset-btn" @click="issues.applyPreset('it')">
               {{ L('preset_it') }}
             </button>
             <button
               type="button"
-              class="btn btn-sm btn-outline-secondary"
+              class="btn btn-sm preset-btn"
               @click="issues.applyPreset('pending')"
             >
               {{ L('preset_pending') }}
             </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" @click="issues.reset()">
+            <button type="button" class="btn btn-sm preset-btn" @click="issues.reset()">
               {{ L('reset') }}
             </button>
             <select
+              v-model="issues.filters.priority"
+              class="form-select form-select-sm w-auto filter-select"
+              :aria-label="L('priority')"
+            >
+              <option value="All">{{ L('priority') }}: {{ L('reset') }}</option>
+              <option v-for="p in issues.options.priority" :key="p" :value="p">
+                {{ priorityLabel(p) }}
+              </option>
+            </select>
+            <select
               v-model="issues.filters.verification"
-              class="form-select form-select-sm w-auto"
+              class="form-select form-select-sm w-auto filter-select"
               :aria-label="L('verification_result')"
             >
               <option value="All">{{ L('verification_result') }}: {{ L('reset') }}</option>
@@ -240,24 +248,20 @@ watch(
             </select>
             <select
               v-model="issues.filters.pic"
-              class="form-select form-select-sm w-auto"
+              class="form-select form-select-sm w-auto filter-select"
               :aria-label="L('it_pic')"
             >
               <option value="All">{{ L('it_pic') }}: {{ L('reset') }}</option>
               <option v-for="p in issues.options.pic" :key="p" :value="p">{{ p }}</option>
             </select>
             <span class="vr"></span>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-              @click="router.push('/csr/dashboard')"
-            >
+            <button type="button" class="btn btn-sm nav-btn" @click="router.push('/csr/dashboard')">
               {{ lang === 'id' ? 'Dasbor' : '대시보드' }}
             </button>
             <button
               v-if="session.isAdmin"
               type="button"
-              class="btn btn-sm btn-outline-secondary"
+              class="btn btn-sm nav-btn"
               @click="router.push('/csr/admin')"
             >
               {{ lang === 'id' ? 'Administrasi' : '관리' }}
@@ -434,6 +438,50 @@ watch(
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+/*
+ * 툴바 세 무리를 색으로 갈라 둡니다(2026-09-14 요청). 전부 같은 회색 테두리라
+ * 「무엇을 하는 단추인지」가 한눈에 잡히지 않았습니다 —
+ * 프리셋(파랑) · 필터(초록) · 이동(회색). 글자는 Bootstrap sm 기본 14px 에서 2px 줄인 12px.
+ */
+.preset-btn,
+.filter-select,
+.nav-btn {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.preset-btn {
+  color: var(--asm-info);
+  background: var(--asm-info-soft);
+  border: 1px solid var(--asm-info-border);
+  font-weight: 600;
+}
+.preset-btn:hover,
+.preset-btn:focus-visible {
+  color: var(--asm-primary-fg);
+  background: var(--asm-primary);
+  border-color: var(--asm-primary);
+}
+.filter-select {
+  color: var(--asm-success);
+  background-color: var(--asm-success-soft);
+  border: 1px solid var(--asm-success-border);
+  font-weight: 600;
+}
+.filter-select:focus {
+  border-color: var(--asm-success);
+  box-shadow: 0 0 0 3px rgb(30 123 52 / 0.15);
+}
+.nav-btn {
+  color: var(--asm-fg-muted);
+  background: var(--asm-card);
+  border: 1px solid var(--asm-border);
+}
+.nav-btn:hover,
+.nav-btn:focus-visible {
+  color: var(--asm-fg);
+  background: var(--asm-secondary);
+  border-color: var(--asm-border-strong);
 }
 .search {
   width: 260px;

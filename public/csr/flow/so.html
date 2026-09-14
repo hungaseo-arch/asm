@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<style>
+body{margin:0;background:#fff;font-family:"Noto Sans CJK KR","Noto Sans KR",sans-serif}
+#wrap{width:2500px;padding:10px}
+svg{display:block}
+text{fill:#37474F}
+.lane-title{font-size:19px;font-weight:700}
+.lane-sub{font-size:12px;fill:#546E7A}
+.t1{font-size:14px;font-weight:700}
+.t2{font-size:10.5px;fill:#455A64}
+.el{font-size:11px;fill:#546E7A}
+.num{font-size:12px;font-weight:700;fill:#fff}
+.lg{font-size:12px;fill:#546E7A}
+.banner{font-size:17px;font-weight:700}
+</style></head><body><div id="wrap"><svg id="s" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<script>
+const C={stroke:'#546E7A',proc:'#E3F2FD',dec:'#E8F5E9',start:'#ECEFF1',todo:'#FFF3E0',todoS:'#B07A2A',db:'#E3F2FD',laneA:'#F7F8F9',laneB:'#ECEFF1',bannerBg:'#FFF3E0'};
+const LANE_H=118,LX=150,W=2500,TOP=30,OFF=110;
+function draw(cfg){
+  const svg=document.getElementById('s');
+  const nL=cfg.lanes.length,H=TOP+nL*LANE_H+120;
+  svg.setAttribute('width',W);svg.setAttribute('height',H);
+  let o=`<defs><marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,5 L0,10 z" fill="${C.stroke}"/></marker></defs>`;
+  cfg.lanes.forEach((l,i)=>{const y=TOP+i*LANE_H;
+    o+=`<rect x="20" y="${y}" width="${W-40}" height="${LANE_H}" fill="${i%2?C.laneB:C.laneA}" stroke="#CFD8DC"/>`;
+    o+=`<rect x="20" y="${y}" width="${LX-20}" height="${LANE_H}" fill="#ECEFF1" stroke="#CFD8DC"/>`;
+    o+=`<text x="${(20+LX)/2}" y="${y+LANE_H/2-4}" text-anchor="middle" class="lane-title">${l.t}</text>`;
+    o+=`<text x="${(20+LX)/2}" y="${y+LANE_H/2+16}" text-anchor="middle" class="lane-sub">${l.s}</text>`;});
+  const N={};
+  cfg.nodes.forEach(n=>{n.x+=OFF;n.y=TOP+n.lane*LANE_H+LANE_H/2;N[n.id]=n;});
+  // edges first (under nodes)
+  cfg.edges.forEach(e=>{
+    const pts=e.pts.map(p=>Array.isArray(p)?[p[0]+OFF,p[1]]:[N[p.n].x+(p.dx||0),N[p.n].y+(p.dy||0)]);
+    const d=pts.map((p,i)=>(i?'L':'M')+p[0]+','+p[1]).join(' ');
+    o+=`<path d="${d}" fill="none" stroke="${C.stroke}" stroke-width="2" ${e.dash?'stroke-dasharray="7,5"':''} ${e.noarrow?'':'marker-end="url(#ar)"'}/>`;
+    if(e.label){const lx=e.at[0]+OFF,ly=e.at[1];o+=`<rect x="${lx-e.label.length*3.75-4}" y="${ly-10}" width="${e.label.length*7.5+8}" height="18" fill="#fff" fill-opacity=".9"/><text x="${lx}" y="${ly+4}" text-anchor="middle" class="el">${e.label}</text>`;}
+  });
+  cfg.nodes.forEach(n=>{
+    const x=n.x,y=n.y,w=(n.w||180)+(n.k==='dec'?0:16),h=n.k==='db'?72:62;
+    let fill=C.proc,st=C.stroke,dash='';
+    if(n.k==='start'||n.k==='end')fill=C.start;
+    if(n.k==='dec'||n.k==='appr')fill=C.dec;
+    if(n.k==='ext'){fill=C.start;}
+    if(n.k==='todo'){fill=C.todo;st=C.todoS;dash='stroke-dasharray="6,4"';}
+    if(n.k==='start'||n.k==='end')o+=`<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="31" fill="${fill}" stroke="${st}" stroke-width="2"/>`;
+    else if(n.k==='dec'){const hw=w/2,hh=37;o+=`<polygon points="${x-hw},${y} ${x},${y-hh} ${x+hw},${y} ${x},${y+hh}" fill="${fill}" stroke="${st}" stroke-width="2"/>`;}
+    else if(n.k==='doc'||n.k==='ext'){o+=`<path d="M${x-w/2},${y-h/2} H${x+w/2} V${y+h/2-8} Q${x+w/4},${y+h/2-20} ${x},${y+h/2-6} T${x-w/2},${y+h/2-8} Z" fill="${fill}" stroke="${st}" stroke-width="2"/>`;}
+    else if(n.k==='db'){o+=`<path d="M${x-w/2},${y-h/2+8} a${w/2},8 0 0 0 ${w},0 V${y+h/2-8} a${w/2},8 0 0 1 -${w},0 Z" fill="${fill}" stroke="${st}" stroke-width="2"/><ellipse cx="${x}" cy="${y-h/2+8}" rx="${w/2}" ry="8" fill="${fill}" stroke="${st}" stroke-width="2"/>`;}
+    else if(n.k==='appr'){o+=`<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" fill="${fill}" stroke="${st}" stroke-width="2"/><line x1="${x-w/2+8}" y1="${y-h/2}" x2="${x-w/2+8}" y2="${y+h/2}" stroke="${st}" stroke-width="2"/><line x1="${x+w/2-8}" y1="${y-h/2}" x2="${x+w/2-8}" y2="${y+h/2}" stroke="${st}" stroke-width="2"/>`;}
+    else o+=`<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${st}" stroke-width="2" ${dash}/>`;
+    const lines=n.t.split('|');const y0=y-(lines.length-1)*8-(n.k==='doc'||n.k==='ext'?4:0)+(n.k==='db'?7:0);
+    lines.forEach((ln,i)=>{o+=`<text x="${x}" y="${y0+i*17+(i?2:6)}" text-anchor="middle" class="${i?'t2':'t1'}">${ln}</text>`;});
+    if(n.n){const nx=x-w/2+2,ny=y-h/2+2;o+=`<circle cx="${nx}" cy="${ny}" r="11" fill="#546E7A"/><text x="${nx}" y="${ny+4}" text-anchor="middle" class="num">${n.n}</text>`;}
+  });
+  const by=TOP+nL*LANE_H+22;
+  o+=`<rect x="170" y="${by}" width="${W-340}" height="40" rx="6" fill="${C.bannerBg}" stroke="${C.todoS}" stroke-dasharray="6,4"/><text x="${W/2}" y="${by+26}" text-anchor="middle" class="banner">${cfg.banner}</text>`;
+  const ly=by+70;let lx=170;
+  const leg=[['start','Start · End'],['proc','Process (ASM screen)'],['dec','Decision (system auto-check)'],['appr','Approval · Control'],['db','Stock · Data'],['todo','Not implemented · Request'],['ext','External doc (outside ASM)']];
+  leg.forEach(([k,t])=>{let f=k==='start'||k==='ext'?C.start:k==='dec'||k==='appr'?C.dec:k==='todo'?C.todo:C.proc;
+    o+=`<rect x="${lx}" y="${ly-11}" width="34" height="20" rx="${k==='start'?10:2}" fill="${f}" stroke="${k==='todo'?C.todoS:C.stroke}" ${k==='todo'?'stroke-dasharray="4,3"':''}/><text x="${lx+42}" y="${ly+4}" class="lg">${t}</text>`;lx+=42+t.length*7.5+30;});
+  svg.innerHTML=o;
+}
+draw({
+ lanes:[{t:'Sales',s:'R3 · R13 / R2 · R12'},{t:'System',s:'ASM auto-check'},{t:'Approval',s:'R2 · R12 · R8 · R1'},{t:'WH · Billing',s:'R10 · R11 · R12 / R9'},{t:'Printouts',s:'PDF · Print'}],
+ nodes:[
+  {id:'po',k:'ext',lane:4,x:240,w:236,t:'Customer P/O|Order basis · attached to SO DRAFT · filed|R3 · R13 · received outside ASM'},
+  {id:'st',k:'start',lane:0,x:75,w:100,t:'Order Req.'},
+  {id:'dr',k:'doc',lane:0,x:230,n:1,w:190,t:'SO DRAFT|Item · Qty · Price entry|Any available stock · R3 · R13'},
+  {id:'fix',k:'proc',lane:0,x:660,w:200,t:'Revise DRAFT|Adjust qty · price · terms|Re-check after rejection reason'},
+  {id:'cf',k:'doc',lane:0,x:1100,n:8,w:200,t:'SO CONFIRMED|Committed stock booked (no lock)|Confirmed by R2 · R12'},
+  {id:'d1',k:'dec',lane:1,x:400,n:2,w:190,t:'① Stock Qty|Commit+New ≤ On-hand?'},
+  {id:'d2',k:'dec',lane:1,x:720,n:4,w:190,t:'② Margin|Price ≥ Std. margin?'},
+  {id:'d3',k:'dec',lane:1,x:1040,n:6,w:210,t:'③ Credit Limit|AR+Order ≤ Limit?'},
+  {id:'db',k:'db',lane:1,x:1290,w:170,t:'Committed +|Avail. = On-hand − Committed'},
+  {id:'a1',k:'todo',lane:2,x:400,n:3,w:200,t:'Over-commit Approval|R2 / R12 · Flow A approval|Save blocked → submit'},
+  {id:'a2',k:'appr',lane:2,x:720,n:5,w:200,t:'Discount Approval|1st R2 / R12 → Final R1|SLA same day'},
+  {id:'a3',k:'appr',lane:2,x:1040,n:7,w:210,t:'Credit Over-limit Appr.|1st R8 → Final R1 · same day|SoD: R3 ✗ R8'},
+  {id:'do',k:'proc',lane:3,x:1290,n:9,w:180,t:'Delivery Order|Issuing WH · plan date · R10'},
+  {id:'dn',k:'dec',lane:3,x:1520,n:10,w:200,t:'On-hand Re-check|Ship ≤ On-hand?'},
+  {id:'dnf',k:'doc',lane:3,x:1740,n:11,w:190,t:'DN CONFIRM (full)|R11 ships · R10 / R12 confirm|Stock OUT · Committed −'},
+  {id:'rem',k:'db',lane:1,x:1520,n:12,w:210,t:'Partial Delivery · Balance Kept|DN available qty · balance committed|Repeat partial DN allowed'},
+  {id:'rel',k:'todo',lane:0,x:1520,n:13,w:200,t:'RELEASE (balance)|Reason · log · no increase|R2 · R12 · not implemented'},
+  {id:'en',k:'end',lane:1,x:1740,w:200,t:'CLOSED|Fully delivered or fully released'},
+  {id:'sop',k:'doc',lane:4,x:1070,w:200,t:'Sales Order Print|SO Confirmation · to customer|R2 · R3 · R12 · R13 · PDF'},
+  {id:'dop',k:'doc',lane:4,x:1300,w:180,t:'Delivery Order Print|WH picking · issue instruction|R10 · R11 · Print'},
+  {id:'dnp',k:'doc',lane:4,x:1740,w:240,t:'Delivery Note (Surat Jalan)|Customer · carrier · file · balance shown|R11 print → basis for R9 billing'},
+  {id:'bill',k:'proc',lane:3,x:2000,n:14,w:180,t:'Invoice Issue (Billing)|Based on confirmed DN · R9|Partial DN → partial invoice'},
+  {id:'inv',k:'doc',lane:4,x:2000,w:190,t:'Invoice Print|To customer · AR booked|R8 · R9 · PDF'},
+  {id:'fp',k:'doc',lane:4,x:2240,w:230,t:'Faktur Pajak (e-Faktur)|Coretax · NPWP · linked to Invoice No.|R8 · PDF'}
+ ],
+ edges:[
+  {pts:[{n:'st',dx:50},{n:'dr',dx:-95}]},
+  {pts:[[180,530],[180,120]],dash:true,label:'P/O attached · order basis',at:[180,505]},
+  {pts:[{n:'dnf',dx:95},{n:'bill',dx:-90}],label:'Bill',at:[1872,443]},
+  {pts:[{n:'bill',dy:31},{n:'inv',dy:-31}],dash:true},
+  {pts:[{n:'bill',dx:90},[2240,443],{n:'fp',dy:-31}],dash:true,label:'After invoice',at:[2240,500]},
+  {pts:[[1160,120],[1160,530]],dash:true,label:'Print after CONFIRMED',at:[1160,500]},
+  {pts:[{n:'do',dy:31},[1290,505],[1300,505],{n:'dop',dy:-31}],dash:true},
+  {pts:[{n:'dnf',dy:31},{n:'dnp',dy:-31}],dash:true,label:'Every DN incl. partial',at:[1740,505]},
+  {pts:[{n:'dr',dy:31},[230,160],[400,160],{n:'d1',dy:-37}]},
+  {pts:[{n:'d1',dx:95},{n:'d2',dx:-95}],label:'Yes',at:[560,207]},
+  {pts:[{n:'d2',dx:95},{n:'d3',dx:-105}],label:'Yes',at:[880,207]},
+  {pts:[{n:'d3',dy:-37},{n:'cf',dy:31}],label:'Yes',at:[1070,150]},
+  {pts:[{n:'cf',dx:100},[1290,89],{n:'db',dy:-31}]},
+  {pts:[{n:'db',dy:31},{n:'do',dy:-31}]},
+  {pts:[{n:'do',dx:90},{n:'dn',dx:-100}]},
+  {pts:[{n:'dn',dx:100},{n:'dnf',dx:-95}],label:'Yes',at:[1630,425]},
+  {pts:[{n:'dnf',dy:-31},{n:'en',dy:31}],label:'Full delivery → Committed 0',at:[1740,320]},
+  {pts:[{n:'dn',dy:-37},{n:'rem',dy:31}],label:'No — partial delivery',at:[1520,330]},
+  {pts:[[1440,238],[1440,390],[1360,390],[1360,412]],dash:true,label:'Next DN (balance)',at:[1440,290]},
+  {pts:[{n:'rem',dy:-31},{n:'rel',dy:31}],dash:true,label:'Customer qty reduction',at:[1520,150]},
+  {pts:[{n:'rel',dx:100},[1740,89],{n:'en',dy:-31}],dash:true,label:'Balance → available',at:[1740,140]},
+  {pts:[{n:'d1',dy:37},{n:'a1',dy:-31}],label:'No',at:[425,283]},
+  {pts:[{n:'d2',dy:37},{n:'a2',dy:-31}],label:'No',at:[745,283]},
+  {pts:[{n:'d3',dy:37},{n:'a3',dy:-31}],label:'No',at:[1065,283]},
+  {pts:[{n:'a1',dx:100},[535,325],[535,225],[671,225]],label:'Approved',at:[535,290]},
+  {pts:[{n:'a2',dx:100},[855,325],[855,225],[985,225]],label:'Approved',at:[855,290]},
+  {pts:[{n:'a3',dx:105},[1180,325],[1180,120]],label:'Approved',at:[1180,290]},
+  {pts:[{n:'a1',dy:31},[400,405],[580,405],[580,89],{n:'fix',dx:-100}],dash:true,label:'Rejected',at:[480,405]},
+  {pts:[{n:'a2',dy:31},[720,405],[580,405]],dash:true,noarrow:true,label:'Rejected',at:[650,405]},
+  {pts:[{n:'a3',dy:31},[1040,405],[720,405]],dash:true,noarrow:true,label:'Rejected',at:[900,405]},
+  {pts:[{n:'fix',dy:-31},[660,45],[230,45],{n:'dr',dy:-31}],dash:true,label:'Re-check (① → ② → ③)',at:[445,45]}
+ ],
+ banner:'SO CONFIRM — 3 sequential checks ① Stock Qty → ② Margin → ③ Credit Limit · any failure blocks save and triggers approval · at DN, shortage allows partial delivery only, balance stays on SO · 6 documents = Customer P/O · SO · DO · DN · Invoice · Faktur Pajak'
+});
+</script></body></html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<style>
+body{margin:0;background:#fff;font-family:"Noto Sans CJK KR","Noto Sans KR",sans-serif}
+#wrap{width:2600px;padding:10px}
+svg{display:block}
+text{fill:#37474F}
+.lane-title{font-size:17px;font-weight:700}
+.lane-sub{font-size:12px;fill:#546E7A}
+.t1{font-size:14px;font-weight:700}
+.t2{font-size:10.5px;fill:#455A64}
+.el{font-size:11px;fill:#546E7A}
+.num{font-size:12px;font-weight:700;fill:#fff}
+.lg{font-size:12px;fill:#546E7A}
+.banner{font-size:17px;font-weight:700}
+</style></head><body><div id="wrap"><svg id="s" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<script>
+const C={stroke:'#546E7A',proc:'#E3F2FD',dec:'#E8F5E9',start:'#ECEFF1',todo:'#FFF3E0',todoS:'#B07A2A',db:'#E3F2FD',laneA:'#F7F8F9',laneB:'#ECEFF1',bannerBg:'#FFF3E0'};
+const LANE_H=118,LX=150,W=2600,TOP=30,OFF=110;
+function draw(cfg){
+  const svg=document.getElementById('s');
+  const nL=cfg.lanes.length,H=TOP+nL*LANE_H+120;
+  svg.setAttribute('width',W);svg.setAttribute('height',H);
+  let o=`<defs><marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,5 L0,10 z" fill="${C.stroke}"/></marker></defs>`;
+  cfg.lanes.forEach((l,i)=>{const y=TOP+i*LANE_H;
+    o+=`<rect x="20" y="${y}" width="${W-40}" height="${LANE_H}" fill="${i%2?C.laneB:C.laneA}" stroke="#CFD8DC"/>`;
+    o+=`<rect x="20" y="${y}" width="${LX-20}" height="${LANE_H}" fill="#ECEFF1" stroke="#CFD8DC"/>`;
+    o+=`<text x="${(20+LX)/2}" y="${y+LANE_H/2-4}" text-anchor="middle" class="lane-title">${l.t}</text>`;
+    o+=`<text x="${(20+LX)/2}" y="${y+LANE_H/2+16}" text-anchor="middle" class="lane-sub">${l.s}</text>`;});
+  const N={};
+  cfg.nodes.forEach(n=>{n.x+=OFF;n.y=TOP+n.lane*LANE_H+LANE_H/2;N[n.id]=n;});
+  cfg.edges.forEach(e=>{
+    const pts=e.pts.map(p=>Array.isArray(p)?[p[0]+OFF,p[1]]:[N[p.n].x+(p.dx||0),N[p.n].y+(p.dy||0)]);
+    const d=pts.map((p,i)=>(i?'L':'M')+p[0]+','+p[1]).join(' ');
+    o+=`<path d="${d}" fill="none" stroke="${C.stroke}" stroke-width="2" ${e.dash?'stroke-dasharray="7,5"':''} ${e.noarrow?'':'marker-end="url(#ar)"'}/>`;
+    if(e.label){const lx=e.at[0]+OFF,ly=e.at[1];o+=`<rect x="${lx-e.label.length*3.75-4}" y="${ly-10}" width="${e.label.length*7.5+8}" height="18" fill="#fff" fill-opacity=".9"/><text x="${lx}" y="${ly+4}" text-anchor="middle" class="el">${e.label}</text>`;}
+  });
+  cfg.nodes.forEach(n=>{
+    const x=n.x,y=n.y,w=(n.w||180)+(n.k==='dec'?0:16),h=n.k==='db'?72:62;
+    let fill=C.proc,st=C.stroke,dash='';
+    if(n.k==='start'||n.k==='end')fill=C.start;
+    if(n.k==='dec'||n.k==='appr')fill=C.dec;
+    if(n.k==='ext'){fill=C.start;}
+    if(n.k==='todo'){fill=C.todo;st=C.todoS;dash='stroke-dasharray="6,4"';}
+    if(n.k==='start'||n.k==='end')o+=`<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="31" fill="${fill}" stroke="${st}" stroke-width="2"/>`;
+    else if(n.k==='dec'){const hw=w/2,hh=37;o+=`<polygon points="${x-hw},${y} ${x},${y-hh} ${x+hw},${y} ${x},${y+hh}" fill="${fill}" stroke="${st}" stroke-width="2"/>`;}
+    else if(n.k==='doc'||n.k==='ext'){o+=`<path d="M${x-w/2},${y-h/2} H${x+w/2} V${y+h/2-8} Q${x+w/4},${y+h/2-20} ${x},${y+h/2-6} T${x-w/2},${y+h/2-8} Z" fill="${fill}" stroke="${st}" stroke-width="2"/>`;}
+    else if(n.k==='db'){o+=`<path d="M${x-w/2},${y-h/2+8} a${w/2},8 0 0 0 ${w},0 V${y+h/2-8} a${w/2},8 0 0 1 -${w},0 Z" fill="${fill}" stroke="${st}" stroke-width="2"/><ellipse cx="${x}" cy="${y-h/2+8}" rx="${w/2}" ry="8" fill="${fill}" stroke="${st}" stroke-width="2"/>`;}
+    else if(n.k==='appr'){o+=`<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" fill="${fill}" stroke="${st}" stroke-width="2"/><line x1="${x-w/2+8}" y1="${y-h/2}" x2="${x-w/2+8}" y2="${y+h/2}" stroke="${st}" stroke-width="2"/><line x1="${x+w/2-8}" y1="${y-h/2}" x2="${x+w/2-8}" y2="${y+h/2}" stroke="${st}" stroke-width="2"/>`;}
+    else o+=`<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${st}" stroke-width="2" ${dash}/>`;
+    const lines=n.t.split('|');const y0=y-(lines.length-1)*8-(n.k==='doc'||n.k==='ext'?4:0)+(n.k==='db'?7:0);
+    lines.forEach((ln,i)=>{o+=`<text x="${x}" y="${y0+i*17+(i?2:6)}" text-anchor="middle" class="${i?'t2':'t1'}">${ln}</text>`;});
+    if(n.n){const nx=x-w/2+2,ny=y-h/2+2;o+=`<circle cx="${nx}" cy="${ny}" r="11" fill="#546E7A"/><text x="${nx}" y="${ny+4}" text-anchor="middle" class="num">${n.n}</text>`;}
+  });
+  const by=TOP+nL*LANE_H+22;
+  o+=`<rect x="170" y="${by}" width="${W-340}" height="40" rx="6" fill="${C.bannerBg}" stroke="${C.todoS}" stroke-dasharray="6,4"/><text x="${W/2}" y="${by+26}" text-anchor="middle" class="banner">${cfg.banner}</text>`;
+  const ly=by+70;let lx=170;
+  const leg=[['start','Start · End'],['proc','Process (ASM screen)'],['dec','Decision (system check)'],['appr','Approval · Control'],['db','Stock · Data'],['todo','Not implemented · Request'],['ext','External doc · step (outside ASM)']];
+  leg.forEach(([k,t])=>{let f=k==='start'||k==='ext'?C.start:k==='dec'||k==='appr'?C.dec:k==='todo'?C.todo:C.proc;
+    o+=`<rect x="${lx}" y="${ly-11}" width="34" height="20" rx="${k==='start'?10:2}" fill="${f}" stroke="${k==='todo'?C.todoS:C.stroke}" ${k==='todo'?'stroke-dasharray="4,3"':''}/><text x="${lx+42}" y="${ly+4}" class="lg">${t}</text>`;lx+=42+t.length*7.5+30;});
+  svg.innerHTML=o;
+}
+draw({
+ lanes:[{t:'Purchasing',s:'R4 · R5'},{t:'Approval',s:'Finance · R1 · R8'},{t:'Shipment',s:'Customs · R5 · Import'},{t:'Warehouse',s:'R10 · R11'},{t:'System',s:'ASM auto'},{t:'Documents',s:'External · Print'}],
+ nodes:[
+  {id:'st',k:'start',lane:0,x:75,w:100,t:'Purchase Need'},
+  {id:'req',k:'ext',lane:0,x:255,w:200,t:'Purchase Request (Hanbiro)|Qty · amount · cash plan · R4|Outside ASM · Import & Local'},
+  {id:'ap1',k:'appr',lane:1,x:255,w:200,t:'Purchase Approval|Hanbiro approval · R1|Basis for PO entry'},
+  {id:'po',k:'doc',lane:0,x:490,n:1,w:180,t:'Purchase PO|Supplier · item · unit price · terms|R5 · PO No. · currency'},
+  {id:'dec',k:'dec',lane:0,x:700,n:2,w:190,t:'Purchase Type?|Import / Local'},
+  {id:'ldel',k:'ext',lane:0,x:1050,w:200,t:'Local Supplier Delivery|Surat Jalan · supplier invoice · MTI etc.|Steps 3–6 skipped · outside ASM'},
+  {id:'ppc',k:'proc',lane:2,x:830,n:3,w:190,t:'PPC|Factory · prod. month · completed qty|R5 · production status'},
+  {id:'pp',k:'todo',lane:1,x:1050,n:4,w:200,t:'Payment Plan|Due date · FX rate · PO–payment–shipment|R5 → R8 · new PUR-010'},
+  {id:'shp',k:'proc',lane:2,x:1050,n:5,w:190,t:'Shipment|B/L No. · ETD / ETA · container|R5 · SHP-YYYYMMDD-001'},
+  {id:'cus',k:'proc',lane:2,x:1270,n:6,w:190,t:'Customs|PIB No. · HS Code · duty · PPN · PPh|R5 · FX rate · date'},
+  {id:'rc',k:'doc',lane:3,x:1450,n:7,w:200,t:'Receipt (new entry)|Actual arrival · receipt date · qty|R11 · arrival ≤ receipt date'},
+  {id:'insp',k:'proc',lane:3,x:1660,n:8,w:180,t:'Inspection Qty Entry|AQL · Defect · DOT|R11 · post-entry allowed'},
+  {id:'cfm',k:'dec',lane:3,x:1870,n:9,w:200,t:'Receipt Confirm|Receipt (Warehouse) · R10'},
+  {id:'smi',k:'db',lane:4,x:1870,n:10,w:180,t:'Stock Movement IN|Stock auto-updated · location'},
+  {id:'vr',k:'proc',lane:3,x:2300,n:13,w:200,t:'Vendor Return · Credit Note|Defect · over-receipt → Stock OUT|R5 → R8 · AP reduction'},
+  {id:'ic',k:'proc',lane:0,x:2300,n:11,w:200,t:'Import Cost|Duty · PPN · PPh 22 · charges · FX|R4 · SKU allocation by qty / wt'},
+  {id:'lc',k:'appr',lane:1,x:2300,n:12,w:200,t:'Landed Cost Confirm|1st R4 → Final R1|SLA before arrival · L4 masked'},
+  {id:'en',k:'end',lane:2,x:2300,w:200,t:'COST FIXED|Import: landed cost / Local: price'},
+  {id:'pop',k:'doc',lane:5,x:490,w:180,t:'Purchase Order Print|To supplier · PO No.|R4 · R5 · PDF'},
+  {id:'bl',k:'ext',lane:5,x:1050,w:200,t:'B/L · Packing List · Invoice|Supplier shipping docs|Attached to Shipment'},
+  {id:'pib',k:'ext',lane:5,x:1270,w:180,t:'PIB · SPPB|Customs · duty / tax receipt|Attached to Customs'},
+  {id:'sj',k:'ext',lane:5,x:1450,w:200,t:'Supplier Surat Jalan · Invoice|Local delivery basis|Attached to Receipt'},
+  {id:'grn',k:'doc',lane:5,x:1870,w:200,t:'Receipt Report (GRN)|Received qty · defect · location|R10 · R11 · Print'},
+  {id:'apn',k:'doc',lane:5,x:2100,w:200,t:'Supplier Invoice → AP|3-way match PO · Receipt · Invoice|R8 · SoD R4 ✗ R8'}
+ ],
+ edges:[
+  {pts:[{n:'st',dx:58},{n:'req',dx:-108}]},
+  {pts:[{n:'req',dy:31},{n:'ap1',dy:-31}],label:'Submit',at:[280,150]},
+  {pts:[{n:'ap1',dx:108},[490,207],{n:'po',dy:31}],label:'Approved',at:[410,207]},
+  {pts:[{n:'po',dx:98},{n:'dec',dx:-95}]},
+  {pts:[{n:'dec',dy:37},[700,325],{n:'ppc',dx:-103}],label:'Import',at:[700,240]},
+  {pts:[{n:'dec',dx:95},{n:'ldel',dx:-108}],label:'Local',at:[860,89]},
+  {pts:[{n:'ppc',dy:-31},[830,207],{n:'pp',dx:-108}],label:'Prod. done',at:[830,250]},
+  {pts:[{n:'pp',dy:31},{n:'shp',dy:-31}]},
+  {pts:[{n:'shp',dx:103},{n:'cus',dx:-103}],label:'ETD',at:[1160,308]},
+  {pts:[{n:'cus',dx:103},[1450,325]],noarrow:true,label:'Cleared',at:[1410,310]},
+  {pts:[{n:'ldel',dx:108},[1450,89],{n:'rc',dy:-31}],label:'Goods arrive',at:[1450,150]},
+  {pts:[{n:'rc',dx:108},{n:'insp',dx:-98}]},
+  {pts:[{n:'insp',dx:98},{n:'cfm',dx:-100}]},
+  {pts:[{n:'cfm',dy:37},{n:'smi',dy:-36}],label:'Confirmed',at:[1900,497]},
+  {pts:[{n:'cfm',dy:-37},[1870,372],[1480,372],[1480,412]],dash:true,label:'Confirm cancel (R10) — reason required · history kept',at:[1675,372]},
+  {pts:[{n:'smi',dx:98},[2430,561],[2430,89],{n:'ic',dx:108}],label:'Cost basis after WH confirm',at:[2130,561]},
+  {pts:[[2300,561],{n:'vr',dy:31}],dash:true,label:'Defect · over-receipt',at:[2300,520]},
+  {pts:[{n:'ic',dy:31},{n:'lc',dy:-31}],label:'Import',at:[2325,150]},
+  {pts:[{n:'lc',dy:31},{n:'en',dy:-31}],label:'Final R1',at:[2325,268]},
+  {pts:[{n:'ic',dx:-108},[2150,89],[2150,325],{n:'en',dx:-108}],dash:true,label:'Local: no customs · price only',at:[2150,150]},
+  {pts:[{n:'po',dy:31},{n:'pop',dy:-31}],dash:true,label:'Print after approval',at:[490,500]},
+  {pts:[{n:'bl',dy:-31},{n:'shp',dy:31}],dash:true,label:'Docs attached',at:[1050,500]},
+  {pts:[{n:'pib',dy:-31},{n:'cus',dy:31}],dash:true},
+  {pts:[{n:'sj',dy:-31},{n:'rc',dy:31}],dash:true,label:'Local basis',at:[1450,560]},
+  {pts:[{n:'smi',dy:36},{n:'grn',dy:-31}],dash:true,label:'Every confirmed receipt',at:[1870,625]},
+  {pts:[{n:'apn',dy:-31},[2100,207],{n:'lc',dx:-108}],dash:true,label:'Invoice · payment after 3-way match',at:[2100,480]}
+ ],
+ banner:'RECEIVING — Import: PO → PPC → Payment Plan → Shipment → Customs (PIB) → Receipt · Local (MTI etc.): PO → Receipt, steps 3–6 skipped · Import Cost only after WH receipt confirm · SoD R4 ✗ R8 · R4 ✗ R10'
+});
+</script></body></html>

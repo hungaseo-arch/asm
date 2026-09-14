@@ -48,6 +48,12 @@ export const navGroups = [
       { label: '개선요청 목록', labelId: 'Daftar permintaan', icon: 'ClipboardList', to: '/csr' },
       { label: '공지', labelId: 'Pengumuman', icon: 'Bell', to: '/csr/notices' },
       { label: '상태 기준', labelId: 'Standar status', icon: 'Info', to: '/csr/status-guide' },
+      {
+        label: '업무 Flow Diagram',
+        labelId: 'Diagram Alur Kerja',
+        icon: 'Workflow',
+        to: '/csr/flow',
+      },
       { label: '관리 (admin)', labelId: 'Administrasi (admin)', icon: 'UserCog', to: '/csr/admin' },
     ],
   },

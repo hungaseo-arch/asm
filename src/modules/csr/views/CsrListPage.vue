@@ -60,8 +60,8 @@ const COLUMNS = computed(() => [
   { key: 'title', sortKey: lang.value === 'id' ? 'title_id' : 'title_ko' },
   { key: 'it_decision', sortKey: 'it_decision' },
   { key: 'it_status', sortKey: 'it_status' },
-  { key: 'it_pic', sortKey: 'it_pic' },
   { key: 'verification_result', sortKey: 'verification_result' },
+  { key: 'it_pic', sortKey: 'it_pic' },
 ])
 const sortMark = (k) => (issues.sort.key !== k ? '' : issues.sort.dir === 'asc' ? '▲' : '▼')
 const ariaSort = (k) =>
@@ -343,7 +343,6 @@ watch(
                       {{ row.it_status }}
                     </span>
                   </td>
-                  <td class="nowrap">{{ row.it_pic }}</td>
                   <td class="nowrap">
                     <span
                       v-if="row.verification_result"
@@ -354,6 +353,7 @@ watch(
                       {{ verifyCodeOf(row.verification_result) }}
                     </span>
                   </td>
+                  <td class="nowrap">{{ row.it_pic }}</td>
                 </tr>
               </tbody>
             </table>

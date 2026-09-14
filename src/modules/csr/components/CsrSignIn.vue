@@ -1,8 +1,13 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useCsrSessionStore } from '../stores/session'
+import { useIdentityStore } from '@/stores/identity'
 
 const session = useCsrSessionStore()
+// 로그인 전에도 표시 언어는 헤더 토글(= localStorage)을 따릅니다.
+const identity = useIdentityStore()
+const lang = computed(() => identity.lang)
+const t = (ko, id) => (lang.value === 'id' ? id : ko)
 const email = ref('')
 const password = ref('')
 const busy = ref(false)
@@ -27,14 +32,18 @@ async function submit() {
     이쪽은 Neon Auth 를 씁니다 — 인증 주체가 다르므로 화면도 나눕니다.
   -->
   <form class="asm-panel signin" @submit.prevent="submit">
-    <h2 class="asm-title">로그인 · Masuk</h2>
+    <h2 class="asm-title">{{ t('로그인', 'Masuk') }}</h2>
     <p class="lead">
-      CSR 사용자로 등록된 계정으로만 개선요청을 볼 수 있습니다.<br />
-      <span class="id">Hanya akun terdaftar yang dapat melihat permintaan perbaikan.</span>
+      {{
+        t(
+          'CSR 사용자로 등록된 계정으로만 개선요청을 볼 수 있습니다.',
+          'Hanya akun terdaftar yang dapat melihat permintaan perbaikan.',
+        )
+      }}
     </p>
 
     <label class="field">
-      <span>이메일 · Email</span>
+      <span>{{ t('이메일', 'Email') }}</span>
       <input
         v-model="email"
         type="email"
@@ -46,7 +55,7 @@ async function submit() {
     </label>
 
     <label class="field">
-      <span>비밀번호 · Kata sandi</span>
+      <span>{{ t('비밀번호', 'Kata sandi') }}</span>
       <input
         v-model="password"
         type="password"
@@ -61,7 +70,7 @@ async function submit() {
     <p v-if="session.error" class="err" role="alert">{{ session.error }}</p>
 
     <button type="submit" class="btn btn-primary" :disabled="busy">
-      {{ busy ? '확인 중…' : '로그인' }}
+      {{ busy ? t('확인 중…', 'Memeriksa…') : t('로그인', 'Masuk') }}
     </button>
 
     <!--
@@ -69,7 +78,9 @@ async function submit() {
       등록해야 쓸 수 있습니다(작업지시서 §6). Neon Auth 가 아직 가입 제한을 지원하지 않아
       가입 자체는 막을 수 없지만, 등록되지 않은 계정은 아무것도 보지 못합니다.
     -->
-    <p class="note">계정이 필요하면 관리자에게 요청하십시오.</p>
+    <p class="note">
+      {{ t('계정이 필요하면 관리자에게 요청하십시오.', 'Hubungi admin bila memerlukan akun.') }}
+    </p>
   </form>
 </template>
 
@@ -87,9 +98,6 @@ async function submit() {
   font-size: 13px;
   color: var(--asm-fg-muted);
   line-height: 1.6;
-}
-.id {
-  font-style: italic;
 }
 .field {
   display: flex;

@@ -8,6 +8,7 @@ import { nullIfBlank } from '../api/issues'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { isConfigured } from '../config'
+import { pickLinesLang } from '../i18n'
 import { markNoticesSeen } from '../notices'
 import CsrSignIn from '../components/CsrSignIn.vue'
 
@@ -16,6 +17,8 @@ const session = useCsrSessionStore()
 const issues = useCsrIssuesStore()
 const lang = computed(() => issues.lang)
 const id = (ko, idn) => (lang.value === 'id' ? idn : ko)
+/** 공지 본문은 "KO / ID" 병기로 씁니다 — 줄마다 표시 언어 쪽만 보여 줍니다(2026-09-14). */
+const V = (v) => pickLinesLang(v, lang.value)
 
 const notices = ref([])
 const loading = ref(true)
@@ -157,7 +160,7 @@ async function remove(n) {
         <div>
           <div class="page-titles">
             <h1 class="page-title">Notices</h1>
-            <p class="page-sub mb-0">Pengumuman · 알림</p>
+            <p class="page-sub mb-0">{{ id('알림', 'Pengumuman') }}</p>
           </div>
         </div>
         <div class="d-flex gap-2 align-items-center">
@@ -238,7 +241,7 @@ async function remove(n) {
             <span v-if="n.is_pinned" class="asm-badge asm-badge--primary">{{
               id('고정', 'Disematkan')
             }}</span>
-            <h2>{{ n.title }}</h2>
+            <h2>{{ V(n.title) }}</h2>
             <span class="meta">
               {{ n.published_on }}
               <template v-if="n.expires_on"> · ~{{ n.expires_on }}</template>
@@ -253,7 +256,7 @@ async function remove(n) {
             </span>
           </div>
           <!-- 마크다운 원문을 줄바꿈만 지켜 보여 줍니다 — 렌더러는 의존성 승인 대상(§9). -->
-          <pre v-if="n.body_md" class="md">{{ n.body_md }}</pre>
+          <pre v-if="n.body_md" class="md">{{ V(n.body_md) }}</pre>
         </article>
 
         <button

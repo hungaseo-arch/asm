@@ -251,7 +251,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
       <div class="headline">
         <div class="page-titles">
           <h1 class="page-title">Admin</h1>
-          <p class="page-sub mb-0">Administrasi · 관리</p>
+          <p class="page-sub mb-0">{{ t('관리', 'Administrasi') }}</p>
         </div>
         <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">
           ← {{ t('개선요청 목록', 'Daftar permintaan') }}
@@ -262,7 +262,9 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
       <div v-else-if="error" class="asm-panel state err">{{ error }}</div>
       <CsrSignIn v-else-if="!session.isAuthenticated" />
       <div v-else-if="!session.isAdmin" class="asm-panel state">
-        {{ t('관리자만 볼 수 있습니다', 'Hanya untuk admin') }} ({{ session.role ?? '미등록' }})
+        {{ t('관리자만 볼 수 있습니다', 'Hanya untuk admin') }} ({{
+          session.role ?? t('미등록', 'belum terdaftar')
+        }})
       </div>
 
       <template v-else>

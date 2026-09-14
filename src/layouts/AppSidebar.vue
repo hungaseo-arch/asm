@@ -2,7 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { findNavGroup, matchPath, navGroups, topNav } from '@/config/navigation'
+import { findNavGroup, matchPath, navGroups, navLabel, topNav } from '@/config/navigation'
+import { useIdentityStore } from '@/stores/identity'
 import { useDrawerFocus } from '@/composables/useDrawerFocus'
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -13,6 +14,9 @@ const emit = defineEmits(['close'])
 const route = useRoute()
 const router = useRouter()
 const isActive = (item) => Boolean(item.to && matchPath(route.path, item.to))
+/** 메뉴 라벨 — 표시 언어 쪽(2026-09-14). */
+const identity = useIdentityStore()
+const nav = (entry) => navLabel(entry, identity.lang)
 
 const closeButton = ref(null)
 useDrawerFocus(() => props.open, closeButton)
@@ -90,17 +94,17 @@ function openItem(item) {
         class="group-chip"
         :class="{ 'is-active': group?.key === item.key }"
         :aria-current="group?.key === item.key ? 'true' : undefined"
-        :title="item.label"
+        :title="nav(item)"
         @click="browsedKey = item.key"
       >
-        {{ item.label }}
+        {{ nav(item) }}
       </button>
     </nav>
 
     <!-- 고른 대분류의 하위메뉴(2단)만 평면으로 나열합니다. -->
     <nav class="nav-list" :aria-label="group?.nav.label">
       <!-- 그룹 라벨 — 가이드 7-3(BI 목차 킥커). 헤더의 활성 대분류와 짝을 이룹니다. -->
-      <span v-if="group" class="group-label">{{ group.label }}</span>
+      <span v-if="group" class="group-label">{{ nav(group) }}</span>
       <button
         v-for="item in items"
         :key="item.label"
@@ -109,7 +113,7 @@ function openItem(item) {
         :class="{ 'is-active': isActive(item) }"
         @click="openItem(item)"
       >
-        <span class="flex-grow-1">{{ item.label }}</span>
+        <span class="flex-grow-1">{{ nav(item) }}</span>
         <em v-if="item.badge">{{ item.badge }}</em>
       </button>
     </nav>

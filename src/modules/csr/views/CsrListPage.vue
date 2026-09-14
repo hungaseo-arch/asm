@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { STATUS_TONE, isConfigured } from '../config'
-import { label, pickLang, pickPair, toneOf } from '../i18n'
+import { label, pickLang, pickLinesLang, pickPair, toneOf } from '../i18n'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrStatusLegend from '../components/CsrStatusLegend.vue'
@@ -144,7 +144,9 @@ watch(
       <div class="headline">
         <div class="page-titles">
           <h1 class="page-title">CSR</h1>
-          <p class="page-sub mb-0">Manajemen Permintaan Perbaikan · 개선요청 관리</p>
+          <p class="page-sub mb-0">
+            {{ lang === 'id' ? 'Manajemen Permintaan Perbaikan' : '개선요청 관리' }}
+          </p>
         </div>
         <button
           v-if="pinned.length"
@@ -154,7 +156,7 @@ watch(
           @click="router.push('/csr/notices')"
         >
           <Bell :size="13" />
-          <span class="notice-text">{{ pinned[0].title }}</span>
+          <span class="notice-text">{{ pickLinesLang(pinned[0].title, lang) }}</span>
           <span v-if="pinned.length > 1" class="notice-more">+{{ pinned.length - 1 }}</span>
         </button>
       </div>
@@ -177,20 +179,25 @@ watch(
         그냥 '결과 없음' 으로 두면 사용자는 데이터가 없는 줄 압니다.
       -->
       <div v-else-if="session.isUnregistered" class="asm-panel state">
-        <h2 class="asm-title">접근 권한이 없습니다 · Tidak memiliki akses</h2>
+        <h2 class="asm-title">
+          {{ lang === 'id' ? 'Tidak memiliki akses' : '접근 권한이 없습니다' }}
+        </h2>
         <p>
-          계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다({{ session.user?.email }}).
-          관리자에게 역할 등록을 요청하십시오.
+          {{
+            lang === 'id'
+              ? `Akun dikenali tetapi belum terdaftar sebagai pengguna CSR (${session.user?.email}). Mintakan pendaftaran peran kepada admin.`
+              : `계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다(${session.user?.email}). 관리자에게 역할 등록을 요청하십시오.`
+          }}
         </p>
         <button type="button" class="btn btn-sm btn-primary mt-3 me-2" @click="recheck">
-          다시 확인 · Periksa lagi
+          {{ lang === 'id' ? 'Periksa lagi' : '다시 확인' }}
         </button>
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary mt-3"
           @click="session.signOut()"
         >
-          다른 계정으로 로그인
+          {{ lang === 'id' ? 'Masuk dengan akun lain' : '다른 계정으로 로그인' }}
         </button>
       </div>
 

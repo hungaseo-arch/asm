@@ -136,7 +136,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
       <div class="headline">
         <div class="page-titles">
           <h1 class="page-title">Dashboard</h1>
-          <p class="page-sub mb-0">Dasbor · 대시보드</p>
+          <p class="page-sub mb-0">{{ t('대시보드', 'Dasbor') }}</p>
         </div>
         <div class="d-flex align-items-center gap-2">
           <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">

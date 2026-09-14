@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { matchPath, navGroups, topNav } from '@/config/navigation'
+import { matchPath, navGroups, navLabel, topNav } from '@/config/navigation'
 import { useSidebarSummary } from '@/composables/useSummaryCards'
 import { useIdentityStore } from '@/stores/identity'
 import CsrLangToggle from '@/modules/csr/components/CsrLangToggle.vue'
@@ -22,6 +22,8 @@ const who = computed(() => identity.display)
 const t = (ko, id) => (identity.lang === 'id' ? id : ko)
 /** 언어 토글 — CSR 화면(/csr 이하) 전부에서 헤더에 한 번(2026-09-14 요청). 값은 identity.lang 하나. */
 const onCsr = computed(() => route.path === '/csr' || route.path.startsWith('/csr/'))
+/** 메뉴 라벨 — 표시 언어 쪽. */
+const nav = (entry) => navLabel(entry, identity.lang)
 const lang = computed({ get: () => identity.lang, set: (v) => identity.setLang(v) })
 /** 로그아웃 상태의 계정 버튼은 로그인 화면(/csr)으로 가는 문입니다. */
 function onAccountClick() {
@@ -176,7 +178,7 @@ async function signOut() {
           :aria-expanded="navOpen === item.key"
           @click="toggleGroup(item, $event)"
         >
-          {{ item.label }}
+          {{ nav(item) }}
         </button>
         <!-- 드롭다운 규격 — 계정 메뉴와 같음(가이드 7-2: White · 1px 테두리 · radius-md · shadow-md) -->
         <div
@@ -194,7 +196,7 @@ async function signOut() {
             role="menuitem"
             @click="goItem(sub)"
           >
-            <span class="flex-grow-1">{{ sub.label }}</span>
+            <span class="flex-grow-1">{{ nav(sub) }}</span>
             <em v-if="sub.badge">{{ sub.badge }}</em>
           </button>
         </div>

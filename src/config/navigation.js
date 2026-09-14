@@ -36,13 +36,19 @@ export const navGroups = [
      */
     key: 'csr',
     label: 'CSR (개선요청)',
-    nav: { label: 'CSR (개선요청)', to: '/csr/dashboard', match: ['/csr'] },
+    labelId: 'CSR (Permintaan Perbaikan)',
+    nav: {
+      label: 'CSR (개선요청)',
+      labelId: 'CSR (Permintaan Perbaikan)',
+      to: '/csr/dashboard',
+      match: ['/csr'],
+    },
     items: [
-      { label: 'Dashboard', icon: 'LayoutDashboard', to: '/csr/dashboard' },
-      { label: '개선요청 목록', icon: 'ClipboardList', to: '/csr' },
-      { label: '공지', icon: 'Bell', to: '/csr/notices' },
-      { label: '상태 기준', icon: 'Info', to: '/csr/status-guide' },
-      { label: '관리 (admin)', icon: 'UserCog', to: '/csr/admin' },
+      { label: 'Dashboard', labelId: 'Dasbor', icon: 'LayoutDashboard', to: '/csr/dashboard' },
+      { label: '개선요청 목록', labelId: 'Daftar permintaan', icon: 'ClipboardList', to: '/csr' },
+      { label: '공지', labelId: 'Pengumuman', icon: 'Bell', to: '/csr/notices' },
+      { label: '상태 기준', labelId: 'Standar status', icon: 'Info', to: '/csr/status-guide' },
+      { label: '관리 (admin)', labelId: 'Administrasi (admin)', icon: 'UserCog', to: '/csr/admin' },
     ],
   },
   {
@@ -164,8 +170,18 @@ export const navGroups = [
       { label: 'Search Staff', icon: 'UserCog', to: '/search-employee' },
       { label: 'Change Password', icon: 'Repeat' },
       // 참고 (문서 기준) — 「ASM 권한 가이드라인 v3.0」을 화면으로 옮긴 자료
-      { label: '참고 · Role / Permission', icon: 'ShieldCheck', to: '/role-permission' },
-      { label: '참고 · Approval Matrix', icon: 'Workflow', to: '/approval-matrix' },
+      {
+        label: '참고 · Role / Permission',
+        labelId: 'Referensi · Role / Permission',
+        icon: 'ShieldCheck',
+        to: '/role-permission',
+      },
+      {
+        label: '참고 · Approval Matrix',
+        labelId: 'Referensi · Approval Matrix',
+        icon: 'Workflow',
+        to: '/approval-matrix',
+      },
       // MOCK-UP (시안) — 운영 ASM 에 없는 시안 화면
       { label: 'MOCK-UP · Stock Movement', icon: 'ArrowLeftRight', to: '/stock-movement' },
       { label: 'MOCK-UP · Stock Adjustment', icon: 'SlidersHorizontal', to: '/inventory-adjust' },
@@ -182,6 +198,13 @@ export const navGroups = [
  * 헤더 항목을 추가·삭제하려면 navGroups 의 그룹을 추가·삭제하십시오.
  */
 export const topNav = navGroups.map((group) => ({ key: group.key, ...group.nav }))
+
+/**
+ * 메뉴 라벨 — 표시 언어 쪽(2026-09-14 「메뉴 버튼도 한국어/인니어 분리」).
+ * 운영 메뉴는 영문 한 가지라 labelId 가 없고, 한국어가 들어간 항목에만 labelId 를 답니다.
+ */
+export const navLabel = (entry, lang) =>
+  (lang === 'id' ? (entry?.labelId ?? entry?.label) : entry?.label) ?? ''
 
 /** 현재 경로가 속한 그룹. 헤더의 활성 대분류이자 사이드바가 보여줄 목록입니다. */
 export function findNavGroup(path) {

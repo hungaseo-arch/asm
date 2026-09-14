@@ -33,6 +33,32 @@ export function pickLang(value, lang) {
   return s
 }
 
+/**
+ * 여러 줄 텍스트 — 줄마다 "KO / ID" 병기인 줄만 한쪽을 고릅니다(공지 제목·본문. 2026-09-14).
+ * 한쪽에만 한글이 있을 때만 자릅니다 — "PO / PPC 대사" 처럼 둘 다 같은 언어인 줄은 그대로 둡니다.
+ */
+export function pickLinesLang(value, lang) {
+  if (value == null) return value
+  return String(value)
+    .split('\n')
+    .map((line) => {
+      const i = line.indexOf(SEP)
+      if (i < 0) return line
+      const a = line.slice(0, i)
+      const b = line.slice(i + SEP.length)
+      if (HANGUL.test(a) === HANGUL.test(b)) return line
+      // 두 언어 문장이 맞는지 — 양쪽이 충분히 길고 라틴 쪽이 두 낱말 이상일 때만. 그러지 않으면
+      // "PO / PPC 대사 기능" 같은 한 문장이 잘립니다(2026-09-14 실측).
+      const ko = HANGUL.test(a) ? a : b
+      const id = HANGUL.test(a) ? b : a
+      const looksBilingual =
+        ko.trim().length >= 8 && id.trim().length >= 8 && id.trim().split(/s+/).length >= 2
+      if (!looksBilingual) return line
+      return (lang === 'id' ? id : ko).trim()
+    })
+    .join('\n')
+}
+
 /** 두 언어 컬럼 쌍(title_ko/title_id 등)에서 하나를 고릅니다 — 비어 있으면 다른 쪽으로. */
 export const pickPair = (ko, id, lang) => (lang === 'id' ? (id ?? ko) : (ko ?? id))
 

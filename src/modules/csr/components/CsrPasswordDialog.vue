@@ -4,9 +4,13 @@ import { authApi } from '../api/neon'
 import { useCsrSessionStore } from '../stores/session'
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
 import { useEscapeToClose } from '@/composables/useEscapeToClose'
+import { useIdentityStore } from '@/stores/identity'
 
 const emit = defineEmits(['close'])
 const session = useCsrSessionStore()
+const identity = useIdentityStore()
+const lang = computed(() => identity.lang)
+const t = (ko, id) => (lang.value === 'id' ? id : ko)
 useBodyScrollLock()
 useEscapeToClose(() => emit('close'))
 
@@ -39,7 +43,8 @@ async function submit() {
       revokeOtherSessions: true,
     })
     if (result?.error) {
-      error.value = result.error.message ?? '비밀번호를 바꾸지 못했습니다'
+      error.value =
+        result.error.message ?? t('비밀번호를 바꾸지 못했습니다', 'Gagal mengubah kata sandi')
       return
     }
     done.value = true
@@ -60,23 +65,32 @@ async function submit() {
     <button
       type="button"
       class="asm-overlay__scrim"
-      aria-label="닫기"
+      :aria-label="t('닫기', 'Tutup')"
       @click="emit('close')"
     ></button>
 
     <div class="asm-panel dialog" role="dialog" aria-modal="true" aria-labelledby="pw-title">
-      <h2 id="pw-title" class="asm-title">비밀번호 변경 · Ubah Kata Sandi</h2>
+      <h2 id="pw-title" class="asm-title">{{ t('비밀번호 변경', 'Ubah Kata Sandi') }}</h2>
 
       <template v-if="done">
-        <p class="ok">비밀번호를 바꿨습니다. 다른 기기의 로그인은 해제되었습니다.</p>
-        <button type="button" class="btn btn-primary" @click="emit('close')">닫기</button>
+        <p class="ok">
+          {{
+            t(
+              '비밀번호를 바꿨습니다. 다른 기기의 로그인은 해제되었습니다.',
+              'Kata sandi telah diubah. Sesi di perangkat lain telah diakhiri.',
+            )
+          }}
+        </p>
+        <button type="button" class="btn btn-primary" @click="emit('close')">
+          {{ t('닫기', 'Tutup') }}
+        </button>
       </template>
 
       <form v-else @submit.prevent="submit">
         <p class="who">{{ session.user?.email }}</p>
 
         <label class="field">
-          <span>현재 비밀번호 · Kata sandi saat ini</span>
+          <span>{{ t('현재 비밀번호', 'Kata sandi saat ini') }}</span>
           <input
             v-model="current"
             type="password"
@@ -87,7 +101,7 @@ async function submit() {
         </label>
 
         <label class="field">
-          <span>새 비밀번호 · Kata sandi baru</span>
+          <span>{{ t('새 비밀번호', 'Kata sandi baru') }}</span>
           <input
             v-model="next"
             type="password"
@@ -95,11 +109,11 @@ async function submit() {
             autocomplete="new-password"
             required
           />
-          <small :class="{ warn: tooShort }">8자 이상 · minimal 8 karakter</small>
+          <small :class="{ warn: tooShort }">{{ t('8자 이상', 'minimal 8 karakter') }}</small>
         </label>
 
         <label class="field">
-          <span>새 비밀번호 확인 · Konfirmasi</span>
+          <span>{{ t('새 비밀번호 확인', 'Konfirmasi') }}</span>
           <input
             v-model="confirm"
             type="password"
@@ -107,17 +121,17 @@ async function submit() {
             autocomplete="new-password"
             required
           />
-          <small v-if="mismatch" class="warn">두 값이 다릅니다 · tidak cocok</small>
+          <small v-if="mismatch" class="warn">{{ t('두 값이 다릅니다', 'tidak cocok') }}</small>
         </label>
 
         <p v-if="error" class="err" role="alert">{{ error }}</p>
 
         <div class="actions">
           <button type="button" class="btn btn-outline-secondary" @click="emit('close')">
-            취소
+            {{ t('취소', 'Batal') }}
           </button>
           <button type="submit" class="btn btn-primary" :disabled="!canSubmit">
-            {{ busy ? '변경 중…' : '변경' }}
+            {{ busy ? t('변경 중…', 'Mengubah…') : t('변경', 'Ubah') }}
           </button>
         </div>
       </form>

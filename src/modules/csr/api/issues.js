@@ -46,6 +46,18 @@ export async function addVerification(issueId, fields, createdBy) {
 }
 
 /**
+ * 최종 접속 기록 (2026-09-14) — 자기 행의 last_seen_at 만 찍는 SECURITY DEFINER 함수(db/029).
+ * 실패해도 화면은 그대로 굴러가야 하므로 삼켜 버립니다 — 접속 시각은 참고용입니다.
+ */
+export async function touchLastSeen() {
+  try {
+    await getDb().rpc('csr_touch_last_seen')
+  } catch {
+    /* 029 미적용 · 네트워크 오류 — 무시 */
+  }
+}
+
+/**
  * 담당자 선택지 — Neon 에 등록된 사용자의 표시 이름(csr_user_roles.display_name).
  * 담당자 값은 등록 사용자와 같아야 하므로(2026-09-11 요청) 자유 입력 대신 이 목록에서 고릅니다.
  */

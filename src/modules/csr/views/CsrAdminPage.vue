@@ -242,6 +242,20 @@ async function resetPassword() {
 }
 
 const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
+/**
+ * 최종 접속 (2026-09-14) — 오늘·어제는 말로, 그 밖은 날짜로. 한 번도 안 들어온 계정은 「—」.
+ * 값은 세션 확인 때마다 갱신되므로 '마지막 로그인'이 아니라 '마지막 사용' 입니다(db/029).
+ */
+const lastSeen = (u) => {
+  if (!u.last_seen_at) return '—'
+  const day = String(u.last_seen_at).slice(0, 10)
+  const today = new Date()
+  const d0 = today.toISOString().slice(0, 10)
+  const d1 = new Date(today.getTime() - 864e5).toISOString().slice(0, 10)
+  if (day === d0) return t('오늘', 'Hari ini')
+  if (day === d1) return t('어제', 'Kemarin')
+  return day
+}
 const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name ?? id ?? '—'
 </script>
 
@@ -372,6 +386,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                 <th>{{ t('권한', 'Peran') }}</th>
                 <th>{{ t('소속', 'Bagian') }}</th>
                 <th class="nowrap">{{ t('등록일', 'Terdaftar') }}</th>
+                <th class="nowrap">{{ t('최종 접속', 'Akses terakhir') }}</th>
                 <th></th>
               </tr>
             </thead>
@@ -388,6 +403,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                 </td>
                 <td>{{ u.department ?? '—' }}</td>
                 <td class="nowrap muted">{{ fmtTs(u.created_at).slice(0, 10) }}</td>
+                <td class="nowrap muted" :title="fmtTs(u.last_seen_at)">{{ lastSeen(u) }}</td>
                 <td class="nowrap ops">
                   <button type="button" class="btn btn-sm btn-link" @click="startEdit(u)">
                     {{ t('편집', 'Ubah') }}

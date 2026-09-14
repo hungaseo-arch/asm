@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { authApi, getDb, unwrap } from '../api/neon'
 import { AUTH_URL, isConfigured } from '../config'
+import { touchLastSeen } from '../api/issues'
 import { useIdentityStore } from '@/stores/identity'
 
 /**
@@ -75,6 +76,8 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
       }
       profile.value = rows?.[0] ?? null
       role.value = profile.value?.role ?? null
+      // 최종 접속일 — 등록 사용자만. 관리 화면이 이 값을 보여 줍니다(2026-09-14). 기다리지 않습니다.
+      if (profile.value) touchLastSeen()
       // 헤더가 읽는 가벼운 정체성 — 미등록 계정도 이메일은 보여 줍니다.
       identity.set({
         name: profile.value?.display_name ?? user.value.name ?? null,

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { matchPath, navGroups, topNav } from '@/config/navigation'
 import { useSidebarSummary } from '@/composables/useSummaryCards'
 import { useIdentityStore } from '@/stores/identity'
+import CsrLangToggle from '@/modules/csr/components/CsrLangToggle.vue'
 import { hasUnreadNotices } from '@/modules/csr/notices'
 const emit = defineEmits(['open-sidebar', 'open-summary'])
 /** 요약 드로어는 이번 화면이 요약 카드를 등록했을 때만 열 수 있습니다. */
@@ -19,6 +20,9 @@ const identity = useIdentityStore()
 const who = computed(() => identity.display)
 /** 계정 메뉴 문구 — CSR 국기 토글과 같은 언어 하나만(2026-09-10 「한국어·인니어 혼용」). */
 const t = (ko, id) => (identity.lang === 'id' ? id : ko)
+/** 언어 토글 — CSR 화면(/csr 이하) 전부에서 헤더에 한 번(2026-09-14 요청). 값은 identity.lang 하나. */
+const onCsr = computed(() => route.path === '/csr' || route.path.startsWith('/csr/'))
+const lang = computed({ get: () => identity.lang, set: (v) => identity.setLang(v) })
 /** 로그아웃 상태의 계정 버튼은 로그인 화면(/csr)으로 가는 문입니다. */
 function onAccountClick() {
   if (who.value.placeholder) router.push('/csr/dashboard')
@@ -210,6 +214,8 @@ async function signOut() {
       >
         <LayoutDashboard :size="18" />
       </button>
+      <!-- 언어 토글(국기) — CSR 화면 전부. 대시보드·목록에 따로 두던 것을 여기로 모았습니다. -->
+      <CsrLangToggle v-if="onCsr" v-model="lang" class="me-1" />
       <!-- 알림 — CSR 공지 화면. 관리자가 쓰고 전원이 봅니다. -->
       <button
         type="button"

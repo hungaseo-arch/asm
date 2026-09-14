@@ -7,7 +7,6 @@ import { STATUS_TONE, isConfigured } from '../config'
 import { label, pickLang, pickPair, toneOf } from '../i18n'
 import { provideSidebarSummary } from '@/composables/useSummaryCards'
 import CsrSignIn from '../components/CsrSignIn.vue'
-import CsrLangToggle from '../components/CsrLangToggle.vue'
 import CsrStatusLegend from '../components/CsrStatusLegend.vue'
 import { itStatusTitle, verifyCodeOf, verifyFilterLabel, verifyTitle } from '../status'
 
@@ -262,7 +261,7 @@ watch(
           <div class="d-flex align-items-center gap-2">
             <!-- 상태 범례 — 상단 우측 (작업지시서 v1.1 §C-2) -->
             <CsrStatusLegend :lang="lang" />
-            <CsrLangToggle v-model="issues.lang" />
+            <!-- 언어 토글은 헤더로(2026-09-14) -->
           </div>
         </div>
 

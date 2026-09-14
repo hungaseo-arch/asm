@@ -8,7 +8,6 @@ import { IT_STATUSES, STATUS_TONE, isConfigured } from '../config'
 import { label, pickLang, toneOf } from '../i18n'
 import { formatInt } from '@/utils/format'
 import CsrSignIn from '../components/CsrSignIn.vue'
-import CsrLangToggle from '../components/CsrLangToggle.vue'
 import {
   VERIFY_CODES,
   isPendingVerification,
@@ -143,8 +142,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
           <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">
             ← {{ t('개선요청 목록', 'Daftar permintaan') }}
           </button>
-          <!-- 언어 토글 — 목록 툴바에서 옮겼습니다(2026-09-10). 대시보드가 로고 클릭 첫 화면이라 여기가 입구. -->
-          <CsrLangToggle v-model="issues.lang" />
+          <!-- 언어 토글은 헤더로 옮겼습니다(2026-09-14, CSR 전체 페이지 공통). -->
         </div>
       </div>
 

@@ -5,7 +5,6 @@ import { matchPath, navGroups, navLabel, topNav } from '@/config/navigation'
 import { useSidebarSummary } from '@/composables/useSummaryCards'
 import { useIdentityStore } from '@/stores/identity'
 import CsrLangToggle from '@/modules/csr/components/CsrLangToggle.vue'
-import { hasUnreadNotices } from '@/modules/csr/notices'
 const emit = defineEmits(['open-sidebar', 'open-summary'])
 /** 요약 드로어는 이번 화면이 요약 카드를 등록했을 때만 열 수 있습니다. */
 const { cards } = useSidebarSummary()
@@ -30,12 +29,6 @@ function onAccountClick() {
   if (who.value.placeholder) router.push('/csr/dashboard')
   else accountOpen.value = !accountOpen.value
 }
-/** 종의 빨간 점 — CSR 화면이 localStorage 에 남긴 비트만 읽습니다(Neon 을 직접 묻지 않음). */
-const unread = computed(() => {
-  void route.path // 화면이 바뀔 때마다 다시 읽습니다
-  return hasUnreadNotices()
-})
-
 const isActive = (item) => {
   const prefixes = item.match ?? (item.to ? [item.to] : [])
   return prefixes.some((prefix) => matchPath(route.path, prefix))
@@ -218,17 +211,6 @@ async function signOut() {
       </button>
       <!-- 언어 토글(국기) — CSR 화면 전부. 대시보드·목록에 따로 두던 것을 여기로 모았습니다. -->
       <CsrLangToggle v-if="onCsr" v-model="lang" class="me-1" />
-      <!-- 알림 — CSR 공지 화면. 관리자가 쓰고 전원이 봅니다. -->
-      <button
-        type="button"
-        class="asm-icon-btn is-borderless"
-        aria-label="알림"
-        title="알림 (Notifications)"
-        @click="router.push('/csr/notices')"
-      >
-        <Bell :size="18" />
-        <i v-if="unread" class="unread-dot" aria-label="새 공지 있음"></i>
-      </button>
 
       <!--
         가이드 7-2 우측 배치 — 역할 pill → 아바타 → 이름. CSR 로그인이 있으면 그 계정의
@@ -470,15 +452,6 @@ async function signOut() {
 /* 미확인 공지 — 종 아이콘 모서리의 8px 점(가이드 4-2: 배지는 로고 밖). */
 .top-actions .asm-icon-btn {
   position: relative;
-}
-.unread-dot {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  background: var(--asm-danger);
-  border-radius: 50%;
 }
 .account {
   position: relative;

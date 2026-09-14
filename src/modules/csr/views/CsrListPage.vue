@@ -17,7 +17,6 @@ async function recheck() {
 }
 import CsrPasswordDialog from '../components/CsrPasswordDialog.vue'
 import { formatInt } from '@/utils/format'
-import { noteNotices } from '../notices'
 import { useIdentityStore } from '@/stores/identity'
 import { getDb, unwrap } from '../api/neon'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -30,7 +29,7 @@ onMounted(async () => {
   await session.refresh()
   if (session.isAuthenticated && !session.isUnregistered) {
     await issues.load()
-    // 헤더 종의 빨간 점 — 마지막으로 본 공지보다 새 공지가 있으면 켭니다. 실패해도 목록과 무관.
+    // 머리줄의 고정 공지 한 줄. 실패해도 목록과 무관합니다.
     try {
       const rows =
         unwrap(
@@ -39,11 +38,10 @@ onMounted(async () => {
             .select('id,title,is_pinned,expires_on,updated_at')
             .order('published_on', { ascending: false }),
         ) ?? []
-      noteNotices(rows)
       const today = new Date().toISOString().slice(0, 10)
       pinned.value = rows.filter((n) => n.is_pinned && (!n.expires_on || n.expires_on >= today))
     } catch {
-      /* 007 미적용 등 — 스트립과 점만 비어 있을 뿐, 목록과 무관합니다 */
+      /* 007 미적용 등 — 스트립만 비어 있을 뿐, 목록과 무관합니다 */
     }
   }
 })
@@ -113,7 +111,7 @@ provideSidebarSummary(() => {
 
 const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)}`)
 
-/** 목록 상단 스트립에 보일 고정 공지(만료 전). 헤더 종의 미확인 점도 같은 조회로 갱신합니다. */
+/** 목록 상단 스트립에 보일 고정 공지(만료 전). 공지 화면이 없어진 뒤 읽기 전용입니다. */
 const pinned = ref([])
 
 /**
@@ -141,7 +139,8 @@ watch(
         머리줄 — 좌: 눈썹 제목, 우: 고정 공지 한 줄(2026-09-10 「우측상단으로 이동하고 1행으로」).
         고정 공지는 작업지시서 §5-4a 의 회신 안내를 포함해 관리자가 고정한 것이며, 문구를
         코드에 박지 않고 공지 체계 하나로 일원화했습니다. 여러 건이면 첫 건만 보이고 나머지는
-        개수로 접습니다 — 머리줄은 한 줄이어야 합니다. 누르면 공지 화면으로 갑니다.
+        개수로 접습니다 — 머리줄은 한 줄이어야 합니다. 공지 화면을 없앤 뒤(2026-09-14)
+        누를 곳이 없어 읽기 전용 한 줄로 두었습니다 — 전체 문구는 툴팁입니다.
       -->
       <div class="headline">
         <div class="page-titles">
@@ -150,17 +149,11 @@ watch(
             {{ lang === 'id' ? 'Manajemen Permintaan Perbaikan' : '개선요청 관리' }}
           </p>
         </div>
-        <button
-          v-if="pinned.length"
-          type="button"
-          class="notice"
-          :title="pinned.map((n) => n.title).join(' · ')"
-          @click="router.push('/csr/notices')"
-        >
+        <span v-if="pinned.length" class="notice" :title="pinned.map((n) => n.title).join(' · ')">
           <Bell :size="13" />
           <span class="notice-text">{{ pickLinesLang(pinned[0].title, lang) }}</span>
           <span v-if="pinned.length > 1" class="notice-more">+{{ pinned.length - 1 }}</span>
-        </button>
+        </span>
       </div>
 
       <!-- 설정 누락 · 미로그인 · 미등록은 각각 다른 안내가 필요합니다. -->

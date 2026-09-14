@@ -24,6 +24,14 @@ Pages 로 배포하므로 **`main` 이 곧 배포본**입니다.
   Data API 실측: 38행 · 이슈 01~38 각 1건 · 중복 0. 39~60 은 Notion 에도 캡쳐 없음(현지 요청 건).
   상세 §1 썸네일·「+ 캡쳐 추가」·admin 삭제 동작 확인
 
+### 2026-09-14 — 개선요청서 v2 정합화 · DB 024/025 콘솔 적용 대기
+
+- v2 문서(hwpx) 이슈 39~68 과 사이트 대조 — 제목 · 심각도 22/22 일치, 61~68(Komang · Finance) 미등록, 57~59 담당자 · 57 본문 차이.
+  보고서 `docs/csr/정합성검증_개선요청서v2_20260914.md`
+- `db/024_v2_sync.sql` — 61~68 등록(+검증 이력) · 57 본문 교체 · 57~59 담당자 SEO. 생성기 `scripts/csr_gen_024.cjs`
+- `db/025_attachments_v2.sql` — v2 캡쳐 23건(Drive 업로드 완료). 업로더에 env 매개변수(`CSR_CAPTURE_*`) 추가
+- 대메뉴 선택지에 Finance 추가
+
 ### 2026-09-10 — 작업지시서 v1.1 (잔여 작업) · DB 015/015b/015c/016~019 적용 완료
 
 - **[A] `csr_issues` UPDATE 403 원인·수정** — 가드가 `auth.user_id()` 를 호출자 권한으로 불러 `permission denied for schema auth`.

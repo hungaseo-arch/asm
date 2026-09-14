@@ -79,6 +79,7 @@ export const OPTIONS = {
     'Partners',
     'Master Data',
     'Settings',
+    'Finance', // v2 개선요청서 61~68(2026-09-11 Komang) — 신설 요청 대메뉴
     '공통 / Umum',
     '업무요건 / Kebutuhan Bisnis',
   ],

@@ -20,9 +20,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const MD_DIR = path.join(ROOT, 'import/notion_export/md')
-const MANIFEST = path.join(ROOT, 'import/out/captures_manifest.json')
-const OUT_SQL = path.join(ROOT, 'db/012_attachments_seed.sql')
+// 환경변수로 다른 묶음도 올릴 수 있습니다(2026-09-14 v2 캡쳐: CSR_CAPTURE_DIR=import/v2_captures
+// CSR_CAPTURE_MANIFEST=import/out/captures_v2_manifest.json CSR_CAPTURE_SQL=db/025_attachments_v2.sql CSR_CAPTURE_BY=v2-doc).
+const MD_DIR = path.join(ROOT, process.env.CSR_CAPTURE_DIR ?? 'import/notion_export/md')
+const MANIFEST = path.join(ROOT, process.env.CSR_CAPTURE_MANIFEST ?? 'import/out/captures_manifest.json')
+const OUT_SQL = path.join(ROOT, process.env.CSR_CAPTURE_SQL ?? 'db/012_attachments_seed.sql')
+const UPLOADED_BY = process.env.CSR_CAPTURE_BY ?? 'notion'
 const DRY = process.argv.includes('--dry-run')
 
 // .env 를 손으로 읽습니다(dotenv 의존성 없이 — 작업지시서 §9).
@@ -112,7 +115,7 @@ const q = (s) => `'${String(s).replace(/'/g, "''")}'`
 const rows = Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b))
 const sql = [
   `-- =============================================================================
--- ASM CSR — Notion 이관 캡쳐 ${rows.length}건 → csr_attachments (2026-09-10)
+-- ASM CSR — 캡쳐 ${rows.length}건 → csr_attachments (${path.basename(MD_DIR)} · ${UPLOADED_BY})
 --   생성: node scripts/csr_migrate_captures.mjs   (Drive 업로드는 이미 끝났고 여기서는 행만 넣습니다)
 --   001~011 적용 후 실행. 재실행 안전(같은 drive_file_id 는 건너뜀).
 -- =============================================================================
@@ -120,7 +123,7 @@ const sql = [
 ]
 for (const [file, m] of rows) {
   sql.push(`INSERT INTO public.csr_attachments (issue_id, drive_file_id, file_name, caption, sort_order, uploaded_by)
-SELECT i.id, ${q(m.fileId)}, ${q(file)}, NULL, 0, 'notion'
+SELECT i.id, ${q(m.fileId)}, ${q(file)}, NULL, 0, ${q(UPLOADED_BY)}
   FROM public.csr_issues i
  WHERE i.issue_no = ${q(m.issueNo)} AND NOT i.is_archived
    AND NOT EXISTS (SELECT 1 FROM public.csr_attachments a WHERE a.drive_file_id = ${q(m.fileId)});

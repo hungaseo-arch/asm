@@ -3,7 +3,7 @@
  *
  * 모듈 식별자는 여기 한 곳에서만 정합니다(작업지시서 C-2). 라우트·테이블 접두사·정책
  * 상수가 전부 `csr` 로 통일되어 있습니다 — 원본 Notion DB 「ASM 개선요청 관리 (CSR)」와
- * 이슈번호 체계 CSR-YYYYMM-nnn 에 맞춘 것입니다.
+ * 이슈번호는 문서와 같은 연번(01~, 2026-09-14 통일 — 종전 CSR-YYYYMM-nnn 폐지)입니다.
  */
 export const MODULE_SLUG = 'csr'
 

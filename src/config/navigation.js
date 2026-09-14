@@ -30,6 +30,22 @@ export const matchPath = (path, prefix) => path === prefix || path.startsWith(`$
  */
 export const navGroups = [
   {
+    /*
+     * CSR(개선요청) — 2026-09-14 요청으로 첫 번째 대분류. 운영 ASM 메뉴가 아니라 이 목업 사이트의 주 기능이라
+     * 맨 앞에 둡니다. 경로 /csr 이하 전부가 이 그룹입니다(상세 /csr/:issueNo 포함).
+     */
+    key: 'csr',
+    label: 'CSR (개선요청)',
+    nav: { label: 'CSR (개선요청)', to: '/csr/dashboard', match: ['/csr'] },
+    items: [
+      { label: 'Dashboard', icon: 'LayoutDashboard', to: '/csr/dashboard' },
+      { label: '개선요청 목록', icon: 'ClipboardList', to: '/csr' },
+      { label: '공지', icon: 'Bell', to: '/csr/notices' },
+      { label: '상태 기준', icon: 'Info', to: '/csr/status-guide' },
+      { label: '관리 (admin)', icon: 'UserCog', to: '/csr/admin' },
+    ],
+  },
+  {
     key: 'purchasing',
     label: 'I. PURCHASING',
     nav: {
@@ -126,69 +142,36 @@ export const navGroups = [
     key: 'settings',
     label: 'VI. SETTINGS',
     // 참고 화면(/role-permission, /approval-matrix)은 참고 대분류로 옮겼습니다.
+    // 참고(권한 가이드라인 화면)·MOCK-UP(시안) 대분류를 이 그룹의 하위메뉴로 옮겼습니다(2026-09-14 요청) —
+    // 헤더가 운영 6종 + CSR 로 정리됩니다. 시안·참고가 필요 없어지면 아래 항목만 지우면 됩니다.
     nav: {
       label: 'Settings',
       to: '/search-employee',
-      match: ['/search-employee', '/setting', '/change-password', '/csr'],
-    },
-    items: [
-      { label: 'Search Staff', icon: 'UserCog', to: '/search-employee' },
-      { label: 'Change Password', icon: 'Repeat' },
-      // 개선요청(CSR) — Notion 이관분. 별도 지시서를 따르는 독립 모듈입니다.
-      { label: 'CSR (개선요청)', icon: 'ClipboardList', to: '/csr' },
-    ],
-  },
-  {
-    /*
-     * 운영 ASM 메뉴가 아니라 「ASM 권한 가이드라인 v3.0」을 화면으로 옮긴 참고 자료입니다.
-     * (문서 정합성 리포트 A-5 — 운영 하위메뉴는 25종으로 고정)
-     *
-     * 임시 대분류 — 실서버 ASM 헤더에는 없는 분류입니다. 사이드바가 2단만 남으면서
-     * 이 화면들로 들어갈 경로가 사라지기에 헤더에 자리를 만들었습니다. 운영 6종과
-     * 섞이지 않도록 Settings 의 match 에서 빼내 별도 대분류로 분리했습니다.
-     * 참고 화면이 필요 없어지면 이 그룹만 통째로 지우면 됩니다.
-     */
-    key: 'reference',
-    label: '참고 (문서 기준)',
-    nav: {
-      label: '참고',
-      to: '/role-permission',
-      match: ['/role-permission', '/approval-matrix'],
-      temporary: true,
-    },
-    items: [
-      { label: 'Role / Permission', icon: 'ShieldCheck', to: '/role-permission' },
-      { label: 'Approval Matrix', icon: 'Workflow', to: '/approval-matrix' },
-    ],
-  },
-  {
-    /*
-     * 운영 ASM 메뉴에는 없는 시안(Mock-up) 화면입니다. 불필요하면 이 그룹만 지우면 됩니다.
-     *
-     * 임시 대분류 — 위 '참고'와 같은 이유로 헤더에 자리를 만들었습니다. 시안 화면이
-     * Inventory(4종)와 Master Data(1종)에 흩어져 있어 운영 메뉴 25종에 섞이던 것을
-     * 두 대분류의 match 에서 빼내 여기로 모았습니다.
-     */
-    key: 'mockup',
-    label: 'MOCK-UP (시안)',
-    nav: {
-      label: 'MOCK-UP',
-      to: '/stock-movement',
       match: [
+        '/search-employee',
+        '/setting',
+        '/change-password',
+        '/role-permission',
+        '/approval-matrix',
         '/stock-movement',
         '/inventory-adjust',
         '/stock-transfer',
         '/stock-opname',
         '/brand-pattern',
       ],
-      temporary: true,
     },
     items: [
-      { label: 'Stock Movement', icon: 'ArrowLeftRight', to: '/stock-movement' },
-      { label: 'Stock Adjustment', icon: 'SlidersHorizontal', to: '/inventory-adjust' },
-      { label: 'Stock Transfer', icon: 'Repeat', to: '/stock-transfer' },
-      { label: 'Stock Opname', icon: 'ClipboardCheck', to: '/stock-opname' },
-      { label: 'Brand / Pattern', icon: 'Tag', to: '/brand-pattern' },
+      { label: 'Search Staff', icon: 'UserCog', to: '/search-employee' },
+      { label: 'Change Password', icon: 'Repeat' },
+      // 참고 (문서 기준) — 「ASM 권한 가이드라인 v3.0」을 화면으로 옮긴 자료
+      { label: '참고 · Role / Permission', icon: 'ShieldCheck', to: '/role-permission' },
+      { label: '참고 · Approval Matrix', icon: 'Workflow', to: '/approval-matrix' },
+      // MOCK-UP (시안) — 운영 ASM 에 없는 시안 화면
+      { label: 'MOCK-UP · Stock Movement', icon: 'ArrowLeftRight', to: '/stock-movement' },
+      { label: 'MOCK-UP · Stock Adjustment', icon: 'SlidersHorizontal', to: '/inventory-adjust' },
+      { label: 'MOCK-UP · Stock Transfer', icon: 'Repeat', to: '/stock-transfer' },
+      { label: 'MOCK-UP · Stock Opname', icon: 'ClipboardCheck', to: '/stock-opname' },
+      { label: 'MOCK-UP · Brand / Pattern', icon: 'Tag', to: '/brand-pattern' },
     ],
   },
 ]

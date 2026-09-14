@@ -72,7 +72,18 @@ function goItem(sub) {
   navOpen.value = null
   router.push(sub.to)
 }
-const isItemActive = (sub) => matchPath(route.path, sub.to)
+/**
+ * 하위메뉴 활성 — 같은 그룹 안에서 가장 긴 경로 하나만. '/csr' 과 '/csr/dashboard' 처럼 접두가 겹치는 항목이
+ * 둘 다 켜지던 것(2026-09-14 CSR 그룹 신설 때 실측)을 막습니다.
+ */
+const isItemActive = (sub) => {
+  if (!sub.to || !matchPath(route.path, sub.to)) return false
+  const group = navGroups.find((g) => g.items.includes(sub))
+  const best = (group?.items ?? [])
+    .filter((it) => it.to && matchPath(route.path, it.to))
+    .sort((x, y) => y.to.length - x.to.length)[0]
+  return best === sub
+}
 
 /*
  * 계정 메뉴 (Account menu / Menu akun) — 아바타를 누르면 열립니다(2026-09-10 요청).

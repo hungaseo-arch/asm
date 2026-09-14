@@ -75,7 +75,7 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
     }
   }
 
-  /** '01' < '02' < … < '60' < 'CSR-202609-001' 순서로 정렬합니다. */
+  /** 숫자 번호 오름차순, 숫자가 아닌 번호(이관 잔재)는 뒤로. */
   const issueNoRank = (no) => {
     const n = Number(no)
     return Number.isFinite(n) ? [0, n, ''] : [1, 0, String(no)]

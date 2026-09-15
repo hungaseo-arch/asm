@@ -37,42 +37,29 @@ const pick = (v) => emit('update:modelValue', v)
       title="한국어"
       @click="pick('ko')"
     >
-      <!-- 태극기 — 태극(빨강 위·파랑 아래)과 건곤감리 4괘를 단순화해 그렸습니다. -->
-      <svg viewBox="0 0 30 20" aria-hidden="true">
-        <rect width="30" height="20" fill="#fff" />
-        <g transform="translate(15 10)">
-          <path d="M-5 0A5 5 0 0 1 5 0A2.5 2.5 0 0 1 0 0A2.5 2.5 0 0 0 -5 0Z" fill="#cd2e3a" />
-          <path d="M5 0A5 5 0 0 1 -5 0A2.5 2.5 0 0 0 0 0A2.5 2.5 0 0 1 5 0Z" fill="#0047a0" />
+      <!--
+        태극기 — Wikimedia Commons 의 공개 도메인 원본(Flag_of_South_Korea.svg) 좌표를
+        그대로 옮겼습니다. viewBox 만 원본과 같은 -72 -48 144 96(3:2, 중심이 원점)입니다.
+        태극 지름 = 세로의 1/2 · 괘 길이 = 세로의 1/4 · 효 두께 4 · 효 간격 2 · 기울기 33.69°
+        4괘: 건(☰) 좌상 · 곤(☷) 우하 · 감(☵) 우상 · 리(☲) 좌하.
+      -->
+      <svg viewBox="-72 -48 144 96" aria-hidden="true">
+        <path fill="#fff" d="M-72-48v96H72v-96z" />
+        <g stroke="#000" stroke-width="4">
+          <!-- ↘ 대각선: 좌상 건(☰) · 우하 곤(☷) -->
+          <path
+            transform="rotate(33.69006752598)"
+            d="M-50-12v24m6 0v-24m6 0v24m76 0V1m0-2v-11m6 0v11m0 2v11m6 0V1m0-2v-11"
+          />
+          <!-- ↗ 대각선: 좌하 리(☲) · 우상 감(☵) -->
+          <path
+            transform="rotate(-33.69006752598)"
+            d="M-50-12v24m6 0V1m0-2v-11m6 0v24m76 0V1m0-2v-11m6 0v24m6 0V1m0-2v-11"
+          />
         </g>
-        <g fill="#000" transform="translate(15 10) rotate(-33.7)">
-          <g transform="translate(-9 0)">
-            <rect x="-2.5" y="-2.1" width="5" height="0.9" />
-            <rect x="-2.5" y="-0.45" width="5" height="0.9" />
-            <rect x="-2.5" y="1.2" width="5" height="0.9" />
-          </g>
-          <g transform="translate(9 0)">
-            <rect x="-2.5" y="-2.1" width="2.2" height="0.9" />
-            <rect x="0.3" y="-2.1" width="2.2" height="0.9" />
-            <rect x="-2.5" y="-0.45" width="2.2" height="0.9" />
-            <rect x="0.3" y="-0.45" width="2.2" height="0.9" />
-            <rect x="-2.5" y="1.2" width="2.2" height="0.9" />
-            <rect x="0.3" y="1.2" width="2.2" height="0.9" />
-          </g>
-        </g>
-        <g fill="#000" transform="translate(15 10) rotate(33.7)">
-          <g transform="translate(-9 0)">
-            <rect x="-2.5" y="-2.1" width="2.2" height="0.9" />
-            <rect x="0.3" y="-2.1" width="2.2" height="0.9" />
-            <rect x="-2.5" y="-0.45" width="5" height="0.9" />
-            <rect x="-2.5" y="1.2" width="2.2" height="0.9" />
-            <rect x="0.3" y="1.2" width="2.2" height="0.9" />
-          </g>
-          <g transform="translate(9 0)">
-            <rect x="-2.5" y="-2.1" width="5" height="0.9" />
-            <rect x="-2.5" y="-0.45" width="2.2" height="0.9" />
-            <rect x="0.3" y="-0.45" width="2.2" height="0.9" />
-            <rect x="-2.5" y="1.2" width="5" height="0.9" />
-          </g>
+        <g transform="rotate(33.69006752598)">
+          <path fill="#cd2e3a" d="M12 0a18 18 0 11-36 0 24 24 0 1148 0" />
+          <path fill="#0047a0" d="M-24 0a24 24 0 1048 0A12 12 0 100 0a12 12 0 11-24 0" />
         </g>
       </svg>
     </button>

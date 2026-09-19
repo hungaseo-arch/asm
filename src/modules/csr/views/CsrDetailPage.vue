@@ -416,14 +416,37 @@ async function saveMd() {
 }
 
 // ─── §5 IT부서 회신 추가 ─────────────────────────────────────────────────────
+/**
+ * 자유 텍스트 4항목은 KO/ID 쌍으로 입력받아 <col>_ko/_id 에 저장합니다(014 컬럼, 2026-09-19).
+ * 원문 컬럼(<col>)에는 한국어 우선 · 없으면 인니어를 함께 넣어, 쌍을 모르는 곳(대시보드·내보내기)이
+ * 빈 값을 보지 않게 합니다 — 본문(saveMd)과 같은 규칙. 한쪽만 적어도 저장되며, 화면은 pairOf 가
+ * 토글 언어 → 반대쪽 → 원문 순으로 되돌아갑니다.
+ */
+const REPLY_TEXT_KEYS = ['fix_plan', 'note', 'needs_decision', 'pic_and_target']
 const EMPTY_REPLY = () => ({
   replied_on: today(),
   decision: '',
-  fix_plan: '',
-  note: '',
-  needs_decision: '',
-  pic_and_target: '',
+  fix_plan_ko: '',
+  fix_plan_id: '',
+  note_ko: '',
+  note_id: '',
+  needs_decision_ko: '',
+  needs_decision_id: '',
+  pic_and_target_ko: '',
+  pic_and_target_id: '',
 })
+/** { col, col_ko, col_id } — 드래프트의 쌍을 저장용 3컬럼으로 폅니다. */
+const pairFields = (draft, keys) => {
+  const out = {}
+  for (const k of keys) {
+    const ko = nullIfBlank(draft[k + '_ko'])
+    const id = nullIfBlank(draft[k + '_id'])
+    out[k + '_ko'] = ko
+    out[k + '_id'] = id
+    out[k] = ko ?? id
+  }
+  return out
+}
 const replyOpen = ref(false)
 const replyDraft = reactive(EMPTY_REPLY())
 async function submitReply() {
@@ -434,10 +457,7 @@ async function submitReply() {
       {
         replied_on: replyDraft.replied_on,
         decision: nullIfBlank(replyDraft.decision),
-        fix_plan: nullIfBlank(replyDraft.fix_plan),
-        note: nullIfBlank(replyDraft.note),
-        needs_decision: nullIfBlank(replyDraft.needs_decision),
-        pic_and_target: nullIfBlank(replyDraft.pic_and_target),
+        ...pairFields(replyDraft, REPLY_TEXT_KEYS),
       },
       me.value,
     )
@@ -466,7 +486,7 @@ async function refreshIssue() {
 
 // ─── §7 검증 이력 추가 ───────────────────────────────────────────────────────
 const verifyOpen = ref(false)
-const verifyDraft = reactive({ verified_on: today(), result: '', note: '' })
+const verifyDraft = reactive({ verified_on: today(), result: '', note_ko: '', note_id: '' })
 async function submitVerification() {
   if (!verifyDraft.result.trim()) {
     toast.error(T('result_required'))
@@ -479,7 +499,7 @@ async function submitVerification() {
       {
         verified_on: verifyDraft.verified_on,
         result: verifyDraft.result.trim(),
-        note: nullIfBlank(verifyDraft.note),
+        ...pairFields(verifyDraft, ['note']),
       },
       me.value,
     )
@@ -487,7 +507,7 @@ async function submitVerification() {
     // 017 트리거가 헤더(현업검증·최종검증일)를 맞췄으므로 서버 값을 다시 읽습니다 — 낙관적 갱신 금지(§B-2).
     await refreshIssue()
     verifyOpen.value = false
-    Object.assign(verifyDraft, { verified_on: today(), result: '', note: '' })
+    Object.assign(verifyDraft, { verified_on: today(), result: '', note_ko: '', note_id: '' })
     toast.success(T('verif_added'))
   } catch (e) {
     report(e, 'verif_failed')
@@ -927,30 +947,27 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                     <option v-for="o in OPTIONS.it_decision" :key="o" :value="o">{{ V(o) }}</option>
                   </select>
                 </label>
-                <label class="field wide">
-                  <span>{{ T('fix_plan') }}</span>
-                  <textarea
-                    v-model="replyDraft.fix_plan"
-                    class="form-control form-control-sm"
-                    rows="2"
-                  ></textarea>
-                </label>
-                <label class="field wide">
-                  <span>{{ T('note') }}</span>
-                  <textarea
-                    v-model="replyDraft.note"
-                    class="form-control form-control-sm"
-                    rows="2"
-                  ></textarea>
-                </label>
-                <label class="field">
-                  <span>{{ T('needs_decision') }}</span>
-                  <input v-model="replyDraft.needs_decision" class="form-control form-control-sm" />
-                </label>
-                <label class="field">
-                  <span>{{ T('pic_and_target') }}</span>
-                  <input v-model="replyDraft.pic_and_target" class="form-control form-control-sm" />
-                </label>
+                <!-- 자유 텍스트는 KO / ID 쌍(2026-09-19). 한쪽만 적어도 됩니다 — 화면이 반대쪽으로 되돌아갑니다. -->
+                <template v-for="k in REPLY_TEXT_KEYS" :key="k">
+                  <label class="field">
+                    <span>{{ T(k) }} · KO</span>
+                    <textarea
+                      v-model="replyDraft[k + '_ko']"
+                      class="form-control form-control-sm"
+                      :rows="k === 'fix_plan' || k === 'note' ? 2 : 1"
+                      lang="ko"
+                    ></textarea>
+                  </label>
+                  <label class="field">
+                    <span>{{ T(k) }} · ID</span>
+                    <textarea
+                      v-model="replyDraft[k + '_id']"
+                      class="form-control form-control-sm"
+                      :rows="k === 'fix_plan' || k === 'note' ? 2 : 1"
+                      lang="id"
+                    ></textarea>
+                  </label>
+                </template>
               </div>
               <div class="actions">
                 <button
@@ -1078,12 +1095,23 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                   </option>
                 </select>
               </label>
-              <label class="field wide">
-                <span>{{ T('content') }}</span>
+              <!-- 내용은 KO / ID 쌍(2026-09-19) — note_ko · note_id 에 저장, 원문 note 는 한국어 우선. -->
+              <label class="field">
+                <span>{{ T('content') }} · KO</span>
                 <textarea
-                  v-model="verifyDraft.note"
+                  v-model="verifyDraft.note_ko"
                   class="form-control form-control-sm"
-                  rows="2"
+                  rows="3"
+                  lang="ko"
+                ></textarea>
+              </label>
+              <label class="field">
+                <span>{{ T('content') }} · ID</span>
+                <textarea
+                  v-model="verifyDraft.note_id"
+                  class="form-control form-control-sm"
+                  rows="3"
+                  lang="id"
                 ></textarea>
               </label>
             </div>

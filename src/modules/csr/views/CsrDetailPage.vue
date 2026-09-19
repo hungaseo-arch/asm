@@ -1136,14 +1136,25 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
             <thead>
               <tr>
                 <th>{{ T('date') }}</th>
-                <th>{{ T('result') }}</th>
                 <th>{{ L('it_status') }}</th>
+                <th>{{ T('result') }}</th>
                 <th>{{ T('content') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="v in sortedVerifications" :key="v.id">
                 <td class="nowrap">{{ v.verified_on }}</td>
+                <!-- 검증 시점의 IT 상태(036) — 로그로 역산되지 않는 이관분은 빈칸입니다. -->
+                <td class="nowrap">
+                  <span
+                    v-if="v.it_status_at"
+                    class="asm-badge"
+                    :class="`asm-badge--${badgeTone('it_status', v.it_status_at)}`"
+                    :title="badgeTitle('it_status', v.it_status_at)"
+                  >
+                    {{ V(v.it_status_at) }}
+                  </span>
+                </td>
                 <td class="nowrap">
                   <span
                     v-if="v.result"
@@ -1157,17 +1168,6 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                   <small v-if="isInitialLegacy(v.result_legacy ?? v.result)" class="legacy">
                     {{ VT(v.result_legacy ?? v.result) }}
                   </small>
-                </td>
-                <!-- 검증 시점의 IT 상태(036) — 로그로 역산되지 않는 이관분은 빈칸입니다. -->
-                <td class="nowrap">
-                  <span
-                    v-if="v.it_status_at"
-                    class="asm-badge"
-                    :class="`asm-badge--${badgeTone('it_status', v.it_status_at)}`"
-                    :title="badgeTitle('it_status', v.it_status_at)"
-                  >
-                    {{ V(v.it_status_at) }}
-                  </span>
                 </td>
                 <td class="wrap">{{ pairOf(v, 'note') }}</td>
               </tr>

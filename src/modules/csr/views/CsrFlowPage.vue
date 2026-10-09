@@ -12,12 +12,9 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
-import { useIdentityStore } from '@/stores/identity'
+import { useCsrLang } from '../composables/useCsrLang'
 
-const identity = useIdentityStore()
-const lang = computed(() => identity.lang)
-/** [ko, id] 쌍에서 토글 언어 쪽. */
-const t = (pair) => (lang.value === 'id' ? pair[1] : pair[0])
+const { tp: t } = useCsrLang()
 
 const DIAGRAMS = [
   {
@@ -38,6 +35,15 @@ const DIAGRAMS = [
       'Impor: PO → PPC → rencana bayar → pengapalan → kepabeanan (PIB) → penerimaan. Lokal: PO → penerimaan, tahap 3–6 dilewati.',
     ],
   },
+  {
+    key: 'dev',
+    file: 'dev.html',
+    name: ['개발 개선요청 프로세스', 'Proses permintaan pengembangan'],
+    desc: [
+      '개발요청 → 개발 → 문서화 3단계 — 문서정합성 검증에서 불일치가 나오면 1단계로 환류합니다.',
+      '3 tahap: permintaan pengembangan → pengembangan → dokumentasi — ketidaksesuaian pada verifikasi dikembalikan ke tahap 1.',
+    ],
+  },
 ]
 
 const current = ref(DIAGRAMS[0].key)
@@ -49,7 +55,7 @@ const frame = ref(null)
 const stage = ref(null)
 const natural = ref({ w: 2600, h: 900 })
 const zoom = ref(1)
-const fit = ref(true) // 처음에는 화면 맞춤 — 2600px 도면을 그냥 두면 가로 스크롤만 보입니다
+const fit = ref(false) // 처음부터 100% — 화면 맞춤은 필요할 때 버튼으로
 const ready = ref(false)
 
 /** 화면 맞춤 배율 — 가로만 기준. 원본보다 크게는 늘리지 않습니다. */
@@ -66,6 +72,12 @@ const applyFit = () => {
  * 같은 출처라 도면 크기를 직접 잽니다. 기준은 <svg id="s"> 의 width · height 속성입니다 —
  * 스크립트가 그리고 나서 붙이는 값이라 문서 전체 크기보다 정확합니다. 여백 20px 은 본문 padding.
  * load 직후에는 아직 안 그려져 있을 수 있어 못 재면 잠시 뒤 한 번 더 봅니다(최대 10회 · 1초).
+ *
+ * dev.html 처럼 svg#s 가 없는 일반 문서(.wrap{max-width:960px} 류)는 documentElement.scrollWidth 로
+ * 재면 안 됩니다 — iframe 폭을 처음 추정치(2600px)로 열어 두면 본문이 흘러넘치지 않아 scrollWidth 가
+ * 그 추정치를 그대로 돌려주는 자기참조 루프가 생깁니다(실제 960px 본문을 2600px 로 오인 → 과도하게
+ * 축소되어 화면에 빈 공간만 남음). body 의 첫 자식(실제 콘텐츠 박스)의 렌더 크기를 재면 max-width 로
+ * 꺾인 진짜 폭이 나옵니다.
  */
 const measure = (tries = 0) => {
   let size = null
@@ -74,10 +86,17 @@ const measure = (tries = 0) => {
     const svg = doc?.getElementById('s')
     const w = Number(svg?.getAttribute('width'))
     const h = Number(svg?.getAttribute('height'))
-    if (w > 0 && h > 0) size = { w: w + 20, h: h + 20 }
-    else if (doc?.documentElement?.scrollWidth > 0) {
-      const el = doc.documentElement
-      size = { w: el.scrollWidth, h: el.scrollHeight }
+    if (w > 0 && h > 0) {
+      size = { w: w + 20, h: h + 20 }
+    } else {
+      const root = doc?.body?.firstElementChild ?? doc?.body
+      const rect = root?.getBoundingClientRect()
+      if (rect?.width > 0 && rect?.height > 0) {
+        size = { w: Math.ceil(rect.width), h: Math.ceil(rect.height) }
+      } else if (doc?.documentElement?.scrollWidth > 0) {
+        const el = doc.documentElement
+        size = { w: el.scrollWidth, h: el.scrollHeight }
+      }
     }
   } catch {
     size = null // 혹시 접근이 막히면 기본값 그대로
@@ -145,9 +164,23 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
           </button>
         </div>
         <div class="zoomer">
-          <button type="button" class="zoom-btn" @click="setZoom(zoom - 0.15)">−</button>
+          <button
+            type="button"
+            class="zoom-btn"
+            :aria-label="t(['축소', 'Perkecil'])"
+            @click="setZoom(zoom - 0.15)"
+          >
+            −
+          </button>
           <span class="zoom-now">{{ Math.round(zoom * 100) }}%</span>
-          <button type="button" class="zoom-btn" @click="setZoom(zoom + 0.15)">＋</button>
+          <button
+            type="button"
+            class="zoom-btn"
+            :aria-label="t(['확대', 'Perbesar'])"
+            @click="setZoom(zoom + 0.15)"
+          >
+            ＋
+          </button>
           <button
             type="button"
             class="zoom-btn wide"
@@ -170,7 +203,10 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
       <p class="desc">{{ t(active.desc) }}</p>
 
       <div ref="stage" class="asm-panel stage">
-        <div class="canvas" :style="{ height: `${natural.h * zoom}px` }">
+        <div
+          class="canvas"
+          :style="{ width: `${natural.w * zoom}px`, height: `${natural.h * zoom}px` }"
+        >
           <iframe
             ref="frame"
             :key="active.key"
@@ -287,6 +323,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
 }
 .canvas {
   position: relative;
+  margin: 0 auto;
 }
 .sheet {
   display: block;

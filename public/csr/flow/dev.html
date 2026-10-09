@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASM 개발 개선요청 프로세스 플로우</title>
+<style>
+  :root{--blue:#E3F2FD;--green:#E8F5E9;--grey:#ECEFF1;--text:#546E7A;--line:#B0BEC5;--white:#FFFFFF}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--white);color:var(--text);font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;font-size:14px;line-height:1.7}
+  .wrap{max-width:960px;margin:0 auto;padding:24px 24px 32px}
+  h2{font-size:17px;font-weight:600;margin:28px 0 12px;padding-left:10px;border-left:4px solid #90CAF9}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:16px}
+  svg text{font-family:inherit}
+  code{font-family:inherit}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}
+  th{background:var(--grey);font-weight:600}
+  td code{font-size:12px;background:var(--grey);padding:1px 5px;border-radius:4px;word-break:break-all}
+  td a{color:#1565C0;text-decoration:none;word-break:break-all}
+  ul{margin:0;padding-left:20px}
+  li{margin:4px 0}
+  .tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:var(--grey)}
+  .tag.ok{background:var(--green)}
+  @media print{body{background:#fff}.wrap{padding:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h2>1. 프로세스 플로우</h2>
+<div class="card">
+<svg width="100%" viewBox="0 0 680 620" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>ASM 개발 개선요청 프로세스 플로우</title>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#546E7A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="60" y="40" width="560" height="206" rx="12" fill="#ECEFF1" stroke="#B0BEC5" stroke-width="0.8" stroke-dasharray="4 4"/>
+<text x="80" y="62" font-size="10.5" font-weight="600" fill="#546E7A" dominant-baseline="central">1. 개발요청</text>
+<rect x="180" y="80" width="320" height="56" rx="8" fill="#E3F2FD" stroke="#90CAF9" stroke-width="0.8"/>
+<text x="340" y="98" font-size="8.8" font-weight="600" fill="#0D47A1" text-anchor="middle" dominant-baseline="central">현업 테스트 결과 정리</text>
+<text x="340" y="116" font-size="6.8" fill="#546E7A" text-anchor="middle" dominant-baseline="central">개선요청서 hwpx 작성 (YYMMDD)</text>
+<line x1="340" y1="136" x2="340" y2="160" stroke="#546E7A" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="180" y="170" width="320" height="56" rx="8" fill="#E3F2FD" stroke="#90CAF9" stroke-width="0.8"/>
+<text x="340" y="188" font-size="8.8" font-weight="600" fill="#0D47A1" text-anchor="middle" dominant-baseline="central">CSR 개선요청 목록 등록</text>
+<text x="340" y="206" font-size="6.8" fill="#546E7A" text-anchor="middle" dominant-baseline="central">CSR 사이트 반영 (SQL 직접 실행)</text>
+<line x1="340" y1="226" x2="340" y2="270" stroke="#546E7A" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="60" y="256" width="560" height="206" rx="12" fill="#ECEFF1" stroke="#B0BEC5" stroke-width="0.8" stroke-dasharray="4 4"/>
+<text x="80" y="278" font-size="10.5" font-weight="600" fill="#546E7A" dominant-baseline="central">2. 개발</text>
+<rect x="180" y="296" width="320" height="56" rx="8" fill="#FFFFFF" stroke="#90CAF9" stroke-width="0.8"/>
+<text x="340" y="314" font-size="8.8" font-weight="600" fill="#0D47A1" text-anchor="middle" dominant-baseline="central">IT 부서 개발 반영</text>
+<text x="340" y="332" font-size="6.8" fill="#546E7A" text-anchor="middle" dominant-baseline="central">asm.ascendotyre.com (vendor-po 진행 중)</text>
+<line x1="340" y1="352" x2="340" y2="376" stroke="#546E7A" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="180" y="386" width="320" height="56" rx="8" fill="#FFFFFF" stroke="#90CAF9" stroke-width="0.8"/>
+<text x="340" y="404" font-size="8.8" font-weight="600" fill="#0D47A1" text-anchor="middle" dominant-baseline="central">문서정합성 검증</text>
+<text x="340" y="422" font-size="6.8" fill="#546E7A" text-anchor="middle" dominant-baseline="central">검증리포트 v?.?_YYMMDD (버전관리)</text>
+<text x="512" y="414" font-size="6.8" fill="#546E7A" dominant-baseline="central">↻ 불일치 시 재요청</text>
+<line x1="340" y1="442" x2="340" y2="486" stroke="#546E7A" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="60" y="472" width="560" height="116" rx="12" fill="#ECEFF1" stroke="#B0BEC5" stroke-width="0.8" stroke-dasharray="4 4"/>
+<text x="80" y="494" font-size="10.5" font-weight="600" fill="#546E7A" dominant-baseline="central">3. 문서화</text>
+<rect x="180" y="512" width="320" height="56" rx="8" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="0.8"/>
+<text x="340" y="530" font-size="8.8" font-weight="600" fill="#1B5E20" text-anchor="middle" dominant-baseline="central">ERP 핵심문서 10종 갱신</text>
+<text x="340" y="548" font-size="6.8" fill="#546E7A" text-anchor="middle" dominant-baseline="central">03-Claude/09-dev/ASM 개발 폴더</text>
+</svg>
+</div>
+
+<h2>2. 단계별 입력 · 산출물 · 담당</h2>
+<div class="card">
+<table>
+<thead><tr><th style="width:52px">단계</th><th style="width:26%">활동</th><th style="width:16%">입력</th><th>산출물</th><th style="width:14%">담당</th></tr></thead>
+<tbody>
+<tr><td>1-1</td><td>현업 테스트 결과 수집 · 이슈 채번 (기존 CSR 목록과 중복 없이)</td><td>실서버 테스트 결과</td><td><code>ASM_테스트결과_개선요청서_YYMMDD.hwpx</code></td><td>현업 부서 / 쎄오님</td></tr>
+<tr><td>1-2</td><td>CSR 개선요청 목록 반영</td><td>개선요청서</td><td><a href="https://hungaseo-arch.github.io/asm/csr/">hungaseo-arch.github.io/asm/csr</a><br>(SQL 파일 전달 → 직접 실행)</td><td>쎄오님</td></tr>
+<tr><td>2-1</td><td>개발 반영</td><td>CSR 목록</td><td><a href="https://asm.ascendotyre.com/vendor-po">asm.ascendotyre.com</a> (현재 vendor-po 개발 중)</td><td>IT 부서</td></tr>
+<tr><td>2-2</td><td>문서정합성 검증 · 불일치 항목은 1-1로 환류</td><td>개발 화면 + CSR 목록</td><td><code>ASM_문서정합성_검증리포트_v?.?_YYMMDD.html</code> (버전관리)</td><td>쎄오님</td></tr>
+<tr><td>3</td><td>확정 내용을 핵심문서에 반영</td><td>검증 통과 항목</td><td><code>ASM_ERP_핵심문서_10종</code> 폴더</td><td>쎄오님</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>3. 운영 규칙</h2>
+<div class="card">
+<ul>
+<li><span class="tag">환류 루프</span> 1-1 ↔ 2-2 : 검증리포트에서 미반영·불일치로 판정된 항목만 차기 개선요청서에 재등록 (회차 번호 유지)</li>
+<li><span class="tag ok">진입 조건</span> 3단계 : 검증리포트 Pass 판정 + 현업 확인 완료 항목에 한함</li>
+<li><span class="tag">보관 위치</span> 전 산출물 <code>03-Claude/09-dev/ASM 개발</code> 단일 폴더 유지</li>
+</ul>
+</div>
+
+<h2>4. 참조 경로</h2>
+<div class="card">
+<ul>
+<li>개발 사이트 : <a href="https://asm.ascendotyre.com/vendor-po">https://asm.ascendotyre.com/vendor-po</a></li>
+<li>CSR 개선요청 목록 : <a href="https://hungaseo-arch.github.io/asm/csr/">https://hungaseo-arch.github.io/asm/csr/</a></li>
+<li>개선요청서 : <code>…/03-Claude/09-dev/ASM 개발/ASM_테스트결과_개선요청서_YYMMDD.hwpx</code> (최신 : 261008)</li>
+<li>정합성 검증리포트 : <code>…/03-Claude/09-dev/ASM 개발/ASM_문서정합성_검증리포트_v?.?_YYMMDD.html</code> (버전관리, 최신 : v3.6)</li>
+<li>핵심문서 10종 : <code>…/03-Claude/09-dev/ASM 개발/ASM_ERP_핵심문서_10종</code></li>
+</ul>
+</div>
+
+</div>
+</body>
+</html>

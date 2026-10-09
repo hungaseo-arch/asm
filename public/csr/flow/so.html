@@ -2,10 +2,10 @@
 <html lang="ko"><head><meta charset="utf-8">
 <style>
 body{margin:0;background:#fff;font-family:"Noto Sans CJK KR","Noto Sans KR",sans-serif}
-#wrap{width:2500px;padding:10px}
+#wrap{width:2000px;padding:10px}
 svg{display:block}
 text{fill:#37474F}
-.lane-title{font-size:19px;font-weight:700}
+.lane-title{font-size:17px;font-weight:700}
 .lane-sub{font-size:12px;fill:#546E7A}
 .t1{font-size:14px;font-weight:700}
 .t2{font-size:10.5px;fill:#455A64}
@@ -16,11 +16,13 @@ text{fill:#37474F}
 </style></head><body><div id="wrap"><svg id="s" xmlns="http://www.w3.org/2000/svg"></svg></div>
 <script>
 const C={stroke:'#546E7A',proc:'#E3F2FD',dec:'#E8F5E9',start:'#ECEFF1',todo:'#FFF3E0',todoS:'#B07A2A',db:'#E3F2FD',laneA:'#F7F8F9',laneB:'#ECEFF1',bannerBg:'#FFF3E0'};
-const LANE_H=118,LX=150,W=2500,TOP=30,OFF=110;
+const LANE_H=118,LX=150,W=2500,TOP=30,OFF=135;
+const SCALE=0.8; // 다이어그램·글자 20% 축소(2026-10-09 요청) — 좌표계는 그대로, 출력 크기만 줄입니다.
 function draw(cfg){
   const svg=document.getElementById('s');
   const nL=cfg.lanes.length,H=TOP+nL*LANE_H+120;
-  svg.setAttribute('width',W);svg.setAttribute('height',H);
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('width',W*SCALE);svg.setAttribute('height',H*SCALE);
   let o=`<defs><marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,5 L0,10 z" fill="${C.stroke}"/></marker></defs>`;
   cfg.lanes.forEach((l,i)=>{const y=TOP+i*LANE_H;
     o+=`<rect x="20" y="${y}" width="${W-40}" height="${LANE_H}" fill="${i%2?C.laneB:C.laneA}" stroke="#CFD8DC"/>`;
@@ -66,7 +68,7 @@ draw({
  nodes:[
   {id:'po',k:'ext',lane:4,x:240,w:236,t:'Customer P/O|Order basis · attached to SO DRAFT · filed|R3 · R13 · received outside ASM'},
   {id:'st',k:'start',lane:0,x:75,w:100,t:'Order Req.'},
-  {id:'dr',k:'doc',lane:0,x:230,n:1,w:190,t:'SO DRAFT|Item · Qty · Price entry|Any available stock · R3 · R13'},
+  {id:'dr',k:'doc',lane:0,x:238,n:1,w:190,t:'SO DRAFT|Item · Qty · Price entry|Any available stock · R3 · R13'},
   {id:'fix',k:'proc',lane:0,x:660,w:200,t:'Revise DRAFT|Adjust qty · price · terms|Re-check after rejection reason'},
   {id:'cf',k:'doc',lane:0,x:1100,n:8,w:200,t:'SO CONFIRMED|Committed stock booked (no lock)|Confirmed by R2 · R12'},
   {id:'d1',k:'dec',lane:1,x:400,n:2,w:190,t:'① Stock Qty|Commit+New ≤ On-hand?'},
@@ -79,7 +81,7 @@ draw({
   {id:'do',k:'proc',lane:3,x:1290,n:9,w:180,t:'Delivery Order|Issuing WH · plan date · R10'},
   {id:'dn',k:'dec',lane:3,x:1520,n:10,w:200,t:'On-hand Re-check|Ship ≤ On-hand?'},
   {id:'dnf',k:'doc',lane:3,x:1740,n:11,w:190,t:'DN CONFIRM (full)|R11 ships · R10 / R12 confirm|Stock OUT · Committed −'},
-  {id:'rem',k:'db',lane:1,x:1520,n:12,w:210,t:'Partial Delivery · Balance Kept|DN available qty · balance committed|Repeat partial DN allowed'},
+  {id:'rem',k:'db',lane:1,x:1512,n:12,w:210,t:'Partial Delivery · Balance Kept|DN available qty · balance committed|Repeat partial DN allowed'},
   {id:'rel',k:'todo',lane:0,x:1520,n:13,w:200,t:'RELEASE (balance)|Reason · log · no increase|R2 · R12 · not implemented'},
   {id:'en',k:'end',lane:1,x:1740,w:200,t:'CLOSED|Fully delivered or fully released'},
   {id:'sop',k:'doc',lane:4,x:1070,w:200,t:'Sales Order Print|SO Confirmation · to customer|R2 · R3 · R12 · R13 · PDF'},
@@ -98,14 +100,14 @@ draw({
   {pts:[[1160,120],[1160,530]],dash:true,label:'Print after CONFIRMED',at:[1160,500]},
   {pts:[{n:'do',dy:31},[1290,505],[1300,505],{n:'dop',dy:-31}],dash:true},
   {pts:[{n:'dnf',dy:31},{n:'dnp',dy:-31}],dash:true,label:'Every DN incl. partial',at:[1740,505]},
-  {pts:[{n:'dr',dy:31},[230,160],[400,160],{n:'d1',dy:-37}]},
+  {pts:[{n:'dr',dy:31},[238,160],[400,160],{n:'d1',dy:-37}]},
   {pts:[{n:'d1',dx:95},{n:'d2',dx:-95}],label:'Yes',at:[560,207]},
   {pts:[{n:'d2',dx:95},{n:'d3',dx:-105}],label:'Yes',at:[880,207]},
   {pts:[{n:'d3',dy:-37},{n:'cf',dy:31}],label:'Yes',at:[1070,150]},
   {pts:[{n:'cf',dx:100},[1290,89],{n:'db',dy:-31}]},
   {pts:[{n:'db',dy:31},{n:'do',dy:-31}]},
   {pts:[{n:'do',dx:90},{n:'dn',dx:-100}]},
-  {pts:[{n:'dn',dx:100},{n:'dnf',dx:-95}],label:'Yes',at:[1630,425]},
+  {pts:[{n:'dn',dx:100},{n:'dnf',dx:-95}],label:'Yes',at:[1620,425]},
   {pts:[{n:'dnf',dy:-31},{n:'en',dy:31}],label:'Full delivery → Committed 0',at:[1740,320]},
   {pts:[{n:'dn',dy:-37},{n:'rem',dy:31}],label:'No — partial delivery',at:[1520,330]},
   {pts:[[1440,238],[1440,390],[1360,390],[1360,412]],dash:true,label:'Next DN (balance)',at:[1440,290]},
@@ -114,13 +116,13 @@ draw({
   {pts:[{n:'d1',dy:37},{n:'a1',dy:-31}],label:'No',at:[425,283]},
   {pts:[{n:'d2',dy:37},{n:'a2',dy:-31}],label:'No',at:[745,283]},
   {pts:[{n:'d3',dy:37},{n:'a3',dy:-31}],label:'No',at:[1065,283]},
-  {pts:[{n:'a1',dx:100},[535,325],[535,225],[671,225]],label:'Approved',at:[535,290]},
-  {pts:[{n:'a2',dx:100},[855,325],[855,225],[985,225]],label:'Approved',at:[855,290]},
-  {pts:[{n:'a3',dx:105},[1180,325],[1180,120]],label:'Approved',at:[1180,290]},
+  {pts:[{n:'a1',dx:100},[535,325],[535,225],[671,225]],label:'Approved',at:[535,270]},
+  {pts:[{n:'a2',dx:100},[855,325],[855,225],[985,225]],label:'Approved',at:[855,270]},
+  {pts:[{n:'a3',dx:105},[1180,325],[1180,120]],label:'Approved',at:[1180,270]},
   {pts:[{n:'a1',dy:31},[400,405],[580,405],[580,89],{n:'fix',dx:-100}],dash:true,label:'Rejected',at:[480,405]},
   {pts:[{n:'a2',dy:31},[720,405],[580,405]],dash:true,noarrow:true,label:'Rejected',at:[650,405]},
   {pts:[{n:'a3',dy:31},[1040,405],[720,405]],dash:true,noarrow:true,label:'Rejected',at:[900,405]},
-  {pts:[{n:'fix',dy:-31},[660,45],[230,45],{n:'dr',dy:-31}],dash:true,label:'Re-check (① → ② → ③)',at:[445,45]}
+  {pts:[{n:'fix',dy:-31},[660,45],[238,45],{n:'dr',dy:-31}],dash:true,label:'Re-check (① → ② → ③)',at:[445,45]}
  ],
  banner:'SO CONFIRM — 3 sequential checks ① Stock Qty → ② Margin → ③ Credit Limit · any failure blocks save and triggers approval · at DN, shortage allows partial delivery only, balance stays on SO · 6 documents = Customer P/O · SO · DO · DN · Invoice · Faktur Pajak'
 });

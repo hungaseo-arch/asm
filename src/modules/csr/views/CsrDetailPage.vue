@@ -593,17 +593,26 @@ async function onRemoveAttachment(a) {
  * 그 리다이렉트 단계가 계정 검사에 걸려 이미지가 깨집니다. 그래서 목적지 주소를 바로 쓰고, 그래도 실패하면
  * Drive 주소로 한 번 더 시도합니다(onThumbError). 둘 다 실패하면 Drive 링크 안내를 보여 줍니다.
  */
+/*
+ * 크기를 지정하지 않은 주소 (2026-10-09 「261008 캡쳐가 안 나옴」)
+ * =w<폭> 은 Google 이 **리사이즈본**을 만들어 주는 주소입니다. 261008 캡쳐 23장 중 폭 1200 미만인
+ * 2장(75 · 82)만 화면에 뜨고 1600~1800 짜리는 전부 깨졌습니다 — 폭이 요청값보다 작으면 리사이즈 없이
+ * 원본이 그대로 나오기 때문입니다. 즉 막히는 것은 파일이 아니라 리사이즈본입니다(로그인 없는 curl 에서는
+ * 23장 전부 200). 크기 suffix 를 뗀 주소는 원본 바이트를 그대로 주므로 마지막 수단으로 씁니다.
+ * 캡쳐는 보통 1 MB 미만이라 원본을 받아도 부담이 없습니다.
+ */
 const THUMB_URLS = (fileId, w) => [
   `https://lh3.googleusercontent.com/d/${fileId}=w${w}`,
   `https://drive.google.com/thumbnail?id=${fileId}&sz=w${w}`,
+  `https://lh3.googleusercontent.com/d/${fileId}`,
 ]
-/** 파일별 시도 단계 — 0: lh3 · 1: drive · 2: 포기(안내) */
+/** 파일별 시도 단계 — 0: lh3 · 1: drive · 2: lh3 원본 · 그 다음은 포기(안내) */
 const thumbStage = reactive({})
 const thumb = (fileId, w = 1200) => {
   const urls = THUMB_URLS(fileId, w)
   return urls[Math.min(thumbStage[fileId] ?? 0, urls.length - 1)]
 }
-const thumbFailed = (fileId) => (thumbStage[fileId] ?? 0) >= 2
+const thumbFailed = (fileId) => (thumbStage[fileId] ?? 0) >= THUMB_URLS('', 0).length
 const onThumbError = (fileId) => {
   thumbStage[fileId] = (thumbStage[fileId] ?? 0) + 1
 }

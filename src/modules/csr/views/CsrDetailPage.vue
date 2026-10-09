@@ -594,12 +594,14 @@ async function onRemoveAttachment(a) {
  * Drive 주소로 한 번 더 시도합니다(onThumbError). 둘 다 실패하면 Drive 링크 안내를 보여 줍니다.
  */
 /*
- * 크기를 지정하지 않은 주소 (2026-10-09 「261008 캡쳐가 안 나옴」)
- * =w<폭> 은 Google 이 **리사이즈본**을 만들어 주는 주소입니다. 261008 캡쳐 23장 중 폭 1200 미만인
- * 2장(75 · 82)만 화면에 뜨고 1600~1800 짜리는 전부 깨졌습니다 — 폭이 요청값보다 작으면 리사이즈 없이
- * 원본이 그대로 나오기 때문입니다. 즉 막히는 것은 파일이 아니라 리사이즈본입니다(로그인 없는 curl 에서는
- * 23장 전부 200). 크기 suffix 를 뗀 주소는 원본 바이트를 그대로 주므로 마지막 수단으로 씁니다.
- * 캡쳐는 보통 1 MB 미만이라 원본을 받아도 부담이 없습니다.
+ * 재시도에는 캐시를 비껴가는 꼬리표를 붙입니다 (2026-10-09 「261008 캡쳐 대부분 안 나옴」)
+ * 증상: 새로 올린 캡쳐가 상세 화면에서만 깨지고, 같은 브라우저 새 탭에 주소를 직접 열면 뜨고, 9월 캡쳐는
+ * 멀쩡하고, 시크릿 창에서는 새 캡쳐도 뜹니다. 파일 · 계정 · 코드가 아니라 **브라우저 캐시** 문제입니다 —
+ * Chrome 은 캐시를 최상위 사이트별로 나누므로 github.io 페이지 안의 <img> 와 주소창 직접 열기는 다른
+ * 칸을 씁니다. 업로드 직후 첫 조회에서 Google 이 돌려준 오류가 그 칸에 `max-age=86400` 으로 눌러앉은
+ * 것입니다. 같은 주소로 다시 시도하면 그 오류를 또 읽으므로, 실패 뒤의 시도에는 매번 다른 쿼리를 붙여
+ * 캐시를 건너뜁니다(세 호스트 모두 모르는 쿼리를 무시하고 200 을 줍니다). 첫 시도는 그대로 두어 정상
+ * 캐시는 계속 살립니다. 크기 suffix 없는 세 번째 주소는 원본 바이트라 리사이즈 생성 단계도 피합니다.
  */
 const THUMB_URLS = (fileId, w) => [
   `https://lh3.googleusercontent.com/d/${fileId}=w${w}`,
@@ -608,13 +610,18 @@ const THUMB_URLS = (fileId, w) => [
 ]
 /** 파일별 시도 단계 — 0: lh3 · 1: drive · 2: lh3 원본 · 그 다음은 포기(안내) */
 const thumbStage = reactive({})
+/** 파일별 캐시 우회 꼬리표 — 실패할 때마다 새 값. 렌더마다 바뀌면 안 되므로 상태로 둡니다. */
+const thumbBust = reactive({})
 const thumb = (fileId, w = 1200) => {
   const urls = THUMB_URLS(fileId, w)
-  return urls[Math.min(thumbStage[fileId] ?? 0, urls.length - 1)]
+  const url = urls[Math.min(thumbStage[fileId] ?? 0, urls.length - 1)]
+  const bust = thumbBust[fileId]
+  return bust ? `${url}${url.includes('?') ? '&' : '?'}r=${bust}` : url
 }
 const thumbFailed = (fileId) => (thumbStage[fileId] ?? 0) >= THUMB_URLS('', 0).length
 const onThumbError = (fileId) => {
   thumbStage[fileId] = (thumbStage[fileId] ?? 0) + 1
+  thumbBust[fileId] = Date.now()
 }
 /*
  * 캡쳐 확대 — 새 창(Drive 뷰어) 대신 모달(2026-09-10 요청). 큰 썸네일(w2000)을 띄우고 Esc·바깥 클릭·
@@ -636,6 +643,7 @@ watch(
     // thumbStage 가 남는데, 키가 fileId 라 한 번 실패한 파일은 다시 열어도 안내 문구만 나옵니다.
     // 79 · 80 · 81 은 78 과, 99 는 98 과 같은 파일을 쓰므로 한 번의 일시적 실패가 네 화면에 번집니다.
     for (const k of Object.keys(thumbStage)) delete thumbStage[k]
+    for (const k of Object.keys(thumbBust)) delete thumbBust[k]
   },
 )
 const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')

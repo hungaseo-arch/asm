@@ -49,7 +49,8 @@ const MIME = {
 const files = fs
   .readdirSync(MD_DIR)
   .filter((f) => MIME[path.extname(f).toLowerCase()])
-  .map((f) => ({ file: f, issueNo: f.match(/^(\d{2})_/)?.[1] ?? null }))
+  // 이슈번호는 2~3자리입니다 — 261008 문서분(100 · 101 · 102)부터 세 자리가 나옵니다.
+  .map((f) => ({ file: f, issueNo: f.match(/^(\d{2,3})_/)?.[1] ?? null }))
   .sort((a, b) => a.file.localeCompare(b.file))
 
 const noIssue = files.filter((f) => !f.issueNo)

@@ -89,7 +89,7 @@ const DICT = {
   ],
   removed: ['삭제했습니다', 'Dihapus'],
   sec_findings: ['현상', 'Temuan'],
-  sec_reco: ['개선 의견', 'Rekomendasi'],
+  sec_reco: ['요청 내용', 'Rekomendasi'],
   sec_reply: ['IT부서 회신', 'Balasan Tim IT'],
   add_reply: ['+ 회신 추가', '+ Tambah balasan'],
   replied_on: ['회신일', 'Tgl. balasan'],

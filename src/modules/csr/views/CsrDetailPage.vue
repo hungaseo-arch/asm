@@ -619,7 +619,16 @@ function onLightboxKey(e) {
 }
 onMounted(() => document.addEventListener('keydown', onLightboxKey))
 onBeforeUnmount(() => document.removeEventListener('keydown', onLightboxKey))
-watch(() => route.params.issueNo, closeLightbox)
+watch(
+  () => route.params.issueNo,
+  () => {
+    closeLightbox()
+    // 썸네일 시도 단계도 비웁니다 (2026-10-09 「79 캡쳐 안 나옴」). 이슈를 옮겨도 컴포넌트는 그대로라
+    // thumbStage 가 남는데, 키가 fileId 라 한 번 실패한 파일은 다시 열어도 안내 문구만 나옵니다.
+    // 79 · 80 · 81 은 78 과, 99 는 98 과 같은 파일을 쓰므로 한 번의 일시적 실패가 네 화면에 번집니다.
+    for (const k of Object.keys(thumbStage)) delete thumbStage[k]
+  },
+)
 const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 </script>
 
@@ -654,15 +663,6 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               T('archived')
             }}</span>
             <span class="asm-pill ms-auto">{{ role }}</span>
-            <a
-              v-if="issue.notion_url"
-              :href="issue.notion_url"
-              target="_blank"
-              rel="noopener"
-              class="notion-link"
-            >
-              Notion ↗
-            </a>
             <button
               v-if="canEditAnything && !editing"
               type="button"
@@ -1290,9 +1290,6 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 .issue-no {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-.notion-link {
-  font-size: 12px;
 }
 .head h1 {
   font-size: 20px;

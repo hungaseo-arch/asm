@@ -46,35 +46,45 @@ export async function addVerification(issueId, fields, createdBy) {
 }
 
 /**
- * 최종 접속 기록 (2026-09-14) — 자기 행의 last_seen_at 만 찍는 SECURITY DEFINER 함수(db/029).
- *
- * 화면은 이게 실패해도 굴러가야 하므로 오류를 던지지 않습니다. 다만 **조용히 삼키지는**
- * 않습니다 — 종전에는 try/catch 로 감쌌는데 PostgREST 클라이언트는 실패를 throw 하지 않고
- * `{ data, error }` 로 돌려주므로 catch 가 한 번도 걸리지 않았고, 그래서 029 미적용 같은
- * 원인이 아무 흔적도 남기지 않은 채 「최종 접속」이 계속 빈칸이었습니다(2026-09-15).
- *
- * 반환값: 찍힌 시각. 미등록 사용자거나 실패하면 null.
+ * 실패해도 화면은 굴러가야 하는 RPC 호출 공통 처리 — touchLastSeen · logLogin 이 함께 씁니다.
+ * 오류를 던지지 않되 **조용히 삼키지는** 않습니다 — 종전에는 try/catch 로 감쌌는데 PostgREST
+ * 클라이언트는 실패를 throw 하지 않고 `{ data, error }` 로 돌려주므로 catch 가 한 번도 걸리지
+ * 않았고, 그래서 db/029 미적용 같은 원인이 아무 흔적도 남기지 않은 채 「최종 접속」이 계속
+ * 빈칸이었습니다(2026-09-15). 코드·메시지를 한 줄에 펼쳐 찍습니다 — 접힌 Object 를 열어 보지
+ * 않아도 원인이 보이게.
  */
-export async function touchLastSeen() {
+async function callRpcQuiet(fn, label) {
   let res
   try {
-    res = await getDb().rpc('csr_touch_last_seen')
+    res = await getDb().rpc(fn)
   } catch (e) {
-    console.warn('[csr] 최종 접속 기록 실패 — 네트워크/인증', e)
+    console.warn(`[csr] ${label} 실패 — 네트워크/인증`, e)
     return null
   }
   if (res?.error) {
-    // PGRST202 = 함수를 못 찾음(db/029 미적용 또는 Data API 의 스키마 캐시가 아직 모름).
-    // 코드·메시지를 한 줄에 펼쳐 찍습니다 — 접힌 Object 를 열어 보지 않아도 원인이 보이게.
     const { code, message, details, hint } = res.error
     console.warn(
-      `[csr] 최종 접속 기록 실패 — csr_touch_last_seen() [${code ?? '?'}] ${message ?? ''}` +
+      `[csr] ${label} 실패 — ${fn}() [${code ?? '?'}] ${message ?? ''}` +
         `${details ? ` | details: ${details}` : ''}${hint ? ` | hint: ${hint}` : ''}`,
     )
     return null
   }
   return res?.data ?? null
 }
+
+/**
+ * 최종 접속 기록 (2026-09-14) — 자기 행의 last_seen_at 만 찍는 SECURITY DEFINER 함수(db/029).
+ * 반환값: 찍힌 시각. 미등록 사용자거나 실패하면 null.
+ */
+export const touchLastSeen = () => callRpcQuiet('csr_touch_last_seen', '최종 접속 기록')
+
+/**
+ * 로그인 이력 기록 (2026-10-09) — 호출자 자신의 로그인 1건을 csr_login_log 에 쌓는
+ * SECURITY DEFINER 함수(db/044). 세션 체크(refresh)마다가 아니라 **실제 로그인(signIn)
+ * 성공 시 1번만** 불러야 합니다 — 그래야 "로그인 이력"이지 last_seen_at 처럼 "마지막 사용
+ * 시각"이 되지 않습니다.
+ */
+export const logLogin = () => callRpcQuiet('csr_log_login', '로그인 기록')
 
 /**
  * 담당자 선택지 — Neon 에 등록된 사용자의 표시 이름(csr_user_roles.display_name).

@@ -14,3 +14,6 @@ export function todayWib(now = new Date()) {
     day: '2-digit',
   }).format(now)
 }
+
+/** 타임스탬프 → 'YYYY-MM-DD HH:MM' — 상세·관리 화면의 로그 표가 함께 씁니다. */
+export const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')

@@ -29,10 +29,7 @@ const EMPTY_FILTERS = {
   search: '',
   itStatus: 'All',
   verification: 'All',
-  menuMain: 'All',
-  menuSub: 'All',
   priority: 'All',
-  goLive: 'All',
   pic: 'All',
   showArchived: false, // 작업지시서 §5-2 — 아카이브는 기본 숨김
   excludeVerified: false, // 「IT부서용」 프리셋 전용 — 끝난 건을 목록에서 뺍니다
@@ -84,10 +81,7 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
   const uniqueValues = (key) => [...new Set(rows.value.map((r) => r[key]).filter(Boolean))].sort()
 
   const options = computed(() => ({
-    menuMain: uniqueValues('menu_main'),
-    menuSub: uniqueValues('menu_sub'),
     priority: uniqueValues('priority'),
-    goLive: uniqueValues('go_live_category'),
     pic: uniqueValues('it_pic'),
     itStatus: uniqueValues('it_status'),
     // 현업검증은 코드 5종 고정(status.js) — 데이터에서 뽑으면 종전 표기와 코드가 섞여 두 줄이 됩니다.
@@ -118,10 +112,7 @@ export const useCsrIssuesStore = defineStore('csr-issues', () => {
         mapLegacyVerifyStatus(r.verification_result) !== f.verification
       )
         return false
-      if (f.menuMain !== 'All' && r.menu_main !== f.menuMain) return false
-      if (f.menuSub !== 'All' && r.menu_sub !== f.menuSub) return false
       if (f.priority !== 'All' && r.priority !== f.priority) return false
-      if (f.goLive !== 'All' && r.go_live_category !== f.goLive) return false
       if (f.pic !== 'All' && r.it_pic !== f.pic) return false
       if (q) {
         const hay = `${r.issue_no} ${r.title_ko ?? ''} ${r.title_id ?? ''}`.toLowerCase()

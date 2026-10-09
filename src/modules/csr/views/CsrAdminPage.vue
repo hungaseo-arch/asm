@@ -6,9 +6,10 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { authApi, getDb, unwrap } from '../api/neon'
 import { nullIfBlank } from '../api/issues'
 import { useCsrSessionStore } from '../stores/session'
-import { useCsrIssuesStore } from '../stores/issues'
 import { INITIAL_PASSWORD, ROLES, isConfigured } from '../config'
 import { pickLang } from '../i18n'
+import { fmtTs } from '../dates'
+import { useCsrLang } from '../composables/useCsrLang'
 import CsrSignIn from '../components/CsrSignIn.vue'
 
 /**
@@ -22,13 +23,12 @@ import CsrSignIn from '../components/CsrSignIn.vue'
  */
 const router = useRouter()
 const session = useCsrSessionStore()
-const issues = useCsrIssuesStore()
-const lang = computed(() => issues.lang)
-const t = (ko, id) => (lang.value === 'id' ? id : ko)
+const { lang, t } = useCsrLang()
 const V = (v) => pickLang(v, lang.value)
 
 const users = ref([])
 const log = ref([])
+const logins = ref([])
 const loading = ref(true)
 const error = ref('')
 const saving = ref(false)
@@ -52,6 +52,21 @@ async function load() {
     error.value = e.message
   } finally {
     loading.value = false
+  }
+  // 로그인 이력(db/044) — 따로 받습니다. 044 미적용 환경이면 테이블이 없어 실패하는데,
+  // 그 한 가지 때문에 사용자·상태 로그 탭까지 막히면 안 됩니다.
+  try {
+    logins.value =
+      unwrap(
+        await getDb()
+          .from('csr_login_log')
+          .select('*, csr_user_roles(email,display_name)')
+          .order('logged_in_at', { ascending: false })
+          .limit(200),
+      ) ?? []
+  } catch (e) {
+    console.warn('[csr] 로그인 이력 조회 실패 — db/044 적용 여부를 확인하십시오', e)
+    logins.value = []
   }
 }
 onMounted(async () => {
@@ -241,7 +256,6 @@ async function resetPassword() {
   }
 }
 
-const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 /**
  * 최종 접속 (2026-09-14) — 오늘·어제는 말로, 그 밖은 날짜로. 한 번도 안 들어온 계정은 「—」.
  * 값은 세션 확인 때마다 갱신되므로 '마지막 로그인'이 아니라 '마지막 사용' 입니다(db/029).
@@ -284,9 +298,11 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
       <template v-else>
         <div class="tabs" role="tablist">
           <button
+            id="tab-users"
             type="button"
             role="tab"
             :aria-selected="tab === 'users'"
+            aria-controls="panel-users"
             :class="{ active: tab === 'users' }"
             @click="tab = 'users'"
           >
@@ -294,19 +310,39 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
             <span class="count-pill">{{ users.length }}</span>
           </button>
           <button
+            id="tab-log"
             type="button"
             role="tab"
             :aria-selected="tab === 'log'"
+            aria-controls="panel-log"
             :class="{ active: tab === 'log' }"
             @click="tab = 'log'"
           >
             {{ t('상태 변경 로그', 'Log perubahan') }}
             <span class="count-pill">{{ log.length }}</span>
           </button>
+          <button
+            id="tab-logins"
+            type="button"
+            role="tab"
+            :aria-selected="tab === 'logins'"
+            aria-controls="panel-logins"
+            :class="{ active: tab === 'logins' }"
+            @click="tab = 'logins'"
+          >
+            {{ t('접속 로그', 'Log akses') }}
+            <span class="count-pill">{{ logins.length }}</span>
+          </button>
         </div>
 
         <!-- ── 사용자 · 역할 ── -->
-        <section v-if="tab === 'users'" class="asm-panel sec">
+        <section
+          v-if="tab === 'users'"
+          id="panel-users"
+          role="tabpanel"
+          aria-labelledby="tab-users"
+          class="asm-panel sec"
+        >
           <div class="sec-head">
             <h2 class="asm-title">{{ t('사용자 · 역할', 'Pengguna · Peran') }}</h2>
             <button v-if="!editing" type="button" class="btn btn-sm btn-primary" @click="startNew">
@@ -321,6 +357,9 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                 <input
                   v-model="form.email"
                   type="email"
+                  name="email"
+                  autocomplete="email"
+                  spellcheck="false"
                   class="form-control form-control-sm"
                   :disabled="!isNew"
                   required
@@ -328,7 +367,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
               </label>
               <label class="field">
                 <span>{{ t('권한', 'Peran') }}</span>
-                <select v-model="form.role" class="form-select form-select-sm">
+                <select v-model="form.role" name="role" class="form-select form-select-sm">
                   <option v-for="r in ROLES" :key="r" :value="r">{{ r }}</option>
                 </select>
               </label>
@@ -336,13 +375,20 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                 <span>{{ t('소속', 'Bagian') }}</span>
                 <input
                   v-model="form.department"
+                  name="department"
+                  autocomplete="off"
                   class="form-control form-control-sm"
-                  placeholder="sales · import · finance · it"
+                  placeholder="sales · import · finance · it…"
                 />
               </label>
               <label class="field">
                 <span>{{ t('표시 이름', 'Nama tampilan') }}</span>
-                <input v-model="form.display_name" class="form-control form-control-sm" />
+                <input
+                  v-model="form.display_name"
+                  name="display_name"
+                  autocomplete="off"
+                  class="form-control form-control-sm"
+                />
               </label>
             </div>
             <p class="muted hint">
@@ -396,12 +442,12 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                 :key="u.user_id"
                 :class="{ me: u.user_id === session.user?.id }"
               >
-                <td>{{ u.display_name ?? '—' }}</td>
+                <td class="truncate-cell">{{ u.display_name ?? '—' }}</td>
                 <td class="nowrap">{{ u.email }}</td>
                 <td>
                   <span class="asm-pill">{{ u.role }}</span>
                 </td>
-                <td>{{ u.department ?? '—' }}</td>
+                <td class="truncate-cell">{{ u.department ?? '—' }}</td>
                 <td class="nowrap muted">{{ fmtTs(u.created_at).slice(0, 10) }}</td>
                 <td class="nowrap muted" :title="fmtTs(u.last_seen_at)">{{ lastSeen(u) }}</td>
                 <td class="nowrap ops">
@@ -433,8 +479,10 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                 <input
                   v-model="pwValue"
                   type="text"
+                  name="new-password"
                   class="form-control form-control-sm"
-                  autocomplete="off"
+                  autocomplete="new-password"
+                  spellcheck="false"
                   required
                 />
               </label>
@@ -463,7 +511,13 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
         </section>
 
         <!-- ── 상태 변경 로그 ── -->
-        <section v-else class="asm-panel sec">
+        <section
+          v-else-if="tab === 'log'"
+          id="panel-log"
+          role="tabpanel"
+          aria-labelledby="tab-log"
+          class="asm-panel sec"
+        >
           <h2 class="asm-title">
             {{ t('상태 변경 로그', 'Log perubahan') }}
             <small>{{ t('최근 200건', '200 terakhir') }}</small>
@@ -485,18 +539,49 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                 <tr v-for="l in log" :key="l.id">
                   <td class="nowrap">{{ fmtTs(l.changed_at) }}</td>
                   <td class="nowrap">
-                    <a
-                      href="#"
-                      @click.prevent="
-                        router.push(`/csr/${encodeURIComponent(l.csr_issues?.issue_no ?? '')}`)
-                      "
-                      >{{ l.csr_issues?.issue_no ?? l.issue_id }}</a
-                    >
+                    <router-link :to="`/csr/${encodeURIComponent(l.csr_issues?.issue_no ?? '')}`">
+                      {{ l.csr_issues?.issue_no ?? l.issue_id }}
+                    </router-link>
                   </td>
                   <td class="nowrap">{{ l.column_name }}</td>
                   <td>{{ V(l.old_value) ?? '—' }}</td>
                   <td>{{ V(l.new_value) ?? '—' }}</td>
                   <td class="nowrap muted">{{ userName(l.changed_by) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ── 접속 로그 (회원별 로그인 이력, db/044) ── -->
+        <section
+          v-else
+          id="panel-logins"
+          role="tabpanel"
+          aria-labelledby="tab-logins"
+          class="asm-panel sec"
+        >
+          <h2 class="asm-title">
+            {{ t('접속 로그', 'Log akses') }}
+            <small>{{ t('최근 200건', '200 terakhir') }}</small>
+          </h2>
+          <p v-if="!logins.length" class="muted">
+            {{ t('기록이 없습니다 — db/044 적용 전이면 아직 쌓이지 않습니다', 'Belum ada catatan') }}
+          </p>
+          <div v-else class="table-scroll">
+            <table class="table asm-table">
+              <thead>
+                <tr>
+                  <th class="nowrap">{{ t('로그인 일시', 'Waktu masuk') }}</th>
+                  <th>{{ t('이름', 'Nama') }}</th>
+                  <th class="nowrap">Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="l in logins" :key="l.id">
+                  <td class="nowrap">{{ fmtTs(l.logged_in_at) }}</td>
+                  <td>{{ l.csr_user_roles?.display_name ?? '—' }}</td>
+                  <td class="nowrap muted">{{ l.csr_user_roles?.email ?? l.user_id }}</td>
                 </tr>
               </tbody>
             </table>
@@ -531,7 +616,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
 }
 .mono {
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 11px;
+  font-size: 12px;
 }
 .hint {
   margin: 8px 0 0;
@@ -558,7 +643,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
   font-weight: 700;
 }
 .count-pill {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--asm-primary);
   background: var(--asm-primary-soft);
@@ -611,7 +696,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
   min-width: 0;
 }
 .field > span {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--asm-fg-muted);
 }
@@ -622,6 +707,12 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
   margin-top: 10px;
 }
 .nowrap {
+  white-space: nowrap;
+}
+.truncate-cell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .ops {

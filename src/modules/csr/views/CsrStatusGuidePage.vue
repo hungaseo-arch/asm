@@ -9,17 +9,12 @@
  * 그래서 문단마다 [한국어, 인도네시아어] 쌍으로 적어 둡니다 — 한쪽을 고치면 다른 쪽도 같이 고치십시오.
  * 인니어는 Claude 번역(검수 서종환). §3 표는 status.js 의 정의를 그대로 그려 문서와 화면이 어긋나지 않게 합니다.
  */
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
-import { useIdentityStore } from '@/stores/identity'
-import { IT_STATUS, VERIFY_STATUS, descOf, nameOf } from '../status'
+import { useCsrLang } from '../composables/useCsrLang'
+import { IT_STATUS, VERIFY_STATUS } from '../status'
+import CsrStatusDefTable from '../components/CsrStatusDefTable.vue'
 
-const router = useRouter()
-const identity = useIdentityStore()
-const lang = computed(() => identity.lang)
-/** [ko, id] 쌍에서 토글 언어 쪽. */
-const t = (pair) => (lang.value === 'id' ? pair[1] : pair[0])
+const { lang, tp: t } = useCsrLang()
 /** 백틱으로 감싼 조각은 <code> 로 — 문장마다 태그를 섞지 않으려고 문자열 한 줄로 적습니다. */
 const parts = (s) => s.split('`').map((x, i) => ({ code: i % 2 === 1, text: x }))
 
@@ -244,12 +239,12 @@ const TAIL_SECTIONS = [
           </p>
         </div>
         <div class="d-flex gap-2 align-items-center">
-          <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr/dashboard')">
+          <router-link to="/csr/dashboard" class="btn btn-sm btn-link">
             ← {{ t(['대시보드', 'Dasbor']) }}
-          </button>
-          <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">
+          </router-link>
+          <router-link to="/csr" class="btn btn-sm btn-link">
             {{ t(['개선요청 목록', 'Daftar permintaan']) }}
-          </button>
+          </router-link>
         </div>
       </div>
 
@@ -279,24 +274,14 @@ const TAIL_SECTIONS = [
           >
         </h4>
         <div class="table-scroll">
-          <table class="table asm-table def">
-            <thead>
-              <tr>
-                <th>{{ t(SEC3.cols.code) }}</th>
-                <th>{{ t(SEC3.cols.name) }}</th>
-                <th>{{ t(SEC3.cols.desc) }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="s in IT_ROWS" :key="s.value">
-                <td class="nowrap">
-                  <span class="asm-badge" :class="`asm-badge--${s.tone}`">{{ s.code }}</span>
-                </td>
-                <td class="nowrap">{{ nameOf(s, lang) }}</td>
-                <td class="wrap">{{ descOf(s, lang) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <CsrStatusDefTable
+            :rows="IT_ROWS"
+            :lang="lang"
+            :code-label="t(SEC3.cols.code)"
+            :name-label="t(SEC3.cols.name)"
+            :desc-label="t(SEC3.cols.desc)"
+            wrap-min-width="260px"
+          />
         </div>
 
         <h4>
@@ -306,24 +291,14 @@ const TAIL_SECTIONS = [
           >
         </h4>
         <div class="table-scroll">
-          <table class="table asm-table def">
-            <thead>
-              <tr>
-                <th>{{ t(SEC3.cols.code) }}</th>
-                <th>{{ t(SEC3.cols.name) }}</th>
-                <th>{{ t(SEC3.cols.desc) }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="s in VERIFY_STATUS" :key="s.code">
-                <td class="nowrap">
-                  <span class="asm-badge" :class="`asm-badge--${s.tone}`">{{ s.code }}</span>
-                </td>
-                <td class="nowrap">{{ nameOf(s, lang) }}</td>
-                <td class="wrap">{{ descOf(s, lang) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <CsrStatusDefTable
+            :rows="VERIFY_STATUS"
+            :lang="lang"
+            :code-label="t(SEC3.cols.code)"
+            :name-label="t(SEC3.cols.name)"
+            :desc-label="t(SEC3.cols.desc)"
+            wrap-min-width="260px"
+          />
         </div>
 
         <h4>{{ t(SEC3.h33) }}</h4>
@@ -398,14 +373,5 @@ const TAIL_SECTIONS = [
 }
 .table-scroll {
   overflow-x: auto;
-}
-.def th,
-.def td {
-  vertical-align: top;
-}
-.def td.wrap {
-  white-space: normal;
-  overflow-wrap: anywhere;
-  min-width: 260px;
 }
 </style>

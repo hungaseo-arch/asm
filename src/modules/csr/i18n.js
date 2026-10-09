@@ -62,6 +62,14 @@ export function pickLinesLang(value, lang) {
 /** 두 언어 컬럼 쌍(title_ko/title_id 등)에서 하나를 고릅니다 — 비어 있으면 다른 쪽으로. */
 export const pickPair = (ko, id, lang) => (lang === 'id' ? (id ?? ko) : (ko ?? id))
 
+/**
+ * 제목 앞 "02. " 번호를 뗍니다 — 이슈번호 열(또는 바로 위)이 따로 있어 두 번 보였습니다
+ * (2026-09-10 요청). 표시만 바꿉니다 — 저장된 제목은 Notion 원문 그대로입니다.
+ */
+export const stripNo = (t) => (t ? String(t).replace(/^[0-9]+[.][ ]*/, '') : t)
+/** 목록·대시보드·상세가 함께 쓰는 이슈 제목 — 토글 언어 쪽 title_ko/title_id 에서 번호만 뗍니다. */
+export const issueTitle = (row, lang) => stripNo(pickPair(row.title_ko, row.title_id, lang))
+
 /** 화면 라벨. 키는 DB 컬럼명이라 헤더·속성 카드·편집 폼이 같은 사전을 씁니다. */
 const LABELS = {
   issue_no: { ko: '이슈번호', id: 'No. Isu' },
@@ -86,7 +94,7 @@ const LABELS = {
   summary: { ko: '요약', id: 'Ringkasan' },
   acceptance: { ko: '수용기준', id: 'Kriteria Selesai' },
   archived: { ko: '아카이브 표시', id: 'Tampilkan arsip' },
-  search: { ko: '이슈번호 · 제목 검색', id: 'Cari no. isu · judul' },
+  search: { ko: '이슈번호 · 제목 검색…', id: 'Cari no. isu · judul…' },
   preset_it: { ko: 'IT부서용', id: 'Untuk Tim IT' },
   preset_pending: { ko: '검증 대기', id: 'Menunggu verifikasi' },
   reset: { ko: '전체', id: 'Semua' },

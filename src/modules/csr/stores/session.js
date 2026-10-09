@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { authApi, getDb, unwrap } from '../api/neon'
 import { AUTH_URL, isConfigured } from '../config'
-import { touchLastSeen } from '../api/issues'
+import { logLogin, touchLastSeen } from '../api/issues'
 import { useIdentityStore } from '@/stores/identity'
 
 /**
@@ -104,6 +104,8 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
       return false
     }
     await refresh()
+    // 로그인 이력(db/044) — 세션 체크(refresh)가 아니라 실제 로그인 성공 때 1번만 찍습니다.
+    if (isAuthenticated.value) void logLogin()
     return isAuthenticated.value
   }
 

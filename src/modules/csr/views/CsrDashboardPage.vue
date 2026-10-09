@@ -5,17 +5,12 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { IT_STATUSES, STATUS_TONE, isConfigured } from '../config'
-import { label, pickLang, toneOf } from '../i18n'
+import { issueTitle, label, pickLang } from '../i18n'
 import { formatInt } from '@/utils/format'
 import CsrSignIn from '../components/CsrSignIn.vue'
-import {
-  VERIFY_CODES,
-  isPendingVerification,
-  itStatusTitle,
-  mapLegacyVerifyStatus,
-  verifyCodeOf,
-  verifyTitle,
-} from '../status'
+import CsrStatusBadge from '../components/CsrStatusBadge.vue'
+import { useCsrLang } from '../composables/useCsrLang'
+import { VERIFY_CODES, isPendingVerification, mapLegacyVerifyStatus } from '../status'
 
 /**
  * 대시보드 (작업지시서 §5-2)
@@ -31,10 +26,9 @@ import {
 const router = useRouter()
 const session = useCsrSessionStore()
 const issues = useCsrIssuesStore()
-const lang = computed(() => issues.lang)
+const { lang, t } = useCsrLang()
 const L = (k) => label(k, lang.value)
 const V = (v) => pickLang(v, lang.value)
-const t = (ko, id) => (lang.value === 'id' ? id : ko)
 
 onMounted(async () => {
   await session.refresh()
@@ -124,9 +118,7 @@ const byPicCols = computed(() => {
   return rows.length > 4 ? [rows.slice(0, half), rows.slice(half)] : [rows]
 })
 
-const stripNo = (s) => (s ? String(s).replace(/^[0-9]+[.][ ]*/, '') : s)
-const title = (r) =>
-  stripNo(lang.value === 'id' ? (r.title_id ?? r.title_ko) : (r.title_ko ?? r.title_id))
+const title = (r) => issueTitle(r, lang.value)
 const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 </script>
 
@@ -191,27 +183,16 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
               <thead>
                 <tr>
                   <th></th>
-                  <th v-for="v in verifValues" :key="v" class="nowrap">
-                    <span
-                      class="asm-badge"
-                      :class="`asm-badge--${toneOf('verification_result', v)}`"
-                      :title="verifyTitle(v, lang)"
-                    >
-                      {{ verifyCodeOf(v) }}
-                    </span>
+                  <th v-for="v in verifValues" :key="v" class="nowrap num">
+                    <CsrStatusBadge kind="verification_result" :value="v" :lang="lang" />
                   </th>
-                  <th class="nowrap total">{{ t('합계', 'Total') }}</th>
+                  <th class="nowrap num total">{{ t('합계', 'Total') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="s in IT_STATUSES.filter((x) => rowTotal(x))" :key="s">
                   <th class="nowrap">
-                    <span
-                      class="asm-badge"
-                      :class="`asm-badge--${STATUS_TONE[s]}`"
-                      :title="itStatusTitle(s, lang)"
-                      >{{ s }}</span
-                    >
+                    <CsrStatusBadge kind="it_status" :value="s" :lang="lang" />
                   </th>
                   <td v-for="v in verifValues" :key="v" class="num">
                     {{ cross[`${s}|${v}`] ?? '' }}
@@ -239,13 +220,17 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
             </h2>
             <p v-if="!pendingVerify.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>
             <ul v-else class="list">
-              <li v-for="r in pagedPending" :key="r.id" @click="open(r)">
+              <li
+                v-for="r in pagedPending"
+                :key="r.id"
+                role="button"
+                tabindex="0"
+                @click="open(r)"
+                @keydown.enter="open(r)"
+                @keydown.space.prevent="open(r)"
+              >
                 <span class="no">{{ r.issue_no }}</span>
-                <span
-                  class="asm-badge"
-                  :class="`asm-badge--${STATUS_TONE[r.it_status] ?? 'neutral'}`"
-                  >{{ r.it_status }}</span
-                >
+                <CsrStatusBadge kind="it_status" :value="r.it_status" :lang="lang" />
                 <span class="ttl" :title="title(r)">{{ title(r) }}</span>
                 <span class="pic">{{ r.it_pic ?? '—' }}</span>
               </li>
@@ -254,6 +239,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
+                :aria-label="t('이전 페이지', 'Halaman sebelumnya')"
                 :disabled="page.pending <= 1"
                 @click="page.pending--"
               >
@@ -263,6 +249,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
+                :aria-label="t('다음 페이지', 'Halaman berikutnya')"
                 :disabled="page.pending >= pageCount(pendingVerify)"
                 @click="page.pending++"
               >
@@ -279,13 +266,17 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
             </h2>
             <p v-if="!noReply.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>
             <ul v-else class="list">
-              <li v-for="r in pagedNoReply" :key="r.id" @click="open(r)">
+              <li
+                v-for="r in pagedNoReply"
+                :key="r.id"
+                role="button"
+                tabindex="0"
+                @click="open(r)"
+                @keydown.enter="open(r)"
+                @keydown.space.prevent="open(r)"
+              >
                 <span class="no">{{ r.issue_no }}</span>
-                <span
-                  class="asm-badge"
-                  :class="`asm-badge--${STATUS_TONE[r.it_status] ?? 'neutral'}`"
-                  >{{ r.it_status }}</span
-                >
+                <CsrStatusBadge kind="it_status" :value="r.it_status" :lang="lang" />
                 <span class="ttl" :title="title(r)">{{ title(r) }}</span>
                 <span class="pic">{{ V(r.priority) ?? '' }}</span>
               </li>
@@ -294,6 +285,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
+                :aria-label="t('이전 페이지', 'Halaman sebelumnya')"
                 :disabled="page.noreply <= 1"
                 @click="page.noreply--"
               >
@@ -303,6 +295,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
+                :aria-label="t('다음 페이지', 'Halaman berikutnya')"
                 :disabled="page.noreply >= pageCount(noReply)"
                 @click="page.noreply++"
               >
@@ -344,6 +337,29 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 </template>
 
 <style scoped>
+/* 메인화면(대시보드) 글자크기 축소 (2026-10-09 요청, 2단계) — 이 화면 안에서만 적용 */
+.page-title {
+  font-size: 18px;
+}
+.page-sub {
+  font-size: 14px;
+}
+.asm-title {
+  font-size: 1.0625rem;
+}
+.asm-kpi-label {
+  font-size: 12px;
+}
+.asm-badge {
+  font-size: 12px;
+}
+.table {
+  font-size: 13px;
+}
+.table thead th {
+  font-size: 12px;
+}
+
 .dash {
   display: flex;
   flex-direction: column;
@@ -374,7 +390,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
   flex-direction: column;
 }
 .card .asm-kpi-value {
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.3;
 }
 /* 톤 — 가이드 3-3 상태색을 좌측 3px 띠로 */
@@ -413,7 +429,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
   color: var(--asm-fg-muted);
 }
 .count-pill {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--asm-primary);
   background: var(--asm-primary-soft);
@@ -424,7 +440,9 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
   overflow-x: auto;
 }
 /* 숫자 칸은 가로 가운데(2026-09-10 요청) — 열 폭이 넓어 오른쪽 정렬이면 헤더와 멀어 보였습니다. */
-.num {
+/* th.num 은 asm-theme.css 의 ".table th.num"(동일 우선순위)과 맞붙으므로 선택자를 명시해 헤더도 가운데 정렬로 맞춥니다. */
+.num,
+.table th.num {
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -464,6 +482,10 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 }
 .list li:hover {
   background: var(--asm-primary-6);
+}
+.list li:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--asm-primary-40);
 }
 .list .no {
   font-variant-numeric: tabular-nums;

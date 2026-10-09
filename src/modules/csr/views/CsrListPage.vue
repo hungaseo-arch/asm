@@ -1,14 +1,14 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
-import { STATUS_TONE, isConfigured } from '../config'
-import { label, pickLang, pickLinesLang, pickPair, toneOf } from '../i18n'
-import { provideSidebarSummary } from '@/composables/useSummaryCards'
+import { isConfigured } from '../config'
+import { issueTitle, label, pickLinesLang } from '../i18n'
 import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrStatusLegend from '../components/CsrStatusLegend.vue'
-import { itStatusTitle, verifyCodeOf, verifyFilterLabel, verifyTitle } from '../status'
+import CsrStatusBadge from '../components/CsrStatusBadge.vue'
+import { verifyFilterLabel } from '../status'
 
 /** 미등록 화면의 「다시 확인」 — 역할을 다시 읽고, 있으면 바로 목록을 불러옵니다. */
 async function recheck() {
@@ -21,9 +21,63 @@ import { useIdentityStore } from '@/stores/identity'
 import { getDb, unwrap } from '../api/neon'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
+const route = useRoute()
 const router = useRouter()
 const session = useCsrSessionStore()
 const issues = useCsrIssuesStore()
+
+/*
+ * 필터·정렬을 URL 쿼리에 반영(작업지시서 — 새로고침·뒤로가기·링크 공유 시 상태 유지).
+ * 진입 시 쿼리를 필터에 한 번 적용하고, 이후로는 필터 → 쿼리 방향으로만 동기화합니다
+ * (store 가 페이지 전환에도 살아있어 라우트 쪽을 따라가면 순환이 생깁니다). 검색어는
+ * 타이핑마다 history 를 바꾸지 않도록 살짝 묶어서(debounce) 반영합니다.
+ */
+const FILTER_DEFAULTS = {
+  search: '',
+  itStatus: 'All',
+  verification: 'All',
+  priority: 'All',
+  pic: 'All',
+  showArchived: false,
+  excludeVerified: false,
+}
+;(function applyQueryToFilters() {
+  const q = route.query
+  const next = { ...issues.filters }
+  for (const key of Object.keys(FILTER_DEFAULTS)) {
+    if (q[key] === undefined) continue
+    next[key] = typeof FILTER_DEFAULTS[key] === 'boolean' ? q[key] === '1' : q[key]
+  }
+  issues.filters = next
+  if (q.sortKey) issues.sort = { key: q.sortKey, dir: q.sortDir === 'desc' ? 'desc' : 'asc' }
+})()
+
+let searchSyncTimer = null
+watch(
+  () => ({ ...issues.filters, sortKey: issues.sort.key, sortDir: issues.sort.dir }),
+  (state, prev) => {
+    const run = () => {
+      const query = {}
+      for (const key of Object.keys(FILTER_DEFAULTS)) {
+        const v = state[key]
+        if (v === FILTER_DEFAULTS[key]) continue
+        query[key] = typeof v === 'boolean' ? '1' : v
+      }
+      if (state.sortKey) {
+        query.sortKey = state.sortKey
+        query.sortDir = state.sortDir
+      }
+      router.replace({ query })
+    }
+    if (prev && state.search !== prev.search) {
+      clearTimeout(searchSyncTimer)
+      searchSyncTimer = setTimeout(run, 300)
+    } else {
+      run()
+    }
+  },
+  { deep: true },
+)
 
 onMounted(async () => {
   await session.refresh()
@@ -64,9 +118,8 @@ const COLUMNS = computed(() => [
 const sortMark = (k) => (issues.sort.key !== k ? '' : issues.sort.dir === 'asc' ? '▲' : '▼')
 const ariaSort = (k) =>
   issues.sort.key !== k ? 'none' : issues.sort.dir === 'asc' ? 'ascending' : 'descending'
-/** 표시 언어에 맞춘 라벨·값. 저장값은 원문 그대로이고 화면에서만 가릅니다(§8). */
+/** 표시 언어에 맞춘 라벨. 저장값은 원문 그대로이고 화면에서만 가릅니다(§8). */
 const L = (key) => label(key, lang.value)
-const V = (value) => pickLang(value, lang.value)
 /** 심각도 표기 — 저장값 「S1 Blocker」를 개선요청서의 「S1 (Blocker)」 꼴로(2026-09-14 요청). */
 const priorityLabel = (p) => String(p).replace(/^(S[0-9]) +(.+)$/, '$1 ($2)')
 
@@ -75,39 +128,7 @@ const priorityLabel = (p) => String(p).replace(/^(S[0-9]) +(.+)$/, '$1 ($2)')
  * 두 번 보였습니다(2026-09-10 요청). 표시만 바꿉니다. 저장된 제목은 Notion 원문 그대로입니다.
  * 정규식에 백슬래시를 쓰지 않는 이유: 셸 heredoc 을 거치며 유실된 적이 있습니다.
  */
-const stripNo = (t) => (t ? String(t).replace(/^[0-9]+[.][ ]*/, '') : t)
-const title = (row) => stripNo(pickPair(row.title_ko, row.title_id, lang.value))
-
-// 요약 카드는 헤더의 브랜드 메뉴 → 「요약」 으로 열리는 좌측 드로어에 실립니다.
-provideSidebarSummary(() => {
-  const id = lang.value === 'id'
-  return [
-    {
-      label: 'Total',
-      value: formatInt(issues.counts.total),
-      note: id ? 'tanpa arsip' : '아카이브 제외',
-    },
-    {
-      label: 'Open',
-      value: formatInt(issues.counts.open),
-      tone: 'danger',
-      note: id ? 'belum mulai' : '미착수',
-    },
-    {
-      label: 'Ongoing',
-      value: formatInt(issues.counts.ongoing),
-      tone: 'warning',
-      note: id ? 'berjalan' : '진행 중',
-    },
-    {
-      label: 'Completed',
-      value: formatInt(issues.counts.completed),
-      tone: 'success',
-      note: id ? 'menunggu verifikasi' : '검증 대기',
-    },
-    { label: 'Verified', value: formatInt(issues.counts.verified), note: id ? 'selesai' : '완료' },
-  ]
-})
+const title = (row) => issueTitle(row, lang.value)
 
 const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)}`)
 
@@ -203,8 +224,11 @@ watch(
             <input
               v-model="issues.filters.search"
               type="search"
+              name="issue-search"
+              autocomplete="off"
               class="form-control search"
               :placeholder="L('search')"
+              :aria-label="L('search')"
             />
             <button type="button" class="btn btn-sm preset-btn" @click="issues.applyPreset('it')">
               {{ L('preset_it') }}
@@ -248,17 +272,12 @@ watch(
               <option v-for="p in issues.options.pic" :key="p" :value="p">{{ p }}</option>
             </select>
             <span class="vr"></span>
-            <button type="button" class="btn btn-sm nav-btn" @click="router.push('/csr/dashboard')">
+            <router-link to="/csr/dashboard" class="btn btn-sm nav-btn">
               {{ lang === 'id' ? 'Dasbor' : '대시보드' }}
-            </button>
-            <button
-              v-if="session.isAdmin"
-              type="button"
-              class="btn btn-sm nav-btn"
-              @click="router.push('/csr/admin')"
-            >
+            </router-link>
+            <router-link v-if="session.isAdmin" to="/csr/admin" class="btn btn-sm nav-btn">
               {{ lang === 'id' ? 'Administrasi' : '관리' }}
-            </button>
+            </router-link>
           </div>
 
           <!-- 계정 메뉴는 헤더 아바타로(2026-09-10). 언어 토글은 대시보드와 같은 것 — 목록에도 두어 달라는 요청. -->
@@ -313,38 +332,27 @@ watch(
                   :key="row.id"
                   class="row-link"
                   :class="{ 'is-archived': row.is_archived }"
+                  tabindex="0"
+                  role="button"
                   @click="openDetail(row)"
+                  @keydown.enter="openDetail(row)"
+                  @keydown.space.prevent="openDetail(row)"
                 >
                   <td class="no-col">{{ row.issue_no }}</td>
                   <!-- 말줄임 — 전체 제목은 title 툴팁으로. 겹침의 원인이던 넘침을 여기서 막습니다. -->
                   <td class="title-col" :title="title(row)">{{ title(row) }}</td>
                   <td class="nowrap">
-                    <span
-                      v-if="row.it_decision"
-                      class="asm-badge"
-                      :class="`asm-badge--${toneOf('it_decision', row.it_decision)}`"
-                    >
-                      {{ V(row.it_decision) }}
-                    </span>
+                    <CsrStatusBadge kind="it_decision" :value="row.it_decision" :lang="lang" />
                   </td>
                   <td>
-                    <span
-                      class="asm-badge"
-                      :class="`asm-badge--${STATUS_TONE[row.it_status] ?? 'neutral'}`"
-                      :title="itStatusTitle(row.it_status, lang)"
-                    >
-                      {{ row.it_status }}
-                    </span>
+                    <CsrStatusBadge kind="it_status" :value="row.it_status" :lang="lang" />
                   </td>
                   <td class="nowrap">
-                    <span
-                      v-if="row.verification_result"
-                      class="asm-badge"
-                      :class="`asm-badge--${toneOf('verification_result', row.verification_result)}`"
-                      :title="verifyTitle(row.verification_result, lang)"
-                    >
-                      {{ verifyCodeOf(row.verification_result) }}
-                    </span>
+                    <CsrStatusBadge
+                      kind="verification_result"
+                      :value="row.verification_result"
+                      :lang="lang"
+                    />
                   </td>
                   <td class="nowrap">{{ row.it_pic }}</td>
                 </tr>
@@ -461,7 +469,7 @@ watch(
   border: 1px solid var(--asm-success-border);
   font-weight: 600;
 }
-.filter-select:focus {
+.filter-select:focus-visible {
   border-color: var(--asm-success);
   box-shadow: 0 0 0 3px rgb(30 123 52 / 0.15);
 }
@@ -486,7 +494,7 @@ watch(
   padding: 16px;
 }
 .count-pill {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--asm-primary);
   background: var(--asm-primary-soft);
@@ -515,7 +523,7 @@ watch(
 .sort-mark {
   display: inline-block;
   width: 1em;
-  font-size: 9px;
+  font-size: 12px;
   vertical-align: middle;
 }
 .table-scroll {
@@ -542,13 +550,20 @@ watch(
 .row-link {
   cursor: pointer;
 }
+.row-link:hover {
+  background: var(--asm-primary-6);
+}
+.row-link:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--asm-primary-40);
+}
 /* 아카이브는 표시하더라도 살아 있는 건과 구분되어야 합니다. */
 .is-archived {
   opacity: 0.55;
 }
 .is-archived .no-col::after {
   content: ' (삭제)';
-  font-size: 10px;
+  font-size: 12px;
   color: var(--asm-fg-muted);
 }
 .empty-row {

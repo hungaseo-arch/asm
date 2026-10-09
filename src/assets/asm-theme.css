@@ -57,17 +57,6 @@
   --asm-sticky-shadow: 5px 0 7px -7px rgb(51 51 51 / 0.3);
 
   /*
-   * 사이드바 (Sidebar) — 가이드 7-3
-   * BI 원문은 사이드바 배경을 페이지 배경과 동일한 #F5F5F5 로 규정합니다(1px 우측
-   * 테두리로만 본문과 구분). 활성 항목은 accent 10% 배경 + 좌측 3px 블루 인디케이터.
-   */
-  --asm-sidebar: #f5f5f5;
-  --asm-sidebar-fg: #333333;
-  --asm-sidebar-hover: #ffffff;
-  --asm-sidebar-active: #e6eff9;
-  --asm-sidebar-border: #d6d6d6;
-
-  /*
    * 상태 (Status / Status) — 가이드 3-3.
    * 상태마다 글자(진한색) · soft(배경) · border(테두리) 3종을 함께 씁니다.
    * info 는 브랜드 Blue 를 그대로 재사용해 브랜드 일관성을 유지합니다(가이드 3-3 주석).
@@ -143,7 +132,6 @@
   --asm-accent-bar-h: 4px;
   --asm-topbar-h: 56px;
   --asm-header-offset: calc(var(--asm-accent-bar-h) + var(--asm-topbar-h));
-  --asm-sidebar-w: 220px;
 
   /* ─── Bootstrap 기본 변수 덮어쓰기 (STEP 1) ─── */
   --bs-primary: #0062c6;
@@ -179,7 +167,7 @@
   --bs-border-radius: 0.375rem; /* 6px — 버튼·입력·배지 */
   --bs-border-radius-lg: 0.5rem; /* 8px — 카드·모달 */
   --bs-border-radius-xl: 0.5rem; /* = lg, BI 에 별도 xl 없음 */
-  --bs-body-font-size: 0.875rem; /* 14px */
+  --bs-body-font-size: 0.875rem; /* 14px — 전체 글자 2px 확대 요청(2026-10-09) */
   --bs-body-font-family:
     'Noto Sans KR', 'Noto Sans', 'KoPubDotum', 'Malgun Gothic', 'Apple SD Gothic Neo', system-ui,
     sans-serif;
@@ -328,25 +316,6 @@ h6 {
   --bs-btn-hover-bg: #b22424;
   --bs-btn-hover-border-color: #b22424;
 }
-/*
- * 헤더 시스템 상태 버튼 — 가이드 7-2 "상태(Status)".
- * 26px · 투명 배경 · 상태색 테두리와 글자 · hover 시 soft 배경.
- */
-.btn-status {
-  min-height: 26px;
-  padding: 0.25rem 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  gap: 6px;
-  background: transparent;
-  border: 1px solid var(--asm-success-border);
-  color: var(--asm-success);
-}
-.btn-status:hover {
-  background: var(--asm-success-soft);
-  color: var(--asm-success);
-}
-
 /* 아이콘 전용 버튼 */
 .asm-icon-btn {
   width: 36px;
@@ -488,18 +457,15 @@ h6 {
   border-bottom-color: var(--asm-border-50);
 }
 /* 숫자 표기: 우측 정렬 + tabular numerals (가이드 9-2) */
-.table .num,
-.asm-num {
+.table .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.table th.num,
-.table th.asm-num {
+.table th.num {
   text-align: right;
 }
 /* BI 는 PO 번호·코드에도 별도 mono 를 두지 않고 tabular-nums 만 적용 (가이드 5-1) */
-.table .code,
-.asm-code {
+.table .code {
   font-variant-numeric: tabular-nums;
 }
 .table .idx {
@@ -526,36 +492,6 @@ h6 {
   color: var(--asm-primary);
   font-weight: 700;
 }
-/* 문자 열이 넘칠 때 — 말줄임 + title 속성으로 전체값 제공 (가이드 9-2) */
-.asm-ellipsis {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 좌측 고정 열 (Sticky column) */
-.asm-sticky-col {
-  position: sticky !important;
-  z-index: 3;
-  background: var(--asm-card);
-}
-.asm-sticky-col.is-first {
-  left: 0;
-  min-width: 152px;
-}
-.asm-sticky-col.is-second {
-  left: 152px;
-  min-width: 224px;
-  box-shadow: var(--asm-sticky-shadow);
-}
-thead .asm-sticky-col {
-  z-index: 6 !important;
-  background: var(--asm-primary-6) !important;
-}
-.table > tbody > tr:hover > .asm-sticky-col {
-  background: var(--asm-primary-6);
-}
-
 /* ─── 상태 배지 (Status badge / Lencana status) — 가이드 8-4 ─────────────── */
 /* soft 배경 + 진한 글자 + 테두리 3종 세트. 20px · 11px/700 · letter-spacing .04em */
 .asm-badge {
@@ -566,7 +502,7 @@ thead .asm-sticky-col {
   padding: 0 8px;
   border: 1px solid transparent;
   border-radius: var(--asm-radius-sm);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase; /* DRAFT · CONFIRMED 등 */
@@ -616,35 +552,6 @@ thead .asm-sticky-col {
   border-color: var(--asm-orange-border);
 }
 
-/*
- * 점(dot) 상태 — 배경 없이 8px 점 + 12px 글자.
- * 표 셀의 간단한 상태 표기에 적합합니다 (가이드 8-4).
- */
-.asm-dot {
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.asm-dot::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-  flex: none;
-}
-.asm-dot--ok {
-  color: var(--asm-success);
-}
-.asm-dot--late {
-  color: var(--asm-danger);
-}
-.asm-dot--plan {
-  color: var(--asm-fg-muted);
-  opacity: 0.7;
-}
-
 /* 역할·사용자 pill — 가이드 8-4 */
 .asm-pill {
   display: inline-flex;
@@ -660,89 +567,14 @@ thead .asm-sticky-col {
   white-space: nowrap;
 }
 
-/* 통화 코드 pill */
-.asm-currency {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 8px;
-  border: 1px solid var(--asm-border);
-  border-radius: var(--asm-radius-sm);
-  background: var(--asm-surface-subtle);
-  color: var(--asm-fg-muted);
-  font-variant-numeric: tabular-nums;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-/* ─── 탭 · 필터 칩 — 가이드 8-6 ──────────────────────────────────────────── */
-/* 필터 칩: 32px · 흰 배경 · radius-full · 활성은 accent 틴트 + primary 글자/테두리 */
-.asm-tab {
-  height: 32px;
-  padding: 0 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  background: var(--asm-card);
-  border: 1px solid var(--asm-border);
-  border-radius: 9999px;
-  color: var(--asm-fg-muted);
-  transition:
-    color 0.15s,
-    background-color 0.15s,
-    border-color 0.15s;
-}
-.asm-tab:hover {
-  background: var(--asm-secondary);
-}
-.asm-tab.is-active,
-.asm-tab.active {
-  background: var(--asm-primary-soft);
-  border-color: var(--asm-primary-40);
-  color: var(--asm-primary);
-  font-weight: 700;
-}
-/* 박스 탭 — 목록 화면의 상태 전환(ALL / DRAFT / CONFIRMED). 가이드 8-6 */
-.asm-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--asm-border);
-}
-.asm-tabs .tab {
-  flex: 1;
-  height: 40px;
-  padding: 0 16px;
-  border: 0;
-  background: transparent;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-align: center;
-  color: var(--asm-fg-muted);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition:
-    color 0.15s,
-    background-color 0.15s,
-    border-color 0.15s;
-}
-.asm-tabs .tab:hover {
-  background: var(--asm-secondary);
-}
-.asm-tabs .tab.is-active,
-.asm-tabs .tab.active {
-  border-bottom-color: var(--asm-primary);
-  color: var(--asm-primary);
-  font-weight: 700;
-}
-
 /* ─── 레이아웃 (Layout / Tata letak) — 가이드 7 ──────────────────────────── */
 /* 헤더는 흰 배경 + 하단 1px 선, 그림자 없음. 액센트 바(.asm-accent-bar)는 그 위. */
 /*
- * 3열 그리드(좌: auto · 가운데: 1fr · 우: auto) — 상단 메뉴(.topnav)를 헤더 정가운데에
- * 고정합니다. 좌우(.brand·.top-actions) 너비가 화면마다 달라도 가운데 열은 항상 남는
- * 공간 전체를 차지하므로, 메뉴는 flex(justify-content:center)로 그 안에서 중앙
- * 정렬됩니다(2026-09-04 반영).
+ * 3열 그리드(좌: 1fr · 가운데: auto · 우: 1fr) — 상단 메뉴(.topnav)를 헤더 정가운데에
+ * 고정합니다. 좌우(.brand·.top-actions) 열을 같은 1fr 로 둬 너비가 달라도(제목 추가 등)
+ * 가운데 열이 항상 화면 정중앙에 오도록 합니다 — auto/1fr/auto 는 좌우 너비가 다르면
+ * 가운데 열이 한쪽으로 쏠립니다(2026-10-09 「ASM CSR관리」 제목 추가 후 실측,
+ * 2026-09-04 최초 반영).
  */
 .menu-header {
   background: var(--asm-card);
@@ -752,7 +584,7 @@ thead .asm-sticky-col {
   z-index: 1030;
   height: var(--asm-topbar-h);
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   box-shadow: none;
 }
@@ -762,90 +594,6 @@ thead .asm-sticky-col {
   color: var(--asm-primary);
   font-weight: 700;
   border-radius: var(--asm-radius-md);
-}
-/*
- * 메뉴 사이드바 — 화면 우측 드로어(구분선도 좌측). 상시 고정이 아니라 필요할 때만
- * 열리므로, 닫힌 상태는 화면 밖 우측으로 밀어 둡니다(폭이 넓은 화면에서도 동일).
- */
-.sidebar {
-  width: var(--asm-sidebar-w);
-  background: var(--asm-sidebar);
-  color: var(--asm-sidebar-fg);
-  border-left: 1px solid var(--asm-sidebar-border);
-  /*
-   * 닫힌 드로어는 화면 밖으로 밀되 visibility 로 감춥니다 — transform 만으로 밀어두면
-   * 화면에 안 보여도 Tab 키가 그 안의 메뉴 버튼들을 계속 훑습니다. 감추기는 슬라이드가
-   * 끝난 뒤(0.2s 지연) 적용해 닫히는 동작이 보이도록 합니다.
-   */
-  visibility: hidden;
-  transform: translateX(100%);
-  transition:
-    transform 0.2s,
-    visibility 0s 0.2s;
-}
-.sidebar.is-open {
-  visibility: visible;
-  transform: none;
-  /* 가이드 6-3 — 떠 있는 요소에만 그림자 */
-  box-shadow: var(--asm-shadow-lg);
-  transition:
-    transform 0.2s,
-    visibility 0s;
-}
-@media (prefers-reduced-motion: reduce) {
-  .sidebar,
-  .sidebar.is-open {
-    transition: none;
-  }
-}
-.sidebar .sub-item {
-  min-height: 36px;
-  padding: 0 12px;
-  margin-bottom: 4px;
-  font-size: 14px;
-  border-radius: var(--asm-radius-md);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: var(--asm-sidebar-fg);
-  text-align: left;
-  font-weight: 500;
-  transition:
-    color 0.15s,
-    background-color 0.15s,
-    box-shadow 0.15s;
-}
-/*
- * 그룹 라벨 — 가이드 7-3: 11px / 500 / Blue / 자간 .06em / 상단 여백 16px.
- * BI 목차의 "BS 01" 킥커 스타일로, 사이드바가 지금 어느 대분류의 하위메뉴를 펼쳐
- * 두었는지 알려줍니다(헤더의 활성 대분류와 짝을 이룹니다).
- */
-.sidebar .group-label {
-  display: block;
-  padding: 16px 12px 4px;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  color: var(--asm-primary);
-  text-transform: uppercase;
-}
-.sidebar .sub-item:hover {
-  background: var(--asm-sidebar-hover);
-}
-/*
- * 가이드 7-3 — 활성은 accent 10% 배경 + primary 글자 + 700 + 좌측 3px 블루
- * 인디케이터(명함 Type A 의 좌측 블루 관점 응용). AsuraDB 기준과 달리 BI 는
- * 이 인디케이터를 명시적으로 규정합니다.
- */
-.sidebar .sub-item.is-active,
-.sidebar .router-link-active.sub-item {
-  background: var(--asm-sidebar-active);
-  color: var(--asm-primary);
-  font-weight: 700;
-  box-shadow: inset 3px 0 0 0 var(--asm-primary);
 }
 
 /*
@@ -886,13 +634,6 @@ thead .asm-sticky-col {
   border-left: 3px solid var(--asm-primary);
 }
 
-/* 각주 패널 (데이터 출처 설명) — 가이드 8-3 */
-.asm-footnote {
-  background: var(--asm-secondary);
-  border-radius: var(--asm-radius-md);
-  padding: 16px;
-  font-size: 12.5px;
-}
 /*
  * 심볼 모티프 — 가이드 4-4. 카드 우하단에 6% 투명도 브랜드 심볼을 배치합니다.
  * 로그인·빈 상태·오류 화면 전용이며 데이터 표·입력 폼 카드에는 쓰지 않습니다(가독성).
@@ -950,40 +691,10 @@ thead .asm-sticky-col {
   font-weight: 700;
 }
 
-/* 진행률 바 */
-.asm-progress {
-  height: 6px;
-  background: var(--asm-muted);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-.asm-progress > span {
-  display: block;
-  height: 100%;
-  background: var(--asm-primary);
-  border-radius: inherit;
-}
-
 /* 포커스 링 통일 — 가이드 8-1/8-2: 3px primary-40 링 */
-.asm-icon-btn:focus-visible,
-.asm-tab:focus-visible,
-.asm-tabs .tab:focus-visible,
-.sub-item:focus-visible,
-.asm-link:focus-visible {
+.asm-icon-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--asm-primary-40);
-}
-
-.asm-link {
-  border: 0;
-  background: transparent;
-  color: var(--asm-primary);
-  font-weight: 500;
-  padding: 3px 0;
-}
-.asm-link:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
 }
 
 /*
@@ -1010,19 +721,12 @@ thead .asm-sticky-col {
   margin: 0;
   color: var(--asm-fg);
 }
-.asm-eyebrow,
-.asm-section-title {
+.asm-eyebrow {
   font-size: 12px;
   letter-spacing: 0.06em;
   color: var(--asm-primary);
   font-weight: 500;
   text-transform: uppercase;
-}
-.asm-section-title .no {
-  color: var(--asm-danger);
-}
-.asm-section-title .sep {
-  color: var(--asm-fg-muted);
 }
 
 /* KPI 카드 — 가이드 8-3 */
@@ -1068,8 +772,3 @@ thead .asm-sticky-col {
   padding: 0;
   background: var(--asm-scrim);
 }
-
-/*
- * 사이드바 드로어 규칙은 위 .sidebar 로 옮겼습니다 — 화면 폭과 무관하게 동일하게
- * 동작하므로 더 이상 lg 미디어 쿼리로 나눌 필요가 없습니다.
- */

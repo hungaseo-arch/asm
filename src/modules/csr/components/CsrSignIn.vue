@@ -1,13 +1,11 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useCsrSessionStore } from '../stores/session'
-import { useIdentityStore } from '@/stores/identity'
+import { useCsrLang } from '../composables/useCsrLang'
 
 const session = useCsrSessionStore()
 // 로그인 전에도 표시 언어는 헤더 토글(= localStorage)을 따릅니다.
-const identity = useIdentityStore()
-const lang = computed(() => identity.lang)
-const t = (ko, id) => (lang.value === 'id' ? id : ko)
+const { t } = useCsrLang()
 const email = ref('')
 const password = ref('')
 const busy = ref(false)
@@ -47,8 +45,10 @@ async function submit() {
       <input
         v-model="email"
         type="email"
+        name="email"
         class="form-control"
         autocomplete="username"
+        spellcheck="false"
         required
         :disabled="busy"
       />
@@ -59,6 +59,7 @@ async function submit() {
       <input
         v-model="password"
         type="password"
+        name="password"
         class="form-control"
         autocomplete="current-password"
         required
@@ -115,7 +116,7 @@ async function submit() {
 }
 .note {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--asm-fg-muted);
 }
 </style>

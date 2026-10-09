@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <style>
 body{margin:0;background:#fff;font-family:"Noto Sans CJK KR","Noto Sans KR",sans-serif}
-#wrap{width:2600px;padding:10px}
+#wrap{width:2080px;padding:10px}
 svg{display:block}
 text{fill:#37474F}
 .lane-title{font-size:17px;font-weight:700}
@@ -16,11 +16,13 @@ text{fill:#37474F}
 </style></head><body><div id="wrap"><svg id="s" xmlns="http://www.w3.org/2000/svg"></svg></div>
 <script>
 const C={stroke:'#546E7A',proc:'#E3F2FD',dec:'#E8F5E9',start:'#ECEFF1',todo:'#FFF3E0',todoS:'#B07A2A',db:'#E3F2FD',laneA:'#F7F8F9',laneB:'#ECEFF1',bannerBg:'#FFF3E0'};
-const LANE_H=118,LX=150,W=2600,TOP=30,OFF=110;
+const LANE_H=118,LX=150,W=2600,TOP=30,OFF=135;
+const SCALE=0.8; // 다이어그램·글자 20% 축소(2026-10-09 요청) — 좌표계는 그대로, 출력 크기만 줄입니다.
 function draw(cfg){
   const svg=document.getElementById('s');
   const nL=cfg.lanes.length,H=TOP+nL*LANE_H+120;
-  svg.setAttribute('width',W);svg.setAttribute('height',H);
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('width',W*SCALE);svg.setAttribute('height',H*SCALE);
   let o=`<defs><marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,5 L0,10 z" fill="${C.stroke}"/></marker></defs>`;
   cfg.lanes.forEach((l,i)=>{const y=TOP+i*LANE_H;
     o+=`<rect x="20" y="${y}" width="${W-40}" height="${LANE_H}" fill="${i%2?C.laneB:C.laneA}" stroke="#CFD8DC"/>`;
@@ -84,7 +86,7 @@ draw({
   {id:'pop',k:'doc',lane:5,x:490,w:180,t:'Purchase Order Print|To supplier · PO No.|R4 · R5 · PDF'},
   {id:'bl',k:'ext',lane:5,x:1050,w:200,t:'B/L · Packing List · Invoice|Supplier shipping docs|Attached to Shipment'},
   {id:'pib',k:'ext',lane:5,x:1270,w:180,t:'PIB · SPPB|Customs · duty / tax receipt|Attached to Customs'},
-  {id:'sj',k:'ext',lane:5,x:1450,w:200,t:'Supplier Surat Jalan · Invoice|Local delivery basis|Attached to Receipt'},
+  {id:'sj',k:'ext',lane:5,x:1480,w:200,t:'Supplier Surat Jalan · Invoice|Local delivery basis|Attached to Receipt'},
   {id:'grn',k:'doc',lane:5,x:1870,w:200,t:'Receipt Report (GRN)|Received qty · defect · location|R10 · R11 · Print'},
   {id:'apn',k:'doc',lane:5,x:2100,w:200,t:'Supplier Invoice → AP|3-way match PO · Receipt · Invoice|R8 · SoD R4 ✗ R8'}
  ],
@@ -97,7 +99,7 @@ draw({
   {pts:[{n:'dec',dx:95},{n:'ldel',dx:-108}],label:'Local',at:[860,89]},
   {pts:[{n:'ppc',dy:-31},[830,207],{n:'pp',dx:-108}],label:'Prod. done',at:[830,250]},
   {pts:[{n:'pp',dy:31},{n:'shp',dy:-31}]},
-  {pts:[{n:'shp',dx:103},{n:'cus',dx:-103}],label:'ETD',at:[1160,308]},
+  {pts:[{n:'shp',dx:103},{n:'cus',dx:-103}],label:'ETD',at:[1160,282]},
   {pts:[{n:'cus',dx:103},[1450,325]],noarrow:true,label:'Cleared',at:[1410,310]},
   {pts:[{n:'ldel',dx:108},[1450,89],{n:'rc',dy:-31}],label:'Goods arrive',at:[1450,150]},
   {pts:[{n:'rc',dx:108},{n:'insp',dx:-98}]},
@@ -112,9 +114,9 @@ draw({
   {pts:[{n:'po',dy:31},{n:'pop',dy:-31}],dash:true,label:'Print after approval',at:[490,500]},
   {pts:[{n:'bl',dy:-31},{n:'shp',dy:31}],dash:true,label:'Docs attached',at:[1050,500]},
   {pts:[{n:'pib',dy:-31},{n:'cus',dy:31}],dash:true},
-  {pts:[{n:'sj',dy:-31},{n:'rc',dy:31}],dash:true,label:'Local basis',at:[1450,560]},
+  {pts:[{n:'sj',dy:-31},{n:'rc',dy:31}],dash:true,label:'Local basis',at:[1465,560]},
   {pts:[{n:'smi',dy:36},{n:'grn',dy:-31}],dash:true,label:'Every confirmed receipt',at:[1870,625]},
-  {pts:[{n:'apn',dy:-31},[2100,207],{n:'lc',dx:-108}],dash:true,label:'Invoice · payment after 3-way match',at:[2100,480]}
+  {pts:[{n:'apn',dy:-31},[2100,207],{n:'lc',dx:-108}],dash:true,label:'Invoice · payment after 3-way match',at:[2100,500]}
  ],
  banner:'RECEIVING — Import: PO → PPC → Payment Plan → Shipment → Customs (PIB) → Receipt · Local (MTI etc.): PO → Receipt, steps 3–6 skipped · Import Cost only after WH receipt confirm · SoD R4 ✗ R8 · R4 ✗ R10'
 });

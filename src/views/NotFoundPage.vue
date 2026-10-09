@@ -14,7 +14,7 @@ onMounted(() => {
       <p class="asm-eyebrow mb-2">ASM · ASCENDO MANAGEMENT SYSTEM</p>
       <h1>404</h1>
       <p class="lead-text">요청하신 페이지를 찾을 수 없습니다.</p>
-      <RouterLink class="btn btn-primary mt-3" to="/">Purchase PO로 이동</RouterLink>
+      <RouterLink class="btn btn-primary mt-3" to="/">CSR 목록으로 이동</RouterLink>
     </div>
   </div>
 </template>
@@ -28,7 +28,7 @@ onMounted(() => {
   padding: 24px;
 }
 h1 {
-  font-size: 56px;
+  font-size: 54px;
   font-weight: 700;
   margin: 0 0 6px;
   color: var(--asm-primary);

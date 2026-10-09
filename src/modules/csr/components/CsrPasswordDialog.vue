@@ -2,15 +2,13 @@
 import { computed, ref } from 'vue'
 import { authApi } from '../api/neon'
 import { useCsrSessionStore } from '../stores/session'
+import { useCsrLang } from '../composables/useCsrLang'
 import { useBodyScrollLock } from '@/composables/useBodyScrollLock'
 import { useEscapeToClose } from '@/composables/useEscapeToClose'
-import { useIdentityStore } from '@/stores/identity'
 
 const emit = defineEmits(['close'])
 const session = useCsrSessionStore()
-const identity = useIdentityStore()
-const lang = computed(() => identity.lang)
-const t = (ko, id) => (lang.value === 'id' ? id : ko)
+const { t } = useCsrLang()
 useBodyScrollLock()
 useEscapeToClose(() => emit('close'))
 
@@ -94,6 +92,7 @@ async function submit() {
           <input
             v-model="current"
             type="password"
+            name="current-password"
             class="form-control"
             autocomplete="current-password"
             required
@@ -105,6 +104,7 @@ async function submit() {
           <input
             v-model="next"
             type="password"
+            name="new-password"
             class="form-control"
             autocomplete="new-password"
             required
@@ -117,6 +117,7 @@ async function submit() {
           <input
             v-model="confirm"
             type="password"
+            name="confirm-password"
             class="form-control"
             autocomplete="new-password"
             required
@@ -171,7 +172,7 @@ form {
   font-weight: 500;
 }
 .field small {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--asm-fg-muted);
 }
 /* .field small 보다 특정성이 높아야 색이 이깁니다 (!important 금지 — CONTRIBUTING §3) */

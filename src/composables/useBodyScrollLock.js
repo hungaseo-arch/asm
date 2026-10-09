@@ -30,7 +30,7 @@ function unlock() {
  * @param {import('vue').MaybeRefOrGetter<boolean>} [active]
  *   생략하면 컴포넌트가 살아 있는 동안 잠급니다 — `v-if` 로 통째로 여닫는 모달용입니다.
  *   반응형 조건을 넘기면 그 값이 참인 동안만 잠급니다 — 늘 마운트된 채 열림 상태만
- *   바뀌는 드로어(AppSidebar·AppSummaryRail)는 이쪽을 씁니다.
+ *   바뀌는 요소에는 이쪽을 씁니다.
  */
 export function useBodyScrollLock(active) {
   if (active === undefined) {

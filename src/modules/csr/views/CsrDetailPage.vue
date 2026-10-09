@@ -1,6 +1,6 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { getDb, unwrap } from '../api/neon'
@@ -16,17 +16,17 @@ import {
   VERIFY_CODES,
   isInitialLegacy,
   mapLegacyVerifyStatus,
-  itStatusTitle,
   verifyCodeOf,
   verifyLabel,
   verifyTitle,
 } from '../status'
-import { todayWib } from '../dates'
+import { fmtTs, todayWib } from '../dates'
 import CsrStatusLegend from '../components/CsrStatusLegend.vue'
+import CsrStatusBadge from '../components/CsrStatusBadge.vue'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
-import { IT_STATUSES, OPTIONS, STATUS_TONE, canAdd, canEditColumn, isConfigured } from '../config'
-import { label, pathToEnglish, pickLang, pickPair, termLang, toneOf } from '../i18n'
+import { IT_STATUSES, OPTIONS, canAdd, canEditColumn, isConfigured } from '../config'
+import { issueTitle, label, pathToEnglish, pickLang, pickPair, termLang, toneOf } from '../i18n'
 import { isUploadConfigured, removeAttachment, uploadCapture } from '../api/upload'
 
 const route = useRoute()
@@ -126,6 +126,10 @@ const DICT = {
   result_required: ['결과를 선택하십시오', 'Pilih hasil verifikasi'],
   verif_added: ['검증 이력을 등록했습니다', 'Riwayat verifikasi tersimpan'],
   verif_failed: ['검증 이력 등록에 실패했습니다', 'Gagal menyimpan riwayat verifikasi'],
+  unsaved_warning: [
+    '저장하지 않은 입력 내용이 있습니다. 이 화면을 떠나시겠습니까?',
+    'Ada input yang belum disimpan. Tinggalkan halaman ini?',
+  ],
 }
 const T = (key) => DICT[key]?.[lang.value === 'id' ? 1 : 0] ?? key
 /**
@@ -141,17 +145,8 @@ const VF = (key, value) =>
       : V(value)
 /** 검증 결과 · 수용 여부 같은 정해진 값 — 용어 사전으로 토글 언어 표시. */
 const VT = (value) => termLang(value, lang.value)
-/** 속성 격자에서 배지로 보이는 항목 — IT상태 · IT수용여부 · 현업검증 (결정사항 색 구분). */
+/** 속성 격자에서 배지로 보이는 항목 — IT상태 · IT수용여부 · 현업검증 (결정사항 색 구분, CsrStatusBadge). */
 const BADGE_KEYS = new Set(['it_status', 'it_decision', 'verification_result'])
-const badgeTone = (key, value) =>
-  key === 'it_status' ? (STATUS_TONE[value] ?? 'neutral') : toneOf(key, value)
-/** 배지 툴팁 — "ko / id — 설명" (§C-2). 수용 여부는 툴팁 없음(용어 사전이 이미 언어를 가릅니다). */
-const badgeTitle = (key, value) =>
-  key === 'it_status'
-    ? itStatusTitle(value, lang.value)
-    : key === 'verification_result'
-      ? verifyTitle(value, lang.value)
-      : ''
 /**
  * 회신·검증의 자유 텍스트 — 014 이후 <col>_ko/_id 쌍. 토글 언어 → 반대쪽 → 원문 순으로 되돌아가므로
  * 014 전 DB 나 화면에서 새로 쓴 행(원문만 있음)도 그대로 보입니다.
@@ -196,8 +191,6 @@ const splitPaths = (v) =>
     .split(/\s+·\s+/)
     .map((x) => x.trim())
     .filter(Boolean)
-/** 제목 앞 "02. " 번호는 뗍니다 — 이슈번호가 바로 위에 따로 있습니다. 저장값은 원문 그대로. */
-const stripNo = (v) => (v ? String(v).replace(/^[0-9]+[.][ ]*/, '') : v)
 const me = computed(() => session.user?.id ?? session.user?.email ?? null)
 
 /**
@@ -385,6 +378,7 @@ const bodyOf = (key) => {
 }
 const mdEditing = ref(null)
 const mdDraft = reactive({ ko: '', id: '' })
+const mdSnapshot = reactive({ ko: '', id: '' })
 const mdDate = ref('')
 function startMd(key) {
   const i = issue.value
@@ -393,6 +387,8 @@ function startMd(key) {
   const legacyIsKo = /[가-힣]/.test(legacy)
   mdDraft.ko = i[key + '_ko'] ?? (legacyIsKo ? legacy : '')
   mdDraft.id = i[key + '_id'] ?? (legacyIsKo ? '' : legacy)
+  mdSnapshot.ko = mdDraft.ko
+  mdSnapshot.id = mdDraft.id
   if (key === 'business_answer_md') mdDate.value = i.business_answered_on ?? today()
   mdEditing.value = key
 }
@@ -518,6 +514,35 @@ async function submitVerification() {
   }
 }
 
+/*
+ * 저장하지 않은 입력 경고 — 편집·회신·검증·본문 폼 중 하나라도 원본과 달라진 채 열려
+ * 있으면 화면을 떠날 때(새로고침 포함) 한 번 더 묻습니다. 회신·검증 폼은 날짜가 기본값(오늘)
+ * 으로 미리 채워져 있어 그 칸만으로는 "손댔다"고 보지 않습니다.
+ */
+const isDirty = computed(() => {
+  if (editing.value && ALL_KEYS.some((k) => nullIfBlank(draft[k]) !== formValue(k))) return true
+  if (mdEditing.value && (mdDraft.ko !== mdSnapshot.ko || mdDraft.id !== mdSnapshot.id)) return true
+  if (
+    replyOpen.value &&
+    (replyDraft.decision || REPLY_TEXT_KEYS.some((k) => replyDraft[k + '_ko'] || replyDraft[k + '_id']))
+  )
+    return true
+  if (verifyOpen.value && (verifyDraft.result || verifyDraft.note_ko || verifyDraft.note_id))
+    return true
+  return false
+})
+function onBeforeUnload(e) {
+  if (!isDirty.value) return
+  e.preventDefault()
+  e.returnValue = ''
+}
+onMounted(() => window.addEventListener('beforeunload', onBeforeUnload))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
+onBeforeRouteLeave(() => {
+  if (isDirty.value && !window.confirm(T('unsaved_warning'))) return false
+  return true
+})
+
 /** 최신이 위로 — 회차가 쌓이면 아래로 스크롤해서 찾게 됩니다. */
 /**
  * 회신 카드에 보일 항목(2026-09-10 「내용 배치 재구성」). 빈 항목은 '—' 로 자리를 차지하던 것을
@@ -553,20 +578,27 @@ async function onPickFiles(event) {
     return
   }
   uploading.value = true
-  let ok = 0
+  // sortOrder 는 호출 전에 미리 고정합니다 — 병렬로 올리면 attachments.value.length 가
+  // 완료 순서대로 바뀌어 선택한 순서와 어긋납니다.
+  const baseOrder = attachments.value.length
   try {
-    for (const [i, f] of files.entries()) {
-      try {
-        const row = await uploadCapture(f, {
+    const results = await Promise.allSettled(
+      files.map((f, i) =>
+        uploadCapture(f, {
           issueId: issue.value.id,
           issueNo: issue.value.issue_no,
           uploadedBy: me.value,
-          sortOrder: attachments.value.length + i,
-        })
-        if (row) attachments.value = [...attachments.value, row]
+          sortOrder: baseOrder + i,
+        }),
+      ),
+    )
+    let ok = 0
+    for (const r of results) {
+      if (r.status === 'fulfilled') {
+        if (r.value) attachments.value = [...attachments.value, r.value]
         ok++
-      } catch (e) {
-        report(e, 'upload_failed')
+      } else {
+        report(r.reason, 'upload_failed')
       }
     }
     if (ok) toast.success(`${T('uploaded')} (${ok}/${files.length})`)
@@ -628,8 +660,18 @@ const onThumbError = (fileId) => {
  * 화면 이동에 닫습니다. Drive 원본이 필요하면 모달 안의 링크로.
  */
 const lightbox = ref(null)
-const openLightbox = (a) => (lightbox.value = a)
-const closeLightbox = () => (lightbox.value = null)
+const lightboxCloseBtn = ref(null)
+let lightboxTrigger = null
+const openLightbox = (a, event) => {
+  lightboxTrigger = event?.currentTarget ?? null
+  lightbox.value = a
+  nextTick(() => lightboxCloseBtn.value?.focus())
+}
+const closeLightbox = () => {
+  lightbox.value = null
+  lightboxTrigger?.focus()
+  lightboxTrigger = null
+}
 function onLightboxKey(e) {
   if (e.key === 'Escape' && lightbox.value) closeLightbox()
 }
@@ -646,7 +688,6 @@ watch(
     for (const k of Object.keys(thumbBust)) delete thumbBust[k]
   },
 )
-const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 </script>
 
 <template>
@@ -669,13 +710,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
         <header class="asm-panel head">
           <div class="head-top">
             <span class="issue-no">{{ issue.issue_no }}</span>
-            <span
-              class="asm-badge"
-              :class="`asm-badge--${STATUS_TONE[issue.it_status] ?? 'neutral'}`"
-              :title="itStatusTitle(issue.it_status, lang)"
-            >
-              {{ issue.it_status }}
-            </span>
+            <CsrStatusBadge kind="it_status" :value="issue.it_status" :lang="lang" />
             <span v-if="issue.is_archived" class="asm-badge asm-badge--neutral">{{
               T('archived')
             }}</span>
@@ -691,7 +726,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
           </div>
 
           <template v-if="!editing">
-            <h1>{{ stripNo(pickPair(issue.title_ko, issue.title_id, lang)) }}</h1>
+            <h1>{{ issueTitle(issue, lang) }}</h1>
             <!-- 값은 한 줄 고정 — 화면경로처럼 긴 값이 카드를 세로로 늘리던 것을 막습니다. 전체는 툴팁. -->
             <dl class="props">
               <!-- 화면경로는 2칸(대메뉴·중메뉴와 같은 행). 긴 경로는 칸 안에서 가로 스크롤. -->
@@ -703,13 +738,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                   </span>
                 </dd>
                 <dd v-else-if="BADGE_KEYS.has(f.key) && issue[f.key]">
-                  <span
-                    class="asm-badge"
-                    :class="`asm-badge--${badgeTone(f.key, issue[f.key])}`"
-                    :title="badgeTitle(f.key, issue[f.key])"
-                  >
-                    {{ VF(f.key, issue[f.key]) }}
-                  </span>
+                  <CsrStatusBadge :kind="f.key" :value="issue[f.key]" :lang="lang" />
                 </dd>
                 <dd v-else :title="VF(f.key, issue[f.key]) ?? ''">
                   {{ VF(f.key, issue[f.key]) ?? '—' }}
@@ -841,12 +870,14 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                   type="button"
                   class="shot-open"
                   :title="a.file_name ?? ''"
-                  @click="openLightbox(a)"
+                  @click="openLightbox(a, $event)"
                 >
                   <img
                     v-if="!thumbFailed(a.drive_file_id)"
                     :src="thumb(a.drive_file_id)"
                     :alt="a.caption ?? a.file_name ?? ''"
+                    width="320"
+                    height="200"
                     loading="lazy"
                     @error="onThumbError(a.drive_file_id)"
                   />
@@ -954,6 +985,8 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                   <input
                     v-model="replyDraft.replied_on"
                     type="date"
+                    name="replied_on"
+                    autocomplete="off"
                     class="form-control form-control-sm"
                     required
                   />
@@ -972,6 +1005,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                     <span>{{ T(k) }} · KO</span>
                     <textarea
                       v-model="replyDraft[k + '_ko']"
+                      :name="k + '_ko'"
                       class="form-control form-control-sm"
                       :rows="k === 'fix_plan' || k === 'note' ? 2 : 1"
                       lang="ko"
@@ -981,6 +1015,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                     <span>{{ T(k) }} · ID</span>
                     <textarea
                       v-model="replyDraft[k + '_id']"
+                      :name="k + '_id'"
                       class="form-control form-control-sm"
                       :rows="k === 'fix_plan' || k === 'note' ? 2 : 1"
                       lang="id"
@@ -1101,6 +1136,8 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 <input
                   v-model="verifyDraft.verified_on"
                   type="date"
+                  name="verified_on"
+                  autocomplete="off"
                   class="form-control form-control-sm"
                   required
                 />
@@ -1119,6 +1156,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 <span>{{ T('content') }} · KO</span>
                 <textarea
                   v-model="verifyDraft.note_ko"
+                  name="note_ko"
                   class="form-control form-control-sm"
                   rows="3"
                   lang="ko"
@@ -1128,6 +1166,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 <span>{{ T('content') }} · ID</span>
                 <textarea
                   v-model="verifyDraft.note_id"
+                  name="note_id"
                   class="form-control form-control-sm"
                   rows="3"
                   lang="id"
@@ -1163,14 +1202,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
                 <td class="nowrap">{{ v.verified_on }}</td>
                 <!-- 검증 시점의 IT 상태(036) — 로그로 역산되지 않는 이관분은 빈칸입니다. -->
                 <td class="nowrap">
-                  <span
-                    v-if="v.it_status_at"
-                    class="asm-badge"
-                    :class="`asm-badge--${badgeTone('it_status', v.it_status_at)}`"
-                    :title="badgeTitle('it_status', v.it_status_at)"
-                  >
-                    {{ V(v.it_status_at) }}
-                  </span>
+                  <CsrStatusBadge kind="it_status" :value="v.it_status_at" :lang="lang" />
                 </td>
                 <td class="nowrap">
                   <span
@@ -1252,7 +1284,12 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
               rel="noopener"
               >Drive ↗</a
             >
-            <button type="button" class="btn btn-sm btn-outline-secondary" @click="closeLightbox">
+            <button
+              ref="lightboxCloseBtn"
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              @click="closeLightbox"
+            >
               {{ T('close') }}
             </button>
           </div>
@@ -1277,7 +1314,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 .verif .legacy {
   display: block;
   margin-top: 2px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--asm-fg-muted);
 }
 .back {
@@ -1371,7 +1408,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   padding: 6px 10px;
 }
 .props dt {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--asm-fg-muted);
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1412,7 +1449,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 }
 .field > span,
 .pair-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--asm-fg-muted);
   display: flex;
@@ -1425,7 +1462,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 }
 .tag {
   font-style: normal;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--asm-primary);
@@ -1540,7 +1577,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   grid-column: 1 / -1;
 }
 .reply dt {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--asm-fg-muted);
@@ -1632,6 +1669,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   justify-content: center;
   padding: 24px;
   cursor: zoom-out;
+  overscroll-behavior: contain;
 }
 .lightbox-body {
   cursor: default;
@@ -1657,6 +1695,7 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
 }
 .lightbox-bar .fname {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1669,10 +1708,12 @@ const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--asm-fg-muted);
 }
 .shot .fname {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

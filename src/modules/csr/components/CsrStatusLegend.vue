@@ -8,12 +8,14 @@
  * 기본은 접힘 — 매번 보이면 표가 아래로 밀립니다. 바깥 클릭 · Esc 로 닫힘.
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { IT_STATUS, TRANSITION_RULES, VERIFY_STATUS, descOf, nameOf } from '../status'
+import { IT_STATUS, TRANSITION_RULES, VERIFY_STATUS } from '../status'
+import { useCsrLang } from '../composables/useCsrLang'
+import CsrStatusDefTable from './CsrStatusDefTable.vue'
 
 const props = defineProps({ lang: { type: String, default: 'id' } })
 const open = ref(false)
 const root = ref(null)
-const t = (ko, id) => (props.lang === 'id' ? id : ko)
+const { t } = useCsrLang(() => props.lang)
 
 // 노션 잔존값(On Hold · N/A)은 표준 4단계가 아니라 범례에서 뺍니다.
 const itRows = IT_STATUS.filter((s) =>
@@ -57,47 +59,23 @@ onBeforeUnmount(() => {
         {{ t('IT상태', 'Status IT') }}
         <small>it_status · {{ t('IT부서 관리', 'dikelola Tim IT') }}</small>
       </h3>
-      <table class="table asm-table">
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>{{ t('한국어', 'Bahasa Indonesia') }}</th>
-            <th>{{ t('설명', 'Keterangan') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="s in itRows" :key="s.value">
-            <td class="nowrap">
-              <span class="asm-badge" :class="`asm-badge--${s.tone}`">{{ s.code }}</span>
-            </td>
-            <td class="nowrap">{{ nameOf(s, lang) }}</td>
-            <td class="wrap">{{ descOf(s, lang) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <CsrStatusDefTable
+        :rows="itRows"
+        :lang="lang"
+        :name-label="t('한국어', 'Bahasa Indonesia')"
+        :desc-label="t('설명', 'Keterangan')"
+      />
 
       <h3>
         {{ t('현업검증', 'Hasil Verifikasi') }}
         <small>verification_result · {{ t('총괄팀 관리', 'dikelola Tim Umum') }}</small>
       </h3>
-      <table class="table asm-table">
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>{{ t('한국어', 'Bahasa Indonesia') }}</th>
-            <th>{{ t('설명', 'Keterangan') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="s in VERIFY_STATUS" :key="s.code">
-            <td class="nowrap">
-              <span class="asm-badge" :class="`asm-badge--${s.tone}`">{{ s.code }}</span>
-            </td>
-            <td class="nowrap">{{ nameOf(s, lang) }}</td>
-            <td class="wrap">{{ descOf(s, lang) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <CsrStatusDefTable
+        :rows="VERIFY_STATUS"
+        :lang="lang"
+        :name-label="t('한국어', 'Bahasa Indonesia')"
+        :desc-label="t('설명', 'Keterangan')"
+      />
 
       <h3>{{ t('전환 규칙', 'Aturan transisi') }}</h3>
       <ul class="rules">
@@ -130,13 +108,6 @@ onBeforeUnmount(() => {
   font-weight: 500;
   color: var(--asm-fg-muted);
   margin-left: 6px;
-}
-.legend-panel table {
-  margin-bottom: 4px;
-}
-.legend-panel td.wrap {
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 .rules {
   margin: 0;

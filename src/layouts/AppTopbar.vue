@@ -1,13 +1,10 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { matchPath, navGroups, navLabel, topNav } from '@/config/navigation'
-import { useSidebarSummary } from '@/composables/useSummaryCards'
+import { matchPath, navItems, navLabel } from '@/config/navigation'
 import { useIdentityStore } from '@/stores/identity'
+import { useCsrLang } from '@/modules/csr/composables/useCsrLang'
 import CsrLangToggle from '@/modules/csr/components/CsrLangToggle.vue'
-const emit = defineEmits(['open-sidebar', 'open-summary'])
-/** 요약 드로어는 이번 화면이 요약 카드를 등록했을 때만 열 수 있습니다. */
-const { cards } = useSidebarSummary()
 const route = useRoute()
 const router = useRouter()
 /**
@@ -18,7 +15,7 @@ const router = useRouter()
 const identity = useIdentityStore()
 const who = computed(() => identity.display)
 /** 계정 메뉴 문구 — CSR 국기 토글과 같은 언어 하나만(2026-09-10 「한국어·인니어 혼용」). */
-const t = (ko, id) => (identity.lang === 'id' ? id : ko)
+const { t } = useCsrLang()
 /** 언어 토글 — CSR 화면(/csr 이하) 전부에서 헤더에 한 번(2026-09-14 요청). 값은 identity.lang 하나. */
 const onCsr = computed(() => route.path === '/csr' || route.path.startsWith('/csr/'))
 /** 메뉴 라벨 — 표시 언어 쪽. */
@@ -29,59 +26,16 @@ function onAccountClick() {
   if (who.value.placeholder) router.push('/csr/dashboard')
   else accountOpen.value = !accountOpen.value
 }
-const isActive = (item) => {
-  const prefixes = item.match ?? (item.to ? [item.to] : [])
-  return prefixes.some((prefix) => matchPath(route.path, prefix))
-}
-
-/*
- * 대분류 드롭다운 (Top-nav dropdown / Menu tarik-turun)
- *
- * 2026-09-10 요청 순서: 대분류 클릭 → 우측 드로어(하위메뉴) → **드롭다운**으로 교체.
- * 드로어는 본문을 가리고 두 번 움직여야 했습니다(열기 → 고르기). 드롭다운은 대분류 바로
- * 아래에 하위메뉴가 펼쳐져 한 번에 고릅니다. 우측 드로어(AppSidebar)는 992px 미만에서
- * 대분류가 숨겨질 때 ☰ 로만 씁니다.
- *
- * 열림은 클릭 토글, 하나가 열려 있으면 다른 대분류에 올리기만 해도 옮겨 갑니다(메뉴바
- * 관례). 바깥 클릭·Esc·화면 이동에 닫힙니다 — 계정 메뉴와 같은 리스너를 씁니다.
- */
-const navOpen = ref(null) // 열린 대분류 key
-const navRef = ref(null)
-/*
- * 드롭다운은 position:fixed — .topnav 가 overflow-x:auto(좁은 폭 스크롤용)라 absolute 로 두면
- * 잘려 보이지 않습니다(2026-09-10 실측). 헤더가 sticky 라 버튼 자리는 스크롤해도 그대로이므로
- * 열 때 버튼 위치를 한 번 재면 됩니다.
- */
-const navPos = ref({ left: 0, top: 0 })
-function place(button) {
-  const r = button.getBoundingClientRect()
-  navPos.value = { left: r.left, top: r.bottom + 6 }
-}
-const groupItems = (key) => navGroups.find((g) => g.key === key)?.items ?? []
-function toggleGroup(item, event) {
-  place(event.currentTarget)
-  navOpen.value = navOpen.value === item.key ? null : item.key
-}
-function hoverGroup(item, event) {
-  if (!navOpen.value || navOpen.value === item.key) return
-  place(event.currentTarget.querySelector('.nav-item'))
-  navOpen.value = item.key
-}
-function goItem(sub) {
-  navOpen.value = null
-  router.push(sub.to)
-}
 /**
- * 하위메뉴 활성 — 같은 그룹 안에서 가장 긴 경로 하나만. '/csr' 과 '/csr/dashboard' 처럼 접두가 겹치는 항목이
+ * 메뉴 활성 — 가장 긴 경로 하나만. '/csr' 과 '/csr/dashboard' 처럼 접두가 겹치는 항목이
  * 둘 다 켜지던 것(2026-09-14 CSR 그룹 신설 때 실측)을 막습니다.
  */
-const isItemActive = (sub) => {
-  if (!sub.to || !matchPath(route.path, sub.to)) return false
-  const group = navGroups.find((g) => g.items.includes(sub))
-  const best = (group?.items ?? [])
+const isActive = (item) => {
+  if (!item.to || !matchPath(route.path, item.to)) return false
+  const best = navItems
     .filter((it) => it.to && matchPath(route.path, it.to))
     .sort((x, y) => y.to.length - x.to.length)[0]
-  return best === sub
+  return best === item
 }
 
 /*
@@ -95,12 +49,10 @@ const accountOpen = ref(false)
 const accountMenu = ref(null)
 function onPointerdown(event) {
   if (accountOpen.value && !accountMenu.value?.contains(event.target)) accountOpen.value = false
-  if (navOpen.value && !navRef.value?.contains(event.target)) navOpen.value = null
 }
 function onKeydown(event) {
   if (event.key === 'Escape') {
     accountOpen.value = false
-    navOpen.value = null
   }
 }
 onMounted(() => {
@@ -115,7 +67,6 @@ watch(
   () => route.path,
   () => {
     accountOpen.value = false
-    navOpen.value = null
   },
 )
 function changePassword() {
@@ -148,67 +99,42 @@ async function signOut() {
         title="CSR 대시보드 (Dasbor)"
         @click="router.push('/csr/dashboard')"
       >
-        <img src="/img/ascendo-logo-horizontal.png" alt="ASCENDO" class="brand-logo" />
-        <img src="/img/ascendo-symbol.png" alt="ASCENDO" class="brand-symbol" />
+        <img
+          src="/img/ascendo-logo-horizontal.png"
+          alt="ASCENDO"
+          class="brand-logo"
+          width="141"
+          height="28"
+        />
+        <img
+          src="/img/ascendo-symbol.png"
+          alt="ASCENDO"
+          class="brand-symbol"
+          width="28"
+          height="28"
+        />
       </button>
+      <span class="brand-title">ASM CSR관리</span>
 
       <!-- 화면 제목은 본문 상단으로 옮겼습니다(DefaultLayout, 2026-09-10 요청) — 헤더는 로고·대분류·계정만. -->
     </div>
 
-    <!-- 상단 메뉴 — 대분류. 클릭하면 바로 아래에 하위메뉴 드롭다운이 펼쳐집니다. -->
-    <nav ref="navRef" class="topnav d-none d-lg-flex" aria-label="Primary">
-      <div
-        v-for="item in topNav"
-        :key="item.key"
-        class="nav-group"
-        @mouseenter="hoverGroup(item, $event)"
+    <!-- 상단 메뉴 — 대분류가 CSR 하나뿐이라 하위메뉴를 곧장 나열합니다(드롭다운 없음). 드로어를 없앤 뒤(2026-10-09) 모든 화면 폭에서 항상 보입니다 — 좁은 화면에서는 가로 스크롤. -->
+    <nav class="topnav" aria-label="Primary">
+      <button
+        v-for="item in navItems"
+        :key="item.label"
+        type="button"
+        class="nav-item"
+        :class="{ active: isActive(item) }"
+        @click="router.push(item.to)"
       >
-        <button
-          type="button"
-          class="nav-item"
-          :class="{ active: isActive(item), open: navOpen === item.key }"
-          aria-haspopup="menu"
-          :aria-expanded="navOpen === item.key"
-          @click="toggleGroup(item, $event)"
-        >
-          {{ nav(item) }}
-        </button>
-        <!-- 드롭다운 규격 — 계정 메뉴와 같음(가이드 7-2: White · 1px 테두리 · radius-md · shadow-md) -->
-        <div
-          v-if="navOpen === item.key"
-          class="dropdown-menu nav-dropdown show"
-          role="menu"
-          :style="{ left: navPos.left + 'px', top: navPos.top + 'px' }"
-        >
-          <button
-            v-for="sub in groupItems(item.key)"
-            :key="sub.label"
-            type="button"
-            class="dropdown-item"
-            :class="{ 'is-active': isItemActive(sub) }"
-            role="menuitem"
-            @click="goItem(sub)"
-          >
-            <span class="flex-grow-1">{{ nav(sub) }}</span>
-            <em v-if="sub.badge">{{ sub.badge }}</em>
-          </button>
-        </div>
-      </div>
+        {{ nav(item) }}
+      </button>
     </nav>
 
     <!-- 우측 액션 -->
     <div class="top-actions">
-      <!-- 요약 — 이번 화면이 카드를 등록했을 때만. 좌측 요약 드로어를 엽니다. -->
-      <button
-        v-if="cards.length"
-        type="button"
-        class="asm-icon-btn is-borderless"
-        aria-label="요약 열기"
-        title="요약 (Summary)"
-        @click="$emit('open-summary')"
-      >
-        <LayoutDashboard :size="18" />
-      </button>
       <!-- 언어 토글(국기) — CSR 화면 전부. 대시보드·목록에 따로 두던 것을 여기로 모았습니다. -->
       <CsrLangToggle v-if="onCsr" v-model="lang" class="me-1" />
 
@@ -230,6 +156,7 @@ async function signOut() {
           class="profile"
           :class="{ 'is-placeholder': who.placeholder }"
           :title="who.email ?? ''"
+          :aria-label="who.name"
           :aria-haspopup="who.placeholder ? undefined : 'menu'"
           :aria-expanded="accountOpen"
           @click="onAccountClick"
@@ -253,20 +180,6 @@ async function signOut() {
           </button>
         </div>
       </div>
-
-      <!--
-        메뉴 드로어 토글 — 992px 이상에서는 대분류 드롭다운이 있어 없앴습니다.
-        992px 미만에서는 상단 대분류가 숨겨져 이 버튼이 유일한 진입로라 남깁니다.
-      -->
-      <button
-        type="button"
-        class="asm-icon-btn d-lg-none"
-        aria-label="메뉴 열기"
-        title="메뉴 (Menu)"
-        @click="$emit('open-sidebar', null)"
-      >
-        <Menu :size="18" />
-      </button>
     </div>
   </header>
 </template>
@@ -332,6 +245,21 @@ async function signOut() {
  * 구분선은 border-left 로 그려 로고 영역(BS 02 최소 공간규정)을 침범하지 않도록
  * 12px 씩 띄웁니다.
  */
+.brand-title {
+  flex: none;
+  padding-left: 12px;
+  margin-left: 12px;
+  border-left: 1px solid var(--asm-border);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--asm-fg);
+  white-space: nowrap;
+}
+@media (max-width: 639.98px) {
+  .brand-title {
+    display: none;
+  }
+}
 
 /*
  * 가이드 7-2 — 14px / weight 500 / 패딩 6px 12px / radius-md / 항목 간 4px.
@@ -376,59 +304,10 @@ async function signOut() {
     color 0.15s;
 }
 /* 비활성 hover — 배경 secondary(가이드 7-2) */
-.topnav .nav-item:hover,
-.topnav .nav-item.open {
+.topnav .nav-item:hover {
   background: var(--asm-secondary);
 }
-.nav-group {
-  position: relative;
-  flex: none;
-}
-/*
- * 대분류 드롭다운 — 대분류 바로 아래, 왼쪽 정렬(위치는 스크립트가 fixed 좌표로 넣습니다).
- * 항목은 드로어의 .sub-item 과 같은 13px · hover secondary · 활성 primary-10.
- */
-.nav-dropdown {
-  display: block;
-  position: fixed;
-  margin: 0;
-  z-index: 1050;
-  min-width: 240px;
-  padding: 6px;
-}
-.nav-dropdown .dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  padding: 8px 10px;
-  border-radius: var(--asm-radius-sm);
-  font-size: 13px;
-  color: var(--asm-fg);
-  white-space: nowrap;
-}
-.nav-dropdown .dropdown-item:hover {
-  background: var(--asm-secondary);
-}
-.nav-dropdown .dropdown-item.is-active {
-  background: var(--asm-primary-10);
-  color: var(--asm-primary);
-  font-weight: 700;
-}
-.nav-dropdown .dropdown-item em {
-  font-style: normal;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--asm-primary);
-  background: var(--asm-primary-10);
-  padding: 1px 5px;
-  border-radius: var(--asm-radius-sm);
-}
-/* 활성 대분류는 accent-10 배경 + primary 글자 + 700 (가이드 7-2) */
+/* 활성 메뉴는 accent-10 배경 + primary 글자 + 700 (가이드 7-2) */
 .topnav .nav-item.active,
 .topnav .nav-item.active:hover {
   background: var(--asm-primary-10);
@@ -446,6 +325,7 @@ async function signOut() {
   height: 100%;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   padding: 0 20px;
 }
@@ -509,7 +389,7 @@ async function signOut() {
   font-size: 13px;
 }
 .account-head small {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--asm-fg-muted);
   overflow-wrap: anywhere;
 }

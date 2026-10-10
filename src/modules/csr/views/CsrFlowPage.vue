@@ -48,8 +48,14 @@ const DIAGRAMS = [
 
 const current = ref(DIAGRAMS[0].key)
 const active = computed(() => DIAGRAMS.find((d) => d.key === current.value) ?? DIAGRAMS[0])
-/** public/ 자산은 vite base(/asm/) 아래에 그대로 놓입니다 — 하위 경로 배포에서도 맞게. */
-const src = computed(() => `${import.meta.env.BASE_URL}csr/flow/${active.value.file}`)
+/**
+ * public/ 자산은 vite base(/asm/) 아래에 그대로 놓입니다 — 하위 경로 배포에서도 맞게.
+ * `?v=` 는 빌드 스탬프(vite.config.js) — public/ 은 해시가 안 붙어 도면을 바꿔 끼워도
+ * 브라우저가 옛 파일을 계속 씁니다. 배포할 때마다 값이 바뀌어 새로 받게 합니다.
+ */
+const src = computed(
+  () => `${import.meta.env.BASE_URL}csr/flow/${active.value.file}?v=${__BUILD_ID__}`,
+)
 
 const frame = ref(null)
 const stage = ref(null)

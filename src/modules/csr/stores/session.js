@@ -17,6 +17,44 @@ import { useIdentityStore } from '@/stores/identity'
  * 등록되지 않은 사용자에게는 목록이 통째로 비어 나오므로, 빈 목록과 구분해
  * 안내를 띄우려고 역할을 별도로 조회합니다.
  */
+/**
+ * 세션 사용자 조회 — 일시 오류에 견디도록 재시도합니다(2026-10-23 「로그인 불안정」).
+ *
+ * 실측: 서버 세션(get-session · token)은 살아 있는데 화면 진입 순간의 getSession() 한 번이
+ * 사용자 없이 돌아오면, 탭은 새로고침 전까지 '로그인이 필요합니다'로 남았습니다. 같은 브라우저의
+ * 다른 탭은 동시에 정상이어서 서버가 아니라 화면 쪽 판정 문제였습니다.
+ *
+ * 1) better-auth 클라이언트 getSession() → 2) 엔드포인트 직접 호출 순으로 시도하고,
+ * 직접 호출이 200 으로 '세션 없음(null)'을 돌려주면 그때만 로그아웃으로 확정합니다.
+ * 네트워크 오류 · 5xx · 429 는 최대 3회까지 간격을 늘려 다시 묻습니다.
+ */
+async function fetchSessionUser() {
+  const client = authApi()
+  if (!client) return null
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      // ※ 옵셔널 호출(?.()) 금지 — signOut 주석 참고(2026-09-11).
+      const session = await client.getSession()
+      const u = session?.data?.user ?? session?.user ?? null
+      if (u) return u
+    } catch {
+      // 아래 직접 호출로 넘어갑니다.
+    }
+    try {
+      const res = await fetch(`${AUTH_URL}/get-session`, { credentials: 'include' })
+      if (res.ok) {
+        const body = await res.json().catch(() => null)
+        if (body?.user) return body.user
+        return null // 서버가 정상 응답으로 '세션 없음'을 알렸습니다 — 진짜 로그아웃 상태입니다.
+      }
+    } catch {
+      // 네트워크 오류 — 다시 시도합니다.
+    }
+    await new Promise((r) => setTimeout(r, 500 * (attempt + 1)))
+  }
+  return null
+}
+
 export const useCsrSessionStore = defineStore('csr-session', () => {
   const identity = useIdentityStore()
   // 헤더 계정 메뉴에서 로그아웃할 수 있도록 동작을 넘겨 둡니다.
@@ -43,9 +81,9 @@ export const useCsrSessionStore = defineStore('csr-session', () => {
     loading.value = true
     error.value = ''
     try {
-      const session = await authApi()?.getSession()
-      // Better Auth 는 { data, error } 또는 세션 객체를 직접 돌려줍니다 — 둘 다 받습니다.
-      user.value = session?.data?.user ?? session?.user ?? null
+      // 세션 확인이 한 번 실패하면 그대로 '로그인이 필요합니다'로 굳던 문제(2026-10-23 「로그인 불안정」) —
+      // 일시 오류는 재시도하고, 서버가 '세션 없음'이라고 분명히 답한 경우에만 로그아웃으로 봅니다.
+      user.value = await fetchSessionUser()
 
       if (!user.value) {
         role.value = null

@@ -32,7 +32,7 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
     <section class="docs">
       <div class="head">
         <div class="page-titles">
-          <h1 class="page-title">{{ t(['핵심문서 10종', 'Dokumen Inti']) }}</h1>
+          <h1 class="page-title">{{ t(['핵심문서', 'Dokumen Inti']) }}</h1>
           <p class="page-sub mb-0">
             {{
               t([

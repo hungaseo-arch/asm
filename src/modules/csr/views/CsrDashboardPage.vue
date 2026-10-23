@@ -409,6 +409,12 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 .sec {
   padding: 20px 24px;
 }
+/* 좁은 화면 — 패널 안쪽 여백을 본문 여백(16px)에 맞춰 표·글 폭을 넓힙니다(2026-10-23 반응형 점검). */
+@media (max-width: 767.98px) {
+  .sec {
+    padding: 16px;
+  }
+}
 .sec > h2 {
   margin: 0 0 12px;
   display: flex;
@@ -457,7 +463,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 }
 .two-col {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
   gap: 16px;
 }
 .list {
@@ -469,7 +475,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 }
 .list li {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 8px 4px;
@@ -515,7 +521,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 /* 두 열 — 좁은 화면(두 표가 나란히 못 서는 폭)에서는 자동으로 한 열로 접힙니다. */
 .pic-cols {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
   gap: 0 32px;
   align-items: start;
 }

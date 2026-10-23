@@ -653,6 +653,12 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
 .sec {
   padding: 20px 24px;
 }
+/* 좁은 화면 — 패널 안쪽 여백을 본문 여백(16px)에 맞춰 표·글 폭을 넓힙니다(2026-10-23 반응형 점검). */
+@media (max-width: 767.98px) {
+  .sec {
+    padding: 16px;
+  }
+}
 .sec-head {
   display: flex;
   align-items: center;

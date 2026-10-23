@@ -1435,7 +1435,7 @@ watch(
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 10px 16px;
 }
 .field {
@@ -1490,6 +1490,12 @@ watch(
 .sec {
   padding: 20px 24px;
 }
+/* 좁은 화면 — 패널 안쪽 여백을 본문 여백(16px)에 맞춰 표·글 폭을 넓힙니다(2026-10-23 반응형 점검). */
+@media (max-width: 767.98px) {
+  .sec {
+    padding: 16px;
+  }
+}
 .sec-head {
   display: flex;
   align-items: center;
@@ -1529,7 +1535,7 @@ watch(
 /* 본문 편집은 KO·ID 나란히 — 한쪽만 고치고 다른 쪽을 잊지 않도록(TEXT_PAIRS 와 같은 이유). */
 .md-pair {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 10px 16px;
 }
 .md-edit {
@@ -1563,7 +1569,7 @@ watch(
 .reply-body {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 8px 16px;
 }
 /* 라벨과 값의 구분(2026-09-10 요청) — 속성 격자와 같은 칸 모양: 옅은 바탕 · 왼쪽 띠 · 라벨 작고 굵게 · 값 본문색 */

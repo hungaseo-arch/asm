@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { matchPath, navItems, navLabel } from '@/config/navigation'
+import { activeLeaf, adminItem, navItems, navLabel } from '@/config/navigation'
 import { useIdentityStore } from '@/stores/identity'
 import { useCsrLang } from '@/modules/csr/composables/useCsrLang'
 import CsrLangToggle from '@/modules/csr/components/CsrLangToggle.vue'
@@ -27,16 +27,20 @@ function onAccountClick() {
   else accountOpen.value = !accountOpen.value
 }
 /**
- * 메뉴 활성 — 가장 긴 경로 하나만. '/csr' 과 '/csr/dashboard' 처럼 접두가 겹치는 항목이
- * 둘 다 켜지던 것(2026-09-14 CSR 그룹 신설 때 실측)을 막습니다.
+ * 메뉴 활성 — 가장 긴 경로 하나만(activeLeaf). 그룹(자료실)은 하위 항목 중 하나가
+ * 켜져 있으면 함께 켜집니다.
  */
-const isActive = (item) => {
-  if (!item.to || !matchPath(route.path, item.to)) return false
-  const best = navItems
-    .filter((it) => it.to && matchPath(route.path, it.to))
-    .sort((x, y) => y.to.length - x.to.length)[0]
-  return best === item
-}
+const current = computed(() => activeLeaf(route.path))
+const isActive = (item) =>
+  item.children ? item.children.includes(current.value) : item === current.value
+
+/** 관리 메뉴는 admin 만 — 다른 사람에겐 눌러 봐야 막힌 화면뿐이라 아예 숨깁니다. */
+const isAdmin = computed(() => identity.role === 'admin')
+
+/** 자료실 드롭다운 — 계정 메뉴와 같은 방식(Vue 상태 · 바깥 클릭 · Esc · 화면 이동 시 닫힘). */
+const groupOpen = ref(null)
+const groupMenu = ref(null)
+const toggleGroup = (item) => (groupOpen.value = groupOpen.value === item.label ? null : item.label)
 
 /*
  * 계정 메뉴 (Account menu / Menu akun) — 아바타를 누르면 열립니다(2026-09-10 요청).
@@ -49,10 +53,13 @@ const accountOpen = ref(false)
 const accountMenu = ref(null)
 function onPointerdown(event) {
   if (accountOpen.value && !accountMenu.value?.contains(event.target)) accountOpen.value = false
+  if (groupOpen.value && !groupMenu.value?.some((el) => el.contains(event.target)))
+    groupOpen.value = null
 }
 function onKeydown(event) {
   if (event.key === 'Escape') {
     accountOpen.value = false
+    groupOpen.value = null
   }
 }
 onMounted(() => {
@@ -67,6 +74,7 @@ watch(
   () => route.path,
   () => {
     accountOpen.value = false
+    groupOpen.value = null
   },
 )
 function changePassword() {
@@ -119,18 +127,52 @@ async function signOut() {
       <!-- 화면 제목은 본문 상단으로 옮겼습니다(DefaultLayout, 2026-09-10 요청) — 헤더는 로고·대분류·계정만. -->
     </div>
 
-    <!-- 상단 메뉴 — 대분류가 CSR 하나뿐이라 하위메뉴를 곧장 나열합니다(드롭다운 없음). 드로어를 없앤 뒤(2026-10-09) 모든 화면 폭에서 항상 보입니다 — 좁은 화면에서는 가로 스크롤. -->
+    <!--
+      상단 메뉴 — 대시보드 · 개선요청 · 자료실▾(2026-10-23 개편). 항목은 RouterLink 라
+      새 탭으로 열 수 있고 현재 화면에 aria-current 가 붙습니다. 640px 미만은 아이콘만.
+    -->
     <nav class="topnav" aria-label="Primary">
-      <button
-        v-for="item in navItems"
-        :key="item.label"
-        type="button"
-        class="nav-item"
-        :class="{ active: isActive(item) }"
-        @click="router.push(item.to)"
-      >
-        {{ nav(item) }}
-      </button>
+      <template v-for="item in navItems" :key="item.label">
+        <div v-if="item.children" ref="groupMenu" class="nav-group">
+          <button
+            type="button"
+            class="nav-item"
+            :class="{ active: isActive(item) }"
+            :title="nav(item)"
+            aria-haspopup="menu"
+            :aria-expanded="groupOpen === item.label"
+            @click="toggleGroup(item)"
+          >
+            <component :is="item.icon" :size="14" />
+            <span class="nav-text">{{ nav(item) }}</span>
+            <ChevronDown :size="10" class="nav-caret" />
+          </button>
+          <div v-if="groupOpen === item.label" class="dropdown-menu show" role="menu">
+            <RouterLink
+              v-for="child in item.children"
+              :key="child.to"
+              :to="child.to"
+              class="dropdown-item"
+              :class="{ active: isActive(child) }"
+              role="menuitem"
+            >
+              <component :is="child.icon" :size="14" />
+              <span>{{ nav(child) }}</span>
+              <span v-if="child.badge" class="nav-badge">{{ child.badge }}</span>
+            </RouterLink>
+          </div>
+        </div>
+        <RouterLink
+          v-else
+          :to="item.to"
+          class="nav-item"
+          :class="{ active: isActive(item) }"
+          :title="nav(item)"
+        >
+          <component :is="item.icon" :size="14" />
+          <span class="nav-text">{{ nav(item) }}</span>
+        </RouterLink>
+      </template>
     </nav>
 
     <!-- 우측 액션 -->
@@ -141,7 +183,7 @@ async function signOut() {
       <!--
         가이드 7-2 우측 배치 — 역할 pill → 아바타 → 이름. CSR 로그인이 있으면 그 계정의
         이름·소속을, 없으면 자리표시자를 보여 줍니다(identity.display.placeholder).
-        역할 pill 은 1,400px 이상에서만(xxl) — 대분류 8개와 자리를 다투기 때문입니다.
+        역할 pill 은 1,400px 이상에서만(xxl) — 좁은 화면에서 메뉴와 자리를 다투지 않게 합니다.
       -->
       <span
         v-if="who.role"
@@ -172,6 +214,15 @@ async function signOut() {
             <small>{{ who.email }}</small>
             <span v-if="who.role" class="asm-pill">{{ who.role }}</span>
           </div>
+          <RouterLink
+            v-if="isAdmin"
+            :to="adminItem.to"
+            class="dropdown-item"
+            :class="{ active: isActive(adminItem) }"
+            role="menuitem"
+          >
+            {{ nav(adminItem) }}
+          </RouterLink>
           <button type="button" class="dropdown-item" role="menuitem" @click="changePassword">
             {{ t('비밀번호 변경', 'Ubah kata sandi') }}
           </button>
@@ -265,30 +316,23 @@ async function signOut() {
  * 가이드 7-2 — 14px / weight 500 / 패딩 6px 12px / radius-md / 항목 간 4px.
  * 헤더가 3열 그리드(auto 1fr auto)라 이 nav 는 가운데 열 전체(남는 공간)를 차지하고,
  * justify-content:center 로 그 안에서 메뉴 자체를 중앙 정렬합니다.
+ * 메뉴가 3개로 줄어(2026-10-23) 가로 스크롤을 걷어냈습니다 — overflow 를 두면 자료실
+ * 드롭다운이 nav 상자 안에서 잘립니다.
  */
 .topnav {
   grid-column: 2;
+  display: flex;
   justify-content: center;
-  /*
-   * safe center — 항목이 넘칠 때는 중앙 정렬을 포기하고 시작(왼쪽)에 붙입니다.
-   * 그냥 center 로 두면 넘친 만큼이 양쪽으로 밀려나, 왼쪽으로 밀린 첫 대분류는
-   * 스크롤로도 되돌릴 수 없어 잘린 채 남습니다(1,280px 에서 'PURCHASING' 이 잘리던
-   * 증상). 미지원 브라우저는 바로 위 center 로 떨어집니다.
-   */
-  justify-content: safe center;
   align-items: center;
   gap: 4px;
   min-width: 0;
-  /* 대분류 8개가 두 줄로 접혀 헤더 56px 을 깨뜨리지 않도록 가로로 흐르게 둡니다. */
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.topnav::-webkit-scrollbar {
-  display: none;
 }
 .topnav .nav-item {
   height: 36px;
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
   border: 0;
   background: transparent;
@@ -297,15 +341,19 @@ async function signOut() {
   color: var(--asm-nav-fg);
   font-size: 13px;
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  text-decoration: none;
   transition:
     background-color 0.15s,
     color 0.15s;
 }
 /* 비활성 hover — 배경 secondary(가이드 7-2) */
-.topnav .nav-item:hover {
+.topnav .nav-item:hover,
+.topnav .nav-item[aria-expanded='true'] {
   background: var(--asm-secondary);
+}
+.topnav .nav-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--asm-primary-40);
 }
 /* 활성 메뉴는 accent-10 배경 + primary 글자 + 700 (가이드 7-2) */
 .topnav .nav-item.active,
@@ -313,6 +361,53 @@ async function signOut() {
   background: var(--asm-primary-10);
   color: var(--asm-primary);
   font-weight: 700;
+}
+.nav-caret {
+  opacity: 0.6;
+}
+/* 자료실 드롭다운 — 계정 메뉴와 같은 규격(가이드 7-2). */
+.nav-group {
+  position: relative;
+}
+.nav-group .dropdown-menu {
+  display: block;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  margin: 0;
+  min-width: 200px;
+}
+.nav-group .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-group .dropdown-item.active,
+.account .dropdown-item.active {
+  background: var(--asm-primary-10);
+  color: var(--asm-primary);
+  font-weight: 600;
+}
+.nav-badge {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--asm-secondary);
+  color: var(--asm-fg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+/* 모바일(< 640px) — 아이콘만. 라벨은 title 툴팁으로 남습니다. */
+@media (max-width: 639.98px) {
+  .topnav .nav-item {
+    padding: 6px 10px;
+  }
+  .nav-text,
+  .nav-caret {
+    display: none;
+  }
 }
 
 /*
@@ -376,6 +471,7 @@ async function signOut() {
   background: transparent;
   text-align: left;
   white-space: nowrap;
+  text-decoration: none;
 }
 .account-head {
   display: flex;

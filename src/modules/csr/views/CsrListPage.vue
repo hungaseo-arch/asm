@@ -486,6 +486,7 @@ watch(
 }
 .search {
   width: 260px;
+  max-width: 100%;
 }
 .table-toolbar {
   display: flex;

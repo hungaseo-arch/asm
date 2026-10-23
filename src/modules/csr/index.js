@@ -43,7 +43,14 @@ export const csrRoutes = [
     path: '/csr/docs/:docNo?',
     name: 'csr-docs',
     component: () => import('./views/CsrCoreDocsPage.vue'),
-    meta: { requiresAuth: false, title: '핵심문서' },
+    meta: { requiresAuth: false, title: '핵심문서', docSet: 'docs' },
+  },
+  {
+    // 판매서류 표준양식 5종 — 핵심문서와 같은 화면을 docSet 만 바꿔 씁니다(2026-10-23 요청).
+    path: '/csr/forms/:docNo?',
+    name: 'csr-forms',
+    component: () => import('./views/CsrCoreDocsPage.vue'),
+    meta: { requiresAuth: false, title: '판매서류 표준양식', docSet: 'forms' },
   },
   {
     // 공지 화면은 없앴습니다(2026-09-14). 남은 북마크가 이슈번호 'notices' 로 잡혀
@@ -53,7 +60,7 @@ export const csrRoutes = [
   },
   {
     // 이슈번호는 'VIII-6' · 'CSR-202609-001' 처럼 슬래시 없는 임의 문자열입니다.
-    // 고정 경로(flow · admin · status-guide · docs)보다 뒤에 두어야 그 이름이 이슈번호로 잡히지 않습니다.
+    // 고정 경로(flow · admin · status-guide · docs · forms)보다 뒤에 두어야 그 이름이 이슈번호로 잡히지 않습니다.
     path: '/csr/:issueNo',
     name: 'csr-detail',
     component: () => import('./views/CsrDetailPage.vue'),

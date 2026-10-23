@@ -1,4 +1,4 @@
-import { CORE_DOCS } from '@/modules/csr/coreDocs'
+import { CORE_DOCS, SALES_FORMS } from '@/modules/csr/coreDocs'
 
 /**
  * 아이콘은 plugins/icons.js 에서 전역 등록한 컴포넌트 '이름'으로 지정합니다
@@ -16,7 +16,7 @@ export const matchPath = (path, prefix) => path === prefix || path.startsWith(`$
 /**
  * 메뉴 (Menu / Menu) — 2026-10-23 개편.
  *
- * 매일 쓰는 화면(대시보드·개선요청)만 상단에 두고, 가끔 찾아보는 참고 화면 3개는
+ * 매일 쓰는 화면(대시보드·개선요청)만 상단에 두고, 가끔 찾아보는 참고 화면(상태 기준 · 흐름도 · 핵심문서 · 표준양식)은
  * 「자료실」 드롭다운으로 묶었습니다. 관리 화면은 admin 만 쓰므로 계정 메뉴로 옮겼습니다
  * (adminItem — AppTopbar 가 identity.role === 'admin' 일 때만 보여 줍니다).
  * badge 는 라벨 옆 숫자 — 핵심문서 개수를 라벨에 박아 두면(「10종」) 문서가 늘 때 어긋납니다.
@@ -37,6 +37,13 @@ export const navItems = [
         icon: 'FileText',
         to: '/csr/docs',
         badge: CORE_DOCS.length,
+      },
+      {
+        label: '판매서류 표준양식',
+        labelId: 'Formulir standar',
+        icon: 'ClipboardCheck',
+        to: '/csr/forms',
+        badge: SALES_FORMS.length,
       },
     ],
   },

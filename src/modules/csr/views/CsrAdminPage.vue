@@ -1,6 +1,5 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { authApi, getDb, unwrap } from '../api/neon'
@@ -21,7 +20,6 @@ import CsrSignIn from '../components/CsrSignIn.vue'
  * 여기 버튼이 보인다고 권한이 생기는 게 아닙니다. 쓰기는 DB 정책(csr_user_roles_write =
  * admin)이 판정합니다. admin 이 아니면 화면 자체를 막지만, 그것은 UX 일 뿐입니다.
  */
-const router = useRouter()
 const session = useCsrSessionStore()
 const { lang, t } = useCsrLang()
 const V = (v) => pickLang(v, lang.value)
@@ -281,9 +279,6 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
           <h1 class="page-title">Admin</h1>
           <p class="page-sub mb-0">{{ t('관리', 'Administrasi') }}</p>
         </div>
-        <button type="button" class="btn btn-sm btn-link" @click="router.push('/csr')">
-          ← {{ t('개선요청 목록', 'Daftar permintaan') }}
-        </button>
       </div>
 
       <div v-if="loading" class="asm-panel state">{{ t('불러오는 중…', 'Memuat…') }}</div>

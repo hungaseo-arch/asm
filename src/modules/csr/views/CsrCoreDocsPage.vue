@@ -8,23 +8,29 @@
  * PDF 는 브라우저 내장 뷰어를 <iframe> 으로 띄웁니다(별도 라이브러리 없음 — 초기 청크 한도).
  * 휴대폰 브라우저는 iframe 안에서 PDF 를 못 그리는 경우가 많아 「새 창 · 내려받기」 버튼을
  * 항상 함께 둡니다. 헤더 언어 토글이 인니어면 PDF 도 인니어판(DOC-xx.id.pdf)으로 바뀝니다.
+ *
+ * 같은 화면이 판매서류 표준양식(/csr/forms)도 보여 줍니다 — 라우트 meta.docSet 으로 묶음을
+ * 고릅니다(coreDocs.js DOC_SETS). 표준양식은 한·인니 겸용이라 언어 토글과 무관하게 PDF 하나.
  */
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useCsrLang } from '../composables/useCsrLang'
-import { CORE_DOCS, coreDocFileName, coreDocUrl } from '../coreDocs'
+import { DOC_SETS, coreDocFileName, coreDocUrl } from '../coreDocs'
 
 const { tp: t, lang } = useCsrLang()
 const route = useRoute()
 const router = useRouter()
 
+const set = computed(() => DOC_SETS[route.meta.docSet] ?? DOC_SETS.docs)
+const items = computed(() => set.value.items)
 const docNo = computed(() => String(route.params.docNo ?? '').toUpperCase())
-const active = computed(() => CORE_DOCS.find((d) => d.no === docNo.value) ?? null)
+const active = computed(() => items.value.find((d) => d.no === docNo.value) ?? null)
 /** 주소에 번호가 있는데 목록에 없으면 「없는 문서」. */
 const missing = computed(() => !!docNo.value && !active.value)
 
-const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } })
+const open = (doc) => router.push({ name: set.value.route, params: { docNo: doc.no } })
+const url = (doc) => coreDocUrl(doc, lang.value, set.value)
 </script>
 
 <template>
@@ -32,21 +38,14 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
     <section class="docs">
       <div class="head">
         <div class="page-titles">
-          <h1 class="page-title">{{ t(['핵심문서', 'Dokumen Inti']) }}</h1>
-          <p class="page-sub mb-0">
-            {{
-              t([
-                `ASM ERP 구축 핵심문서 (DOC-01 ~ DOC-${CORE_DOCS.length})`,
-                `Dokumen inti pembangunan ASM ERP (DOC-01 – DOC-${CORE_DOCS.length})`,
-              ])
-            }}
-          </p>
+          <h1 class="page-title">{{ t(set.title) }}</h1>
+          <p class="page-sub mb-0">{{ t(set.sub) }}</p>
         </div>
         <button
           v-if="docNo"
           type="button"
           class="btn btn-sm btn-link"
-          @click="router.push({ name: 'csr-docs' })"
+          @click="router.push({ name: set.route })"
         >
           ← {{ t(['전체 목록', 'Semua dokumen']) }}
         </button>
@@ -55,7 +54,7 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
       <!-- 목록 (index) -->
       <div v-if="!docNo" class="grid">
         <button
-          v-for="d in CORE_DOCS"
+          v-for="d in items"
           :key="d.no"
           type="button"
           class="asm-panel card-doc"
@@ -65,7 +64,7 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
           <b class="title">{{ t(d.title) }}</b>
           <small class="en">{{ d.en }}</small>
           <span class="desc">{{ t(d.desc) }}</span>
-          <span class="meta">{{ d.version }} · {{ d.date }}</span>
+          <span class="meta">{{ [d.version, d.date].filter(Boolean).join(' · ') }}</span>
         </button>
       </div>
 
@@ -78,7 +77,7 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
       <div v-else class="viewer">
         <nav class="asm-panel side" :aria-label="t(['문서 목록', 'Daftar dokumen'])">
           <button
-            v-for="d in CORE_DOCS"
+            v-for="d in items"
             :key="d.no"
             type="button"
             class="side-item"
@@ -98,14 +97,14 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
               <h2 class="doc-title">{{ t(active.title) }}</h2>
               <p class="desc mb-0">{{ t(active.desc) }}</p>
               <small class="meta"
-                >{{ active.en }} · {{ active.version }} · {{ t(['기준일', 'Tanggal']) }}
-                {{ active.date }}</small
+                >{{ [active.en, active.version].filter(Boolean).join(' · ') }} ·
+                {{ t(['기준일', 'Tanggal']) }} {{ active.date }}</small
               >
             </div>
             <div class="actions">
               <a
                 class="btn btn-sm btn-outline-secondary"
-                :href="coreDocUrl(active, lang)"
+                :href="url(active)"
                 target="_blank"
                 rel="noopener"
               >
@@ -113,8 +112,8 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
               </a>
               <a
                 class="btn btn-sm btn-primary"
-                :href="coreDocUrl(active, lang)"
-                :download="coreDocFileName(active, lang)"
+                :href="url(active)"
+                :download="coreDocFileName(active, lang, set)"
               >
                 {{ t(['PDF 내려받기', 'Unduh PDF']) }}
               </a>
@@ -123,7 +122,7 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
           <div class="asm-panel stage">
             <iframe
               :key="`${active.no}-${lang}`"
-              :src="coreDocUrl(active, lang)"
+              :src="url(active)"
               class="sheet"
               :title="t(active.title)"
             ></iframe>

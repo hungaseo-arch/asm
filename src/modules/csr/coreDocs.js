@@ -157,7 +157,108 @@ export const CORE_DOCS = [
  * public/ 자산은 vite base(/asm/) 아래에 놓입니다 — 하위 경로 배포에서도 맞게.
  * 인니어판은 DOC-xx.id.pdf (2026-10-23 — 한국어 원본 hwpx 를 번역해 같은 양식으로 뽑은 PDF).
  */
-export const coreDocUrl = (doc, lang) =>
-  `${import.meta.env.BASE_URL}csr/docs/${doc.no}${lang === 'id' ? '.id' : ''}.pdf`
+export const coreDocUrl = (doc, lang, set = DOC_SETS.docs) =>
+  `${import.meta.env.BASE_URL}csr/${set.dir}/${doc.no}${set.bilingual && lang === 'id' ? '.id' : ''}.pdf`
 /** 내려받을 때 파일 이름 — 원본 한글 이름, 인니어판은 _ID 를 붙입니다. */
-export const coreDocFileName = (doc, lang) => `${doc.file}${lang === 'id' ? '_ID' : ''}.pdf`
+export const coreDocFileName = (doc, lang, set = DOC_SETS.docs) =>
+  `${doc.file}${set.bilingual && lang === 'id' ? '_ID' : ''}.pdf`
+
+/**
+ * 판매서류 표준양식 5종 (Standard sales forms / Formulir standar) — 2026-10-23 요청.
+ *
+ * 원본은 Google Drive 「ASM_사내문서/01_ASM_필수문서5종/표준양식_PDF」. 양식 자체가
+ * 한국어·인니어 겸용이라 언어별 PDF 가 따로 없습니다(bilingual: false — 토글과 무관하게
+ * FORM-xx.pdf 하나). 개정되면 PDF 를 바꿔 끼우고 date 만 고칩니다.
+ */
+const FORM_DATE = '2026-10-23'
+export const SALES_FORMS = [
+  {
+    no: 'FORM-01',
+    file: '01_QUOTATION_20261023',
+    title: ['견적서', 'Penawaran Harga'],
+    en: 'Quotation',
+    version: '',
+    date: FORM_DATE,
+    desc: [
+      '고객 문의에 품목 · 단가 · 조건을 제시하는 첫 판매서류.',
+      'Dokumen penjualan pertama: item, harga, dan syarat untuk permintaan pelanggan.',
+    ],
+  },
+  {
+    no: 'FORM-02',
+    file: '02_SALES_ORDER_20261023',
+    title: ['판매주문서 (SO)', 'Sales Order (SO)'],
+    en: 'Sales Order',
+    version: '',
+    date: FORM_DATE,
+    desc: [
+      '고객 확정 주문을 수량 · 단가 · 납기로 확정하는 내부 기준 문서.',
+      'Dokumen acuan internal pesanan pelanggan yang sudah pasti: jumlah, harga, jadwal kirim.',
+    ],
+  },
+  {
+    no: 'FORM-03',
+    file: '03_DELIVERY_ORDER_20261023',
+    title: ['출고지시서 (DO)', 'Delivery Order (DO)'],
+    en: 'Delivery Order',
+    version: '',
+    date: FORM_DATE,
+    desc: [
+      'SO 를 근거로 창고에 출고를 지시하는 문서.',
+      'Perintah pengeluaran barang ke gudang berdasarkan SO.',
+    ],
+  },
+  {
+    no: 'FORM-04',
+    file: '04_DELIVERY_NOTE_20261023',
+    title: ['납품서 (DN)', 'Surat Jalan (DN)'],
+    en: 'Delivery Note',
+    version: '',
+    date: FORM_DATE,
+    desc: [
+      '물품과 함께 가서 고객이 인수 서명하는 납품 확인 문서.',
+      'Menyertai barang dan ditandatangani pelanggan sebagai bukti terima.',
+    ],
+  },
+  {
+    no: 'FORM-05',
+    file: '05_INVOICE_20261023',
+    title: ['청구서 (Invoice)', 'Faktur (Invoice)'],
+    en: 'Invoice',
+    version: '',
+    date: FORM_DATE,
+    desc: [
+      '납품 완료분에 대금을 청구하는 문서.',
+      'Penagihan pembayaran atas barang yang sudah dikirim.',
+    ],
+  },
+]
+
+/**
+ * 문서 묶음 — 화면(CsrCoreDocsPage) 하나가 라우트 meta.docSet 으로 골라 씁니다.
+ * dir 은 public/csr/ 아래 폴더, bilingual 이면 인니어 화면에서 .id.pdf · _ID 이름을 씁니다.
+ */
+export const DOC_SETS = {
+  docs: {
+    route: 'csr-docs',
+    dir: 'docs',
+    bilingual: true,
+    items: CORE_DOCS,
+    title: ['핵심문서', 'Dokumen Inti'],
+    sub: [
+      `ASM ERP 구축 핵심문서 (DOC-01 ~ DOC-${CORE_DOCS.length})`,
+      `Dokumen inti pembangunan ASM ERP (DOC-01 – DOC-${CORE_DOCS.length})`,
+    ],
+  },
+  forms: {
+    route: 'csr-forms',
+    dir: 'forms',
+    bilingual: false,
+    items: SALES_FORMS,
+    title: ['판매서류 표준양식', 'Formulir Standar Penjualan'],
+    sub: [
+      `견적서 → SO → DO → DN → Invoice (${SALES_FORMS.length}종 · 한국어·인니어 겸용)`,
+      `Penawaran → SO → DO → DN → Invoice (${SALES_FORMS.length} formulir · dwibahasa)`,
+    ],
+  },
+}

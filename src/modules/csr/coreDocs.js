@@ -153,5 +153,11 @@ export const CORE_DOCS = [
   },
 ]
 
-/** public/ 자산은 vite base(/asm/) 아래에 놓입니다 — 하위 경로 배포에서도 맞게. */
-export const coreDocUrl = (doc) => `${import.meta.env.BASE_URL}csr/docs/${doc.no}.pdf`
+/**
+ * public/ 자산은 vite base(/asm/) 아래에 놓입니다 — 하위 경로 배포에서도 맞게.
+ * 인니어판은 DOC-xx.id.pdf (2026-10-23 — 한국어 원본 hwpx 를 번역해 같은 양식으로 뽑은 PDF).
+ */
+export const coreDocUrl = (doc, lang) =>
+  `${import.meta.env.BASE_URL}csr/docs/${doc.no}${lang === 'id' ? '.id' : ''}.pdf`
+/** 내려받을 때 파일 이름 — 원본 한글 이름, 인니어판은 _ID 를 붙입니다. */
+export const coreDocFileName = (doc, lang) => `${doc.file}${lang === 'id' ? '_ID' : ''}.pdf`

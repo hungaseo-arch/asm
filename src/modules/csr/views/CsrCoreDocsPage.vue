@@ -7,15 +7,15 @@
  *
  * PDF 는 브라우저 내장 뷰어를 <iframe> 으로 띄웁니다(별도 라이브러리 없음 — 초기 청크 한도).
  * 휴대폰 브라우저는 iframe 안에서 PDF 를 못 그리는 경우가 많아 「새 창 · 내려받기」 버튼을
- * 항상 함께 둡니다. 문서 본문은 한국어라 번역하지 않고, 제목 · 설명만 언어 토글을 따릅니다.
+ * 항상 함께 둡니다. 헤더 언어 토글이 인니어면 PDF 도 인니어판(DOC-xx.id.pdf)으로 바뀝니다.
  */
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useCsrLang } from '../composables/useCsrLang'
-import { CORE_DOCS, coreDocUrl } from '../coreDocs'
+import { CORE_DOCS, coreDocFileName, coreDocUrl } from '../coreDocs'
 
-const { tp: t } = useCsrLang()
+const { tp: t, lang } = useCsrLang()
 const route = useRoute()
 const router = useRouter()
 
@@ -105,7 +105,7 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
             <div class="actions">
               <a
                 class="btn btn-sm btn-outline-secondary"
-                :href="coreDocUrl(active)"
+                :href="coreDocUrl(active, lang)"
                 target="_blank"
                 rel="noopener"
               >
@@ -113,8 +113,8 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
               </a>
               <a
                 class="btn btn-sm btn-primary"
-                :href="coreDocUrl(active)"
-                :download="`${active.file}.pdf`"
+                :href="coreDocUrl(active, lang)"
+                :download="coreDocFileName(active, lang)"
               >
                 {{ t(['PDF 내려받기', 'Unduh PDF']) }}
               </a>
@@ -122,8 +122,8 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
           </div>
           <div class="asm-panel stage">
             <iframe
-              :key="active.no"
-              :src="coreDocUrl(active)"
+              :key="`${active.no}-${lang}`"
+              :src="coreDocUrl(active, lang)"
               class="sheet"
               :title="t(active.title)"
             ></iframe>

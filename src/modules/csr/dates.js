@@ -17,3 +17,14 @@ export function todayWib(now = new Date()) {
 
 /** 타임스탬프 → 'YYYY-MM-DD HH:MM' — 상세·관리 화면의 로그 표가 함께 씁니다. */
 export const fmtTs = (ts) => (ts ? String(ts).replace('T', ' ').slice(0, 16) : '')
+/** 타임스탬프 → 'YYYY-MM-DD' — 변경 이력은 시각이 의미 없어 날짜만 씁니다(2026-10-23 요청). */
+export const fmtDate = (ts) => fmtTs(ts).slice(0, 10)
+
+/**
+ * 변경 이력의 이전·이후 값 — 날짜 컬럼(verified_on 등)은 '2026-10-18T00:00:00' 처럼
+ * 시각이 붙어 오고 좁은 칸에서 「202 / 6-10- / 18」 로 쪼개졌습니다. 날짜로 보이는 값은
+ * 'YYYY-MM-DD' 로 줄이고(isDateValue → 표에서 nowrap), 나머지는 그대로 둡니다.
+ */
+const DATE_RE = /^\d{4}-\d{2}-\d{2}(?:[T ][\d:.]+(?:Z|[+-]\d{2}:?\d{2})?)?$/
+export const isDateValue = (v) => typeof v === 'string' && DATE_RE.test(v.trim())
+export const logValue = (v) => (isDateValue(v) ? v.trim().slice(0, 10) : v)

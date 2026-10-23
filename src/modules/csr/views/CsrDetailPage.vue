@@ -20,7 +20,7 @@ import {
   verifyLabel,
   verifyTitle,
 } from '../status'
-import { fmtTs, todayWib } from '../dates'
+import { fmtDate, isDateValue, logValue, todayWib } from '../dates'
 import CsrStatusLegend from '../components/CsrStatusLegend.vue'
 import CsrStatusBadge from '../components/CsrStatusBadge.vue'
 import { useCsrSessionStore } from '../stores/session'
@@ -1249,10 +1249,14 @@ watch(
             </thead>
             <tbody>
               <tr v-for="l in statusLog" :key="l.id">
-                <td class="nowrap">{{ fmtTs(l.changed_at) }}</td>
+                <td class="nowrap">{{ fmtDate(l.changed_at) }}</td>
                 <td class="nowrap">{{ l.column_name }}</td>
-                <td class="wrap">{{ VF(l.column_name, l.old_value) ?? '—' }}</td>
-                <td class="wrap">{{ VF(l.column_name, l.new_value) ?? '—' }}</td>
+                <td :class="isDateValue(l.old_value) ? 'nowrap' : 'wrap'">
+                  {{ logValue(VF(l.column_name, l.old_value)) ?? '—' }}
+                </td>
+                <td :class="isDateValue(l.new_value) ? 'nowrap' : 'wrap'">
+                  {{ logValue(VF(l.column_name, l.new_value)) ?? '—' }}
+                </td>
                 <td class="nowrap muted">{{ l.changed_by ?? '—' }}</td>
               </tr>
             </tbody>

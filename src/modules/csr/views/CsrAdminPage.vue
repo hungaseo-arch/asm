@@ -7,7 +7,7 @@ import { nullIfBlank } from '../api/issues'
 import { useCsrSessionStore } from '../stores/session'
 import { INITIAL_PASSWORD, ROLES, isConfigured } from '../config'
 import { pickLang } from '../i18n'
-import { fmtTs } from '../dates'
+import { fmtDate, fmtTs, isDateValue, logValue } from '../dates'
 import { useCsrLang } from '../composables/useCsrLang'
 import CsrSignIn from '../components/CsrSignIn.vue'
 
@@ -443,7 +443,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                   <span class="asm-pill">{{ u.role }}</span>
                 </td>
                 <td class="truncate-cell">{{ u.department ?? '—' }}</td>
-                <td class="nowrap muted">{{ fmtTs(u.created_at).slice(0, 10) }}</td>
+                <td class="nowrap muted">{{ fmtDate(u.created_at) }}</td>
                 <td class="nowrap muted" :title="fmtTs(u.last_seen_at)">{{ lastSeen(u) }}</td>
                 <td class="nowrap ops">
                   <button type="button" class="btn btn-sm btn-link" @click="startEdit(u)">
@@ -532,15 +532,19 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
               </thead>
               <tbody>
                 <tr v-for="l in log" :key="l.id">
-                  <td class="nowrap">{{ fmtTs(l.changed_at) }}</td>
+                  <td class="nowrap">{{ fmtDate(l.changed_at) }}</td>
                   <td class="nowrap">
                     <router-link :to="`/csr/${encodeURIComponent(l.csr_issues?.issue_no ?? '')}`">
                       {{ l.csr_issues?.issue_no ?? l.issue_id }}
                     </router-link>
                   </td>
                   <td class="nowrap">{{ l.column_name }}</td>
-                  <td>{{ V(l.old_value) ?? '—' }}</td>
-                  <td>{{ V(l.new_value) ?? '—' }}</td>
+                  <td :class="{ nowrap: isDateValue(l.old_value) }">
+                    {{ logValue(V(l.old_value)) ?? '—' }}
+                  </td>
+                  <td :class="{ nowrap: isDateValue(l.new_value) }">
+                    {{ logValue(V(l.new_value)) ?? '—' }}
+                  </td>
                   <td class="nowrap muted">{{ userName(l.changed_by) }}</td>
                 </tr>
               </tbody>

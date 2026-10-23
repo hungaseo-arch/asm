@@ -39,6 +39,13 @@ export const csrRoutes = [
     meta: { requiresAuth: false, title: 'CSR 업무 Flow Diagram' },
   },
   {
+    // 핵심문서 — /csr/docs 는 목록, /csr/docs/DOC-01 같은 하위 페이지는 PDF 뷰어(2026-10-23 요청).
+    path: '/csr/docs/:docNo?',
+    name: 'csr-docs',
+    component: () => import('./views/CsrCoreDocsPage.vue'),
+    meta: { requiresAuth: false, title: '핵심문서' },
+  },
+  {
     // 공지 화면은 없앴습니다(2026-09-14). 남은 북마크가 이슈번호 'notices' 로 잡혀
     // 「없는 이슈」 화면을 띄우지 않도록 목록으로 돌려보냅니다.
     path: '/csr/notices',
@@ -46,7 +53,7 @@ export const csrRoutes = [
   },
   {
     // 이슈번호는 'VIII-6' · 'CSR-202609-001' 처럼 슬래시 없는 임의 문자열입니다.
-    // 고정 경로(flow · admin · status-guide)보다 뒤에 두어야 그 이름이 이슈번호로 잡히지 않습니다.
+    // 고정 경로(flow · admin · status-guide · docs)보다 뒤에 두어야 그 이름이 이슈번호로 잡히지 않습니다.
     path: '/csr/:issueNo',
     name: 'csr-detail',
     component: () => import('./views/CsrDetailPage.vue'),

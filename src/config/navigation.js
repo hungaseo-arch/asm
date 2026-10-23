@@ -25,6 +25,12 @@ export const navItems = [
     icon: 'Workflow',
     to: '/csr/flow',
   },
+  {
+    label: '핵심문서10종',
+    labelId: 'Dokumen Inti',
+    icon: 'FileText',
+    to: '/csr/docs',
+  },
   { label: '관리 (admin)', labelId: 'Administrasi (admin)', icon: 'UserCog', to: '/csr/admin' },
 ]
 

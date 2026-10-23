@@ -221,7 +221,8 @@ const open = (doc) => router.push({ name: 'csr-docs', params: { docNo: doc.no } 
   padding: 8px;
   gap: 2px;
   position: sticky;
-  top: 16px;
+  /* 고정 헤더(액센트 바 + 56px) 아래에 멈추도록 — 16px 만 두면 스크롤 시 헤더 밑으로 숨었습니다. */
+  top: calc(var(--asm-header-offset) + 16px);
 }
 .side-item {
   display: flex;

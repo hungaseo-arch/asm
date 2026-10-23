@@ -257,8 +257,8 @@ export const DOC_SETS = {
     items: SALES_FORMS,
     title: ['판매서류 표준양식', 'Formulir Standar Penjualan'],
     sub: [
-      `견적서 → SO → DO → DN → Invoice (${SALES_FORMS.length}종 · 한국어·인니어 겸용)`,
-      `Penawaran → SO → DO → DN → Invoice (${SALES_FORMS.length} formulir · dwibahasa)`,
+      `견적서 → SO → DO → DN → Invoice (${SALES_FORMS.length}종)`,
+      `Penawaran → SO → DO → DN → Invoice (${SALES_FORMS.length} formulir)`,
     ],
   },
 }

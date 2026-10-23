@@ -306,7 +306,8 @@ async function signOut() {
   color: var(--asm-fg);
   white-space: nowrap;
 }
-@media (max-width: 639.98px) {
+/* 992px 미만 — 메뉴와 자리를 다투지 않도록 「ASM CSR관리」 제목을 먼저 숨깁니다. */
+@media (max-width: 991.98px) {
   .brand-title {
     display: none;
   }
@@ -399,8 +400,8 @@ async function signOut() {
   font-weight: 600;
   text-align: center;
 }
-/* 모바일(< 640px) — 아이콘만. 라벨은 title 툴팁으로 남습니다. */
-@media (max-width: 639.98px) {
+/* 768px 미만 — 메뉴는 아이콘만. 라벨은 title 툴팁으로 남습니다. */
+@media (max-width: 767.98px) {
   .topnav .nav-item {
     padding: 6px 10px;
   }

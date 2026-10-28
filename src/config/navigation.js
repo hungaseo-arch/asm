@@ -1,4 +1,5 @@
 import { CORE_DOCS, SALES_FORMS } from '@/modules/csr/coreDocs'
+import { REPORT_COUNT } from '@/modules/csr/reportDesign'
 
 /**
  * 아이콘은 plugins/icons.js 에서 전역 등록한 컴포넌트 '이름'으로 지정합니다
@@ -44,6 +45,21 @@ export const navItems = [
         icon: 'ClipboardCheck',
         to: '/csr/forms',
         badge: SALES_FORMS.length,
+      },
+    ],
+  },
+  {
+    // 문서개발 — 개발 중인 문서 시안을 모아 둡니다(2026-10-28 · 작업지시서 ASM-CSR-2026-1028-01).
+    label: '문서개발',
+    labelId: 'Pengembangan dokumen',
+    icon: 'Ruler',
+    children: [
+      {
+        label: '보고서 양식안',
+        labelId: 'Rancangan laporan',
+        icon: 'FileSpreadsheet',
+        to: '/csr/reports',
+        badge: REPORT_COUNT,
       },
     ],
   },

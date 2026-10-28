@@ -282,4 +282,17 @@ h1 { font-size:14.5pt; margin:3mm 0 .5mm; } .sub { margin-bottom:2.5mm; }
   var sl=null; try{ sl=localStorage.getItem('asm_rpt_lang'); }catch(e){} if(sl==='id') setLang('id');
   window.__asmLangStats = { translatable: nodes.length };
 })();
-</script></body></html>
+</script><script>
+(function(){
+  // CSR 사이트(부모)가 보내는 언어를 따른다. 단독으로 열면 자체 토글이 그대로 동작.
+  var q = new URLSearchParams(location.search);
+  function apply(l){ var b=document.querySelector('.lang button[data-l="'+(l==='id'?'id':'ko')+'"]'); if(b) b.click(); }
+  if (q.get('lang')) apply(q.get('lang'));
+  if (q.get('embed')==='1') { var n=document.querySelector('.lang'); if(n) n.style.display='none'; }
+  window.addEventListener('message', function(e){ if(e.data && e.data.type==='asm-lang') apply(e.data.lang); });
+  // 부모에 높이를 알려 iframe 스크롤 이중화를 막는다.
+  function post(){ try{ parent.postMessage({type:'asm-report-height', h: document.documentElement.scrollHeight}, '*'); }catch(_){} }
+  new MutationObserver(post).observe(document.body,{subtree:true,attributes:true,childList:true}); window.addEventListener('load', post);
+})();
+</script>
+</body></html>

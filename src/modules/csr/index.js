@@ -53,6 +53,13 @@ export const csrRoutes = [
     meta: { requiresAuth: false, title: '판매서류 표준양식', docSet: 'forms' },
   },
   {
+    // 보고서 양식안(직원별) — 단독 HTML 을 iframe 으로 띄웁니다(2026-10-28 작업지시서 ASM-CSR-2026-1028-01).
+    path: '/csr/reports',
+    name: 'csr-reports',
+    component: () => import('./views/CsrReportDesignPage.vue'),
+    meta: { requiresAuth: false, title: '보고서 양식안' },
+  },
+  {
     // 공지 화면은 없앴습니다(2026-09-14). 남은 북마크가 이슈번호 'notices' 로 잡혀
     // 「없는 이슈」 화면을 띄우지 않도록 목록으로 돌려보냅니다.
     path: '/csr/notices',
@@ -60,7 +67,7 @@ export const csrRoutes = [
   },
   {
     // 이슈번호는 'VIII-6' · 'CSR-202609-001' 처럼 슬래시 없는 임의 문자열입니다.
-    // 고정 경로(flow · admin · status-guide · docs · forms)보다 뒤에 두어야 그 이름이 이슈번호로 잡히지 않습니다.
+    // 고정 경로(flow · admin · status-guide · docs · forms · reports)보다 뒤에 두어야 그 이름이 이슈번호로 잡히지 않습니다.
     path: '/csr/:issueNo',
     name: 'csr-detail',
     component: () => import('./views/CsrDetailPage.vue'),

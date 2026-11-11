@@ -1,6 +1,6 @@
 <script setup>
 /**
- * ASM 가격 분류 체계 — 제품 가격 항목의 To-Be 정의 (2026-11-11 서종환 결정).
+ * ASM 가격 분류 체계 — 제품 가격 항목 분류 제안안 (2026-11-11 서종환 제안, IT팀 검토 중).
  *
  * 자료실 정적 문서입니다(DB 미사용, 로그인 없이 열림). 「상태 기준」 화면과 같은 방식으로
  * 문단마다 [한국어, 인도네시아어] 쌍을 적고 토글 언어 한쪽만 보여 줍니다 — 한쪽을 고치면 다른 쪽도 같이 고치십시오.
@@ -16,10 +16,10 @@ const { tp: t } = useCsrLang()
 /** 백틱으로 감싼 조각은 <code> 로 */
 const parts = (s) => s.split('`').map((x, i) => ({ code: i % 2 === 1, text: x }))
 
-const TITLE = ['ASM 가격 분류 체계 (To-Be)', 'Klasifikasi Harga ASM (To-Be)']
+const TITLE = ['ASM 가격 분류 체계 (제안안)', 'Klasifikasi Harga ASM (Usulan)']
 const META = [
-  '결정일 2026-11-11 · 결정 서종환 · 대상 IT팀(개발), 구매팀・재무팀・영업부(데이터)',
-  'Tanggal keputusan 2026-11-11 · Diputuskan oleh Seo Jonghwan · Untuk tim IT (pengembangan), tim Pembelian・Keuangan・Sales (data)',
+  '제안일 2026-11-11 · 제안 서종환 · 상태 IT팀 검토 중 · 대상 IT팀(개발), 구매팀・재무팀・영업부(데이터)',
+  'Tanggal usulan 2026-11-11 · Diusulkan oleh Seo Jonghwan · Status sedang ditinjau tim IT · Untuk tim IT (pengembangan), tim Pembelian・Keuangan・Sales (data)',
 ]
 
 const PURPOSE = [
@@ -52,8 +52,8 @@ const PRICE_ROWS = [
     state: 'keep',
     unit: ['USD, FOB', 'USD, FOB'],
     input: [
-      '구매팀 — 최근 확정 Vendor PO 단가',
-      'Tim Pembelian — harga Vendor PO terakhir yang dikonfirmasi',
+      '구매팀 : 최근 확정 Vendor PO 단가',
+      'Tim Pembelian : harga Vendor PO terakhir yang dikonfirmasi',
     ],
     use: ['Purchase > Vendor PO 단가 기본값', 'Purchase > Vendor PO, harga default'],
   },
@@ -64,8 +64,8 @@ const PRICE_ROWS = [
     state: 'keep',
     unit: ['IDR, VAT 별도', 'IDR, tanpa PPN'],
     input: [
-      '구매팀 — 최근 확정 Vendor PO 단가',
-      'Tim Pembelian — harga Vendor PO terakhir yang dikonfirmasi',
+      '구매팀 : 최근 확정 Vendor PO 단가',
+      'Tim Pembelian : harga Vendor PO terakhir yang dikonfirmasi',
     ],
     use: ['Purchase > Vendor PO 단가 기본값', 'Purchase > Vendor PO, harga default'],
   },
@@ -76,8 +76,8 @@ const PRICE_ROWS = [
     state: 'new',
     unit: ['IDR, VAT 별도, 실제 환율', 'IDR, tanpa PPN, kurs aktual'],
     input: [
-      '자동 계산 — FOB × 환율 + Import Cost(운임・보험・관세・통관비) 배부',
-      'Hitung otomatis — FOB × kurs + alokasi Import Cost (freight・asuransi・bea・clearance)',
+      '자동 계산 : FOB × 환율 + Import Cost(운임・보험・관세・통관비) 배부',
+      'Hitung otomatis : FOB × kurs + alokasi Import Cost (freight・asuransi・bea・clearance)',
     ],
     use: ['실적 원가 참고, WH Price 검증', 'Referensi biaya aktual, verifikasi WH Price'],
   },
@@ -104,8 +104,8 @@ const PRICE_ROWS = [
     state: 'keep',
     unit: ['IDR, 월마감', 'IDR, tutup buku bulanan'],
     input: [
-      '재무팀 — Master Data > Monthly Closing 업로드',
-      'Tim Keuangan — upload Master Data > Monthly Closing',
+      '재무팀 : Master Data > Monthly Closing 업로드',
+      'Tim Keuangan : upload Master Data > Monthly Closing',
     ],
     use: [
       '회계 실적・매출총이익 보고 (견적 마진에는 쓰지 않음)',
@@ -147,8 +147,8 @@ const PRICE_ROWS = [
 
 const STATE = {
   keep: { label: ['기존', 'Sudah ada'], tone: 'neutral' },
-  new: { label: ['신설', 'Baru'], tone: 'info' },
-  merge: { label: ['⑤로 통합', 'Gabung ke ⑤'], tone: 'warning' },
+  new: { label: ['신설 제안', 'Usulan baru'], tone: 'info' },
+  merge: { label: ['⑤와 통합 제안', 'Usulan gabung ke ⑤'], tone: 'warning' },
 }
 
 const TXN_COLS = { stage: ['단계', 'Tahap'], screen: ['화면', 'Layar'], field: ['필드', 'Field'] }
@@ -175,8 +175,8 @@ const TXN_ROWS = [
 
 const RULES = [
   [
-    '견적 마진 = (기준단가 × 수량 − 할인 − WH Price × 수량) ÷ 판매금액. 현재 원가로 쓰는 `finance_buy_unit_cost_idr`를 `wh_price_idr`로 변경',
-    'Margin penawaran = (harga dasar × qty − diskon − WH Price × qty) ÷ nilai jual. Ganti biaya yang dipakai sekarang `finance_buy_unit_cost_idr` menjadi `wh_price_idr`',
+    '견적 마진 = (기준단가 × 수량 − 할인 − WH Price × 수량) ÷ 판매금액. 현재 원가로 쓰는 `finance_buy_unit_cost_idr`를 `wh_price_idr`로 바꾸는 방안',
+    'Margin penawaran = (harga dasar × qty − diskon − WH Price × qty) ÷ nilai jual. Usulan mengganti biaya yang dipakai sekarang `finance_buy_unit_cost_idr` menjadi `wh_price_idr`',
   ],
   [
     'WH Price 0 또는 미등록 품목은 견적 화면에서 「WH Price 미등록」 경고 표시, 원가 0으로 계산 금지',
@@ -187,8 +187,8 @@ const RULES = [
     'Upload WH Price dicocokkan berdasarkan Article No.; simpan tanggal berlaku dan riwayat perubahan (nilai sebelumnya・pengubah・waktu)',
   ],
   [
-    'Finance Cost는 변경하지 않음 — 월마감 실적 원가로만 사용',
-    'Finance Cost tidak diubah — hanya dipakai sebagai biaya aktual tutup buku bulanan',
+    'Finance Cost는 지금처럼 월마감 실적 원가로 유지',
+    'Finance Cost tetap dipakai sebagai biaya aktual tutup buku bulanan',
   ],
   [
     'Sell Price와 Base Sales Price를 하나로 통합(정리 전까지 Products 화면에 두 값 병기)',
@@ -206,8 +206,8 @@ const STATUS_NOW = [
     'Per 2026-11-10, dari 520 item transaksi・stok: harga beli belum terdaftar 146, biaya Finance 40, harga jual dasar 221, Sell Price 118',
   ],
   [
-    'WH MASTER(2026-11-11, 457행)와 ASM Finance 원가 비교 — 376개 중 346개가 WH Price가 높음, 중앙값 +8.7%. 기준 변경 시 견적 마진이 낮아짐',
-    'Perbandingan WH MASTER (2026-11-11, 457 baris) dengan biaya Finance ASM — 346 dari 376 item WH Price lebih tinggi, median +8,7%. Margin penawaran akan turun setelah dasar diganti',
+    'WH MASTER(2026-11-11, 457행)와 ASM Finance 원가 비교 : 376개 중 346개가 WH Price가 높음, 중앙값 +8.7%. 기준을 바꾸면 견적 마진이 낮게 표시됨',
+    'Perbandingan WH MASTER (2026-11-11, 457 baris) dengan biaya Finance ASM : 346 dari 376 item WH Price lebih tinggi, median +8,7%. Margin penawaran akan turun setelah dasar diganti',
   ],
   [
     'WH MASTER 업로드 전 정리 필요 : Article No. 오류・중복(No 67・71・99・106・109・113), Article No. 공란 2개, ASM 거래품목 144개 누락',
@@ -217,37 +217,37 @@ const STATUS_NOW = [
 
 const RELATED = [
   [
-    'CSR 122 — 제품 마스터 가격구분 Landed Cost・WH Price 추가',
-    'CSR 122 — Tambah jenis harga Landed Cost dan WH Price di master produk',
+    'CSR 122 : 제품 마스터 가격구분 Landed Cost・WH Price 추가',
+    'CSR 122 : Tambah jenis harga Landed Cost dan WH Price di master produk',
   ],
   [
-    'CSR 137 — 고객주문 마진분석・승인 절차',
-    'CSR 137 — Analisis margin・persetujuan pesanan pelanggan',
+    'CSR 137 : 고객주문 마진분석・승인 절차',
+    'CSR 137 : Analisis margin・persetujuan pesanan pelanggan',
   ],
   [
-    'CSR 138 — SO 매입원가 미등록・직전 월 원가 적용',
-    'CSR 138 — Harga pokok di SO belum terdaftar・memakai biaya bulan sebelumnya',
+    'CSR 138 : SO 매입원가 미등록・직전 월 원가 적용',
+    'CSR 138 : Harga pokok di SO belum terdaftar・memakai biaya bulan sebelumnya',
   ],
   [
-    '후보 D — 제품 마스터 구매가 미등록 (140개)',
-    'Kandidat D — Harga beli master produk belum terdaftar (140 item)',
+    '후보 D : 제품 마스터 구매가 미등록 (140개)',
+    'Kandidat D : Harga beli master produk belum terdaftar (140 item)',
   ],
-  ['후보 E — 판매가 미등록・이원화', 'Kandidat E — Harga jual belum terdaftar・ganda'],
+  ['후보 E : 판매가 미등록・이원화', 'Kandidat E : Harga jual belum terdaftar・ganda'],
 ]
 
 const H = {
   s1: ['1. 목적', '1. Tujuan'],
-  s2: ['2. 가격 분류', '2. Klasifikasi harga'],
+  s2: ['2. 가격 분류 (제안안)', '2. Klasifikasi harga (usulan)'],
   s3: [
     '3. 거래 단계에서 생기는 원가 (참고, 마스터 항목 아님)',
     '3. Biaya yang muncul di tahap transaksi (referensi, bukan item master)',
   ],
-  s4: ['4. 견적 원가 기준 — WH Price', '4. Dasar biaya penawaran — WH Price'],
+  s4: ['4. 견적 원가 기준 제안 : WH Price', '4. Usulan dasar biaya penawaran : WH Price'],
   s4p: [
-    '견적・고객주문・SO 마진은 ③ 창고기준원가(WH Price)로 계산 (2026-11-11 결정)',
-    'Margin penawaran・pesanan pelanggan・SO dihitung dengan ③ harga gudang (WH Price) (diputuskan 2026-11-11)',
+    '견적・고객주문・SO 마진을 ③ 창고기준원가(WH Price)로 계산하는 방안 (2026-11-11 제안, IT팀 검토 중)',
+    'Usulan menghitung margin penawaran・pesanan pelanggan・SO dengan ③ harga gudang (WH Price) (diusulkan 2026-11-11, sedang ditinjau tim IT)',
   ],
-  s5: ['5. 개발 규칙 (IT팀)', '5. Aturan pengembangan (tim IT)'],
+  s5: ['5. 검토 요청 사항 (IT팀)', '5. Hal yang perlu ditinjau (tim IT)'],
   s6: ['6. 현재 데이터 현황', '6. Kondisi data saat ini'],
   s7: ['7. 관련 CSR', '7. CSR terkait'],
 }
@@ -310,8 +310,8 @@ const H = {
         <p class="note">
           {{
             t([
-              '신설 필드명(landed_cost_idr・wh_price_idr)은 예시 — IT팀이 실제 명명 규칙에 맞춰 확정',
-              'Nama field baru (landed_cost_idr・wh_price_idr) hanya contoh — tim IT menetapkan sesuai aturan penamaan',
+              '신설 필드명(landed_cost_idr・wh_price_idr)은 예시이며, IT팀이 실제 명명 규칙에 맞춰 정함',
+              'Nama field baru (landed_cost_idr・wh_price_idr) hanya contoh : tim IT menetapkan sesuai aturan penamaan',
             ])
           }}
         </p>

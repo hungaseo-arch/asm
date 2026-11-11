@@ -34,8 +34,8 @@ async function submit() {
     <p class="lead">
       {{
         t(
-          'CSR 사용자로 등록된 계정으로만 개선요청을 볼 수 있습니다.',
-          'Hanya akun terdaftar yang dapat melihat permintaan perbaikan.',
+          '개선요청 조회는 로그인 없이 가능합니다. 입력・수정은 CSR 사용자로 등록된 계정으로 로그인해야 합니다.',
+          'Permintaan perbaikan bisa dilihat tanpa login. Input dan perubahan hanya untuk akun pengguna CSR yang terdaftar.',
         )
       }}
     </p>

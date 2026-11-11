@@ -5,7 +5,6 @@ import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
 import { isConfigured } from '../config'
 import { issueTitle, label, pickLinesLang } from '../i18n'
-import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrStatusLegend from '../components/CsrStatusLegend.vue'
 import CsrStatusBadge from '../components/CsrStatusBadge.vue'
 import { verifyFilterLabel } from '../status'
@@ -13,7 +12,7 @@ import { verifyFilterLabel } from '../status'
 /** 미등록 화면의 「다시 확인」 — 역할을 다시 읽고, 있으면 바로 목록을 불러옵니다. */
 async function recheck() {
   await session.refresh()
-  if (session.isAuthenticated && !session.isUnregistered) await issues.load()
+  await issues.load()
 }
 import CsrPasswordDialog from '../components/CsrPasswordDialog.vue'
 import { formatInt } from '@/utils/format'
@@ -81,7 +80,8 @@ watch(
 
 onMounted(async () => {
   await session.refresh()
-  if (session.isAuthenticated && !session.isUnregistered) {
+  // 2026-11-11 : 조회는 로그인 없이 공개(익명 JWT · db/045). 입력・수정만 로그인 + 역할이 필요합니다.
+  {
     await issues.load()
     // 머리줄의 고정 공지 한 줄. 실패해도 목록과 무관합니다.
     try {
@@ -188,36 +188,34 @@ watch(
 
       <div v-else-if="session.loading" class="asm-panel state">{{ L('loading') }}</div>
 
-      <CsrSignIn v-else-if="!session.isAuthenticated" />
-
       <!--
         로그인은 됐지만 csr_user_roles 에 없는 상태. RLS 때문에 목록이 통째로 비어 나오는데,
         그냥 '결과 없음' 으로 두면 사용자는 데이터가 없는 줄 압니다.
       -->
-      <div v-else-if="session.isUnregistered" class="asm-panel state">
-        <h2 class="asm-title">
-          {{ lang === 'id' ? 'Tidak memiliki akses' : '접근 권한이 없습니다' }}
-        </h2>
-        <p>
-          {{
-            lang === 'id'
-              ? `Akun dikenali tetapi belum terdaftar sebagai pengguna CSR (${session.user?.email}). Mintakan pendaftaran peran kepada admin.`
-              : `계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다(${session.user?.email}). 관리자에게 역할 등록을 요청하십시오.`
-          }}
-        </p>
-        <button type="button" class="btn btn-sm btn-primary mt-3 me-2" @click="recheck">
-          {{ lang === 'id' ? 'Periksa lagi' : '다시 확인' }}
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-outline-secondary mt-3"
-          @click="session.signOut()"
-        >
-          {{ lang === 'id' ? 'Masuk dengan akun lain' : '다른 계정으로 로그인' }}
-        </button>
-      </div>
-
       <template v-else>
+        <div v-if="session.isUnregistered" class="asm-panel state unreg">
+          <h2 class="asm-title">
+            {{ lang === 'id' ? 'Tidak memiliki akses' : '접근 권한이 없습니다' }}
+          </h2>
+          <p>
+            {{
+              lang === 'id'
+                ? `Akun dikenali tetapi belum terdaftar sebagai pengguna CSR (${session.user?.email}). Mintakan pendaftaran peran kepada admin.`
+                : `계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다(${session.user?.email}). 관리자에게 역할 등록을 요청하십시오.`
+            }}
+          </p>
+          <button type="button" class="btn btn-sm btn-primary mt-3 me-2" @click="recheck">
+            {{ lang === 'id' ? 'Periksa lagi' : '다시 확인' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary mt-3"
+            @click="session.signOut()"
+          >
+            {{ lang === 'id' ? 'Masuk dengan akun lain' : '다른 계정으로 로그인' }}
+          </button>
+        </div>
+
         <!-- 툴바 — 프리셋·언어 토글 (작업지시서 §5-2) -->
         <div class="toolbar">
           <div class="d-flex align-items-center gap-2 flex-wrap">

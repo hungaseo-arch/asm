@@ -247,8 +247,8 @@ onMounted(async () => {
       userNames.value = [] // 목록을 못 받으면 현재 값만 선택지로 남습니다
     }
   }
-  if (session.isAuthenticated && !session.isUnregistered) await load()
-  else loading.value = false
+  // 2026-11-11 : 상세 조회는 로그인 없이 공개(익명 JWT · db/045). 편집은 역할이 있을 때만.
+  await load()
 })
 watch(() => route.params.issueNo, load)
 
@@ -524,7 +524,8 @@ const isDirty = computed(() => {
   if (mdEditing.value && (mdDraft.ko !== mdSnapshot.ko || mdDraft.id !== mdSnapshot.id)) return true
   if (
     replyOpen.value &&
-    (replyDraft.decision || REPLY_TEXT_KEYS.some((k) => replyDraft[k + '_ko'] || replyDraft[k + '_id']))
+    (replyDraft.decision ||
+      REPLY_TEXT_KEYS.some((k) => replyDraft[k + '_ko'] || replyDraft[k + '_id']))
   )
     return true
   if (verifyOpen.value && (verifyDraft.result || verifyDraft.note_ko || verifyDraft.note_id))
@@ -703,7 +704,6 @@ watch(
 
       <div v-if="loading" class="asm-panel state">{{ L('loading') }}</div>
       <div v-else-if="error" class="asm-panel state err">{{ error }}</div>
-      <div v-else-if="!session.isAuthenticated" class="asm-panel state">{{ T('need_login') }}</div>
 
       <template v-else-if="issue">
         <!-- 속성 카드 (작업지시서 §5-2 상단 — 역할별 편집 가능 필드만 활성) -->

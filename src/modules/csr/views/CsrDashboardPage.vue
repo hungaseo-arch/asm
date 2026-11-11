@@ -7,7 +7,6 @@ import { useCsrIssuesStore } from '../stores/issues'
 import { IT_STATUSES, STATUS_TONE, isConfigured } from '../config'
 import { issueTitle, label, pickLang } from '../i18n'
 import { formatInt } from '@/utils/format'
-import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrStatusBadge from '../components/CsrStatusBadge.vue'
 import { useCsrLang } from '../composables/useCsrLang'
 import { VERIFY_CODES, isPendingVerification, mapLegacyVerifyStatus } from '../status'
@@ -32,7 +31,8 @@ const V = (v) => pickLang(v, lang.value)
 
 onMounted(async () => {
   await session.refresh()
-  if (session.isAuthenticated && !session.isUnregistered && !issues.rows.length) await issues.load()
+  // 2026-11-11 : 로그인 없이 조회 공개(익명 JWT · db/045)
+  if (!issues.rows.length) await issues.load()
 })
 
 const live = computed(() => issues.rows.filter((r) => !r.is_archived))
@@ -136,10 +136,6 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
       <div v-if="!isConfigured()" class="asm-panel state">설정이 필요합니다</div>
       <div v-else-if="session.loading || issues.loading" class="asm-panel state">
         {{ L('loading') }}
-      </div>
-      <CsrSignIn v-else-if="!session.isAuthenticated" />
-      <div v-else-if="session.isUnregistered" class="asm-panel state">
-        {{ t('접근 권한이 없습니다', 'Tidak memiliki akses') }}
       </div>
 
       <template v-else>

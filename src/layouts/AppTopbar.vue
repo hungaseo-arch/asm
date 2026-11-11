@@ -21,9 +21,13 @@ const onCsr = computed(() => route.path === '/csr' || route.path.startsWith('/cs
 /** 메뉴 라벨 — 표시 언어 쪽. */
 const nav = (entry) => navLabel(entry, identity.lang)
 const lang = computed({ get: () => identity.lang, set: (v) => identity.setLang(v) })
-/** 로그아웃 상태의 계정 버튼은 로그인 화면(/csr)으로 가는 문입니다. */
+/** 로그아웃 상태의 계정 버튼은 로그인 화면(/csr/login)으로 가는 문입니다. 로그인 뒤 지금 화면으로 돌아옵니다. */
 function onAccountClick() {
-  if (who.value.placeholder) router.push('/csr/dashboard')
+  if (who.value.placeholder)
+    router.push({
+      path: '/csr/login',
+      query: { next: route.fullPath.startsWith('/csr') ? route.fullPath : '/csr' },
+    })
   else accountOpen.value = !accountOpen.value
 }
 /**

@@ -65,6 +65,43 @@ export function getAuth() {
 async function getJwt() {
   const client = getAuth()
   if (!client) return null
+  const user = await getUserJwt(client)
+  return user ?? getAnonymousJwt()
+}
+
+/**
+ * 로그인하지 않은 방문자용 익명 JWT (2026-11-11 「개선요청・대시보드 공개」).
+ *
+ * Neon Auth 의 `GET /token/anonymous` 는 role=anonymous 토큰을 줍니다(1시간). Data API 는 이 토큰을
+ * anonymous 역할로 실행하므로, DB 에서 anonymous 에 준 SELECT 권한만 통합니다(db/045). 입력・수정은
+ * RLS 와 컬럼 가드가 계속 막습니다. 만료 1분 전까지 캐시해 요청마다 새로 받지 않습니다.
+ */
+let anon = null
+async function getAnonymousJwt() {
+  if (anon && anon.exp - 60_000 > Date.now()) return anon.token
+  try {
+    const res = await fetch(`${AUTH_URL}/token/anonymous`)
+    if (!res.ok) return null
+    const body = await res.json()
+    if (!body?.token) return null
+    const raw = body.expires_at
+    const exp =
+      typeof raw === 'number'
+        ? raw < 1e12
+          ? raw * 1000
+          : raw
+        : raw
+          ? new Date(raw).getTime()
+          : NaN
+    anon = { token: body.token, exp: Number.isFinite(exp) ? exp : Date.now() + 10 * 60_000 }
+    return anon.token
+  } catch {
+    return null
+  }
+}
+
+/** 로그인 세션의 JWT. 세션이 없으면 null. */
+async function getUserJwt(client) {
   try {
     // ※ 프록시 메서드에 옵셔널 호출(?.())을 쓰지 마십시오 — 프로덕션 빌드가 .call(client) 로 바꾸고
     //    better-auth 프록시는 .call 을 경로로 읽어 클라이언트 자신을 인자로 넘깁니다(2026-09-11 로그아웃 불가 원인).

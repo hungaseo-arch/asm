@@ -60,6 +60,13 @@ export const csrRoutes = [
     meta: { requiresAuth: false, title: 'ASM 가격 분류 체계' },
   },
   {
+    // 로그인 — 조회는 공개, 입력・수정만 로그인(2026-11-11). 헤더 「로그인」이 ?next= 로 돌아올 곳을 넘깁니다.
+    path: '/csr/login',
+    name: 'csr-login',
+    component: () => import('./views/CsrLoginPage.vue'),
+    meta: { requiresAuth: false, title: 'CSR 로그인' },
+  },
+  {
     // 공지 화면은 없앴습니다(2026-09-14). 남은 북마크가 이슈번호 'notices' 로 잡혀
     // 「없는 이슈」 화면을 띄우지 않도록 목록으로 돌려보냅니다.
     path: '/csr/notices',

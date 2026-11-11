@@ -431,7 +431,8 @@ tr.row-key td {
   background: var(--asm-primary-5);
 }
 .callout {
-  border-left: 3px solid var(--asm-primary);
+  background: var(--asm-primary-5);
+  border-radius: var(--asm-radius-sm);
   padding: 8px 12px;
   margin: 0;
   font-weight: 600;

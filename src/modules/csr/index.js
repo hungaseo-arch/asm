@@ -53,6 +53,13 @@ export const csrRoutes = [
     meta: { requiresAuth: false, title: '판매서류 표준양식', docSet: 'forms' },
   },
   {
+    // ASM 가격 분류 체계 — 자료실 정적 문서(2026-11-11 서종환 결정 · 견적 원가 = WH Price).
+    path: '/csr/price-system',
+    name: 'csr-price-system',
+    component: () => import('./views/CsrPriceSystemPage.vue'),
+    meta: { requiresAuth: false, title: 'ASM 가격 분류 체계' },
+  },
+  {
     // 공지 화면은 없앴습니다(2026-09-14). 남은 북마크가 이슈번호 'notices' 로 잡혀
     // 「없는 이슈」 화면을 띄우지 않도록 목록으로 돌려보냅니다.
     path: '/csr/notices',

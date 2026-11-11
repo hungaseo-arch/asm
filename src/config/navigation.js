@@ -45,6 +45,12 @@ export const navItems = [
         to: '/csr/forms',
         badge: SALES_FORMS.length,
       },
+      {
+        label: 'ASM 가격 분류 체계',
+        labelId: 'Klasifikasi harga ASM',
+        icon: 'CircleDollarSign',
+        to: '/csr/price-system',
+      },
     ],
   },
 ]

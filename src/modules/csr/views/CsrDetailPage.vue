@@ -231,8 +231,9 @@ const renderMd = (text) => {
   for (const raw of String(src).replace(/\r/g, '').split('\n')) {
     const line = escapeHtml(raw.replace(/\s+$/, ''))
     if (!line.trim()) {
+      // 빈 줄은 문단만 끝냅니다. 목록은 열어 둬야 「1. a ⏎⏎ 2. b」 가 한 목록으로 이어집니다(R-3).
+      // 목록을 닫는 건 뒤따르는 제목·문단·종류가 다른 목록 항목이고, 마지막에도 한 번 닫습니다.
       flushPara()
-      closeList()
       continue
     }
     const heading = line.match(/^\s{0,3}#{1,6}[ ]+(.+)$/)
@@ -248,7 +249,11 @@ const renderMd = (text) => {
       const type = item[3] ? 'ol' : 'ul'
       if (listType !== type) {
         closeList()
-        out.push(`<${type}>`)
+        // 번호 목록은 원문의 번호로 시작합니다. 사이에 「- 하위 항목」이 끼어 목록이 갈라져도
+        // 「2.」 가 1 로 되돌아가지 않게 합니다(R-3). item[3] 은 \d+ 로 잡은 숫자뿐이라 안전합니다.
+        const n = Number(item[3])
+        const startAt = type === 'ol' && n > 1 && n <= 9999 ? ` start="${n}"` : ''
+        out.push(`<${type}${startAt}>`)
         listType = type
       }
       const level = Math.min(Math.floor(item[1].replace(/\t/g, '  ').length / 2), 3)

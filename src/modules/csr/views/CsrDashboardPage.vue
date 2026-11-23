@@ -1,6 +1,5 @@
 <script setup>
 import { computed, onMounted, reactive } from 'vue'
-import { useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useCsrSessionStore } from '../stores/session'
 import { useCsrIssuesStore } from '../stores/issues'
@@ -23,7 +22,6 @@ import { VERIFY_CODES, isPendingVerification, mapLegacyVerifyStatus } from '../s
  * 목록 스토어의 63건을 그대로 집계합니다 — 63건 규모에서 서버 집계를 따로 두면
  * 두 곳의 숫자가 어긋날 여지만 생깁니다. 아카이브(삭제) 3건은 전부 제외합니다.
  */
-const router = useRouter()
 const session = useCsrSessionStore()
 const issues = useCsrIssuesStore()
 const { lang, t } = useCsrLang()
@@ -44,13 +42,17 @@ const live = computed(() => issues.rows.filter((r) => !r.is_archived))
 const PAGE_SIZE = 10
 const page = reactive({ pending: 1, noreply: 1 })
 const pageCount = (list) => Math.max(1, Math.ceil(list.length / PAGE_SIZE))
+// 필터가 바뀌어 페이지 수가 줄면 마지막 페이지로 보정합니다(상태를 바꾸지 않는 계산값).
+const pageNow = (list, key) => Math.min(page[key], pageCount(list))
 const slicePage = (list, key) => {
-  // 필터가 바뀌어 페이지 수가 줄면 마지막 페이지로 되돌립니다.
-  if (page[key] > pageCount(list)) page[key] = pageCount(list)
-  return list.slice((page[key] - 1) * PAGE_SIZE, page[key] * PAGE_SIZE)
+  const p = pageNow(list, key)
+  return list.slice((p - 1) * PAGE_SIZE, p * PAGE_SIZE)
 }
 const pagedPending = computed(() => slicePage(pendingVerify.value, 'pending'))
 const pagedNoReply = computed(() => slicePage(noReply.value, 'noreply'))
+const step = (list, key, d) => {
+  page[key] = pageNow(list, key) + d
+}
 const c = computed(() => issues.counts)
 
 /**
@@ -119,7 +121,15 @@ const byPicCols = computed(() => {
 })
 
 const title = (r) => issueTitle(r, lang.value)
-const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
+const issueTo = (r) => `/csr/${encodeURIComponent(r.issue_no)}`
+const UNASSIGNED = '—'
+
+/**
+ * 숫자 → 목록 이동. 목록 화면이 이미 읽는 쿼리(itStatus · verification · pic)만 씁니다.
+ * 목록은 진입 시 쿼리에 있는 키만 덮어쓰므로 목록에 남아 있던 다른 필터는 유지됩니다.
+ */
+const listTo = (q = {}) => ({ path: '/csr', query: q })
+const known = (v) => VERIFY_CODES.includes(v)
 </script>
 
 <template>
@@ -133,13 +143,18 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
         <!-- 언어 토글은 헤더로 옮겼습니다(2026-09-14, CSR 전체 페이지 공통). -->
       </div>
 
-      <div v-if="!isConfigured()" class="asm-panel state">설정이 필요합니다</div>
-      <div v-else-if="session.loading || issues.loading" class="asm-panel state">
+      <div v-if="!isConfigured()" class="asm-panel state" role="status">
+        {{ t('설정이 필요합니다', 'Konfigurasi diperlukan') }}
+      </div>
+      <div v-else-if="session.loading || issues.loading" class="asm-panel state" role="status">
         {{ L('loading') }}
       </div>
       <CsrSignIn v-else-if="!session.isAuthenticated" />
-      <div v-else-if="session.isUnregistered" class="asm-panel state">
+      <div v-else-if="session.isUnregistered" class="asm-panel state" role="status">
         {{ t('접근 권한이 없습니다', 'Tidak memiliki akses') }}
+      </div>
+      <div v-else-if="issues.error" class="asm-panel state" role="alert">
+        {{ t('목록을 불러오지 못했습니다', 'Gagal memuat daftar') }}
       </div>
 
       <template v-else>
@@ -147,7 +162,12 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
         <div class="cards">
           <article class="asm-panel card">
             <span class="asm-kpi-label">Total</span>
-            <strong class="asm-kpi-value">{{ formatInt(c.total) }}</strong>
+            <RouterLink
+              :to="listTo()"
+              class="asm-kpi-value stat-link"
+              :aria-label="`Total ${c.total} — ${t('목록 보기', 'Lihat daftar')}`"
+              >{{ formatInt(c.total) }}</RouterLink
+            >
             <small class="asm-kpi-delta">{{ t('아카이브 제외', 'tanpa arsip') }}</small>
           </article>
           <article
@@ -157,7 +177,12 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
             :class="`tone-${STATUS_TONE[s]}`"
           >
             <span class="asm-kpi-label">{{ s }}</span>
-            <strong class="asm-kpi-value">{{ formatInt(c[s.toLowerCase()]) }}</strong>
+            <RouterLink
+              :to="listTo({ itStatus: s })"
+              class="asm-kpi-value stat-link"
+              :aria-label="`${s} ${c[s.toLowerCase()]} — ${t('목록 보기', 'Lihat daftar')}`"
+              >{{ formatInt(c[s.toLowerCase()]) }}</RouterLink
+            >
             <small v-if="s === 'Completed'" class="asm-kpi-delta">{{
               t('검증 대기', 'menunggu verifikasi')
             }}</small>
@@ -175,31 +200,51 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
           </h2>
           <div class="table-scroll">
             <table class="table asm-table cross">
+              <caption class="sr-only">
+                {{ L('it_status') }} × {{ L('verification_result') }}
+              </caption>
               <thead>
                 <tr>
-                  <th></th>
-                  <th v-for="v in verifValues" :key="v" class="nowrap num">
+                  <th scope="col"><span class="sr-only">{{ L('it_status') }}</span></th>
+                  <th v-for="v in verifValues" :key="v" scope="col" class="nowrap num">
                     <CsrStatusBadge kind="verification_result" :value="v" :lang="lang" />
                   </th>
-                  <th class="nowrap num total">{{ t('합계', 'Total') }}</th>
+                  <th scope="col" class="nowrap num total">{{ t('합계', 'Total') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="s in IT_STATUSES.filter((x) => rowTotal(x))" :key="s">
-                  <th class="nowrap">
+                  <th scope="row" class="nowrap">
                     <CsrStatusBadge kind="it_status" :value="s" :lang="lang" />
                   </th>
                   <td v-for="v in verifValues" :key="v" class="num">
-                    {{ cross[`${s}|${v}`] ?? '' }}
+                    <RouterLink
+                      v-if="cross[`${s}|${v}`] && known(v)"
+                      :to="listTo({ itStatus: s, verification: v })"
+                      class="cell-link"
+                      >{{ cross[`${s}|${v}`] }}</RouterLink
+                    >
+                    <template v-else>{{ cross[`${s}|${v}`] ?? '' }}</template>
                   </td>
-                  <td class="num total">{{ rowTotal(s) }}</td>
+                  <td class="num total">
+                    <RouterLink :to="listTo({ itStatus: s })" class="cell-link">{{
+                      rowTotal(s)
+                    }}</RouterLink>
+                  </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <th>{{ t('합계', 'Total') }}</th>
-                  <td v-for="v in verifValues" :key="v" class="num">{{ colTotal(v) }}</td>
-                  <td class="num total">{{ c.total }}</td>
+                  <th scope="row">{{ t('합계', 'Total') }}</th>
+                  <td v-for="v in verifValues" :key="v" class="num">
+                    <RouterLink v-if="known(v)" :to="listTo({ verification: v })" class="cell-link">{{
+                      colTotal(v)
+                    }}</RouterLink>
+                    <template v-else>{{ colTotal(v) }}</template>
+                  </td>
+                  <td class="num total">
+                    <RouterLink :to="listTo()" class="cell-link">{{ c.total }}</RouterLink>
+                  </td>
                 </tr>
               </tfoot>
             </table>
@@ -215,38 +260,38 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
             </h2>
             <p v-if="!pendingVerify.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>
             <ul v-else class="list">
-              <li
-                v-for="r in pagedPending"
-                :key="r.id"
-                role="button"
-                tabindex="0"
-                @click="open(r)"
-                @keydown.enter="open(r)"
-                @keydown.space.prevent="open(r)"
-              >
-                <span class="no">{{ r.issue_no }}</span>
+              <li v-for="r in pagedPending" :key="r.id">
+                <RouterLink :to="issueTo(r)" class="no row-link">{{ r.issue_no }}</RouterLink>
                 <CsrStatusBadge kind="it_status" :value="r.it_status" :lang="lang" />
                 <span class="ttl" :title="title(r)">{{ title(r) }}</span>
-                <span class="pic">{{ r.it_pic ?? '—' }}</span>
+                <span class="pic"
+                  ><span class="sr-only">{{ L('it_pic') }}: </span>{{ r.it_pic ?? UNASSIGNED }}</span
+                >
               </li>
             </ul>
-            <nav v-if="pendingVerify.length > PAGE_SIZE" class="pager" aria-label="pagination">
+            <nav
+              v-if="pendingVerify.length > PAGE_SIZE"
+              class="pager"
+              :aria-label="t('현업 검증 대기 페이지', 'Halaman menunggu verifikasi')"
+            >
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
                 :aria-label="t('이전 페이지', 'Halaman sebelumnya')"
-                :disabled="page.pending <= 1"
-                @click="page.pending--"
+                :disabled="pageNow(pendingVerify, 'pending') <= 1"
+                @click="step(pendingVerify, 'pending', -1)"
               >
                 ‹
               </button>
-              <span>{{ page.pending }} / {{ pageCount(pendingVerify) }}</span>
+              <span aria-live="polite"
+                >{{ pageNow(pendingVerify, 'pending') }} / {{ pageCount(pendingVerify) }}</span
+              >
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
                 :aria-label="t('다음 페이지', 'Halaman berikutnya')"
-                :disabled="page.pending >= pageCount(pendingVerify)"
-                @click="page.pending++"
+                :disabled="pageNow(pendingVerify, 'pending') >= pageCount(pendingVerify)"
+                @click="step(pendingVerify, 'pending', 1)"
               >
                 ›
               </button>
@@ -261,38 +306,38 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
             </h2>
             <p v-if="!noReply.length" class="muted">{{ t('없음', 'Tidak ada') }}</p>
             <ul v-else class="list">
-              <li
-                v-for="r in pagedNoReply"
-                :key="r.id"
-                role="button"
-                tabindex="0"
-                @click="open(r)"
-                @keydown.enter="open(r)"
-                @keydown.space.prevent="open(r)"
-              >
-                <span class="no">{{ r.issue_no }}</span>
+              <li v-for="r in pagedNoReply" :key="r.id">
+                <RouterLink :to="issueTo(r)" class="no row-link">{{ r.issue_no }}</RouterLink>
                 <CsrStatusBadge kind="it_status" :value="r.it_status" :lang="lang" />
                 <span class="ttl" :title="title(r)">{{ title(r) }}</span>
-                <span class="pic">{{ V(r.priority) ?? '' }}</span>
+                <span class="pic"
+                  ><span class="sr-only">{{ L('priority') }}: </span>{{ V(r.priority) ?? '' }}</span
+                >
               </li>
             </ul>
-            <nav v-if="noReply.length > PAGE_SIZE" class="pager" aria-label="pagination">
+            <nav
+              v-if="noReply.length > PAGE_SIZE"
+              class="pager"
+              :aria-label="t('IT부서 미회신 페이지', 'Halaman belum ada balasan Tim IT')"
+            >
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
                 :aria-label="t('이전 페이지', 'Halaman sebelumnya')"
-                :disabled="page.noreply <= 1"
-                @click="page.noreply--"
+                :disabled="pageNow(noReply, 'noreply') <= 1"
+                @click="step(noReply, 'noreply', -1)"
               >
                 ‹
               </button>
-              <span>{{ page.noreply }} / {{ pageCount(noReply) }}</span>
+              <span aria-live="polite"
+                >{{ pageNow(noReply, 'noreply') }} / {{ pageCount(noReply) }}</span
+              >
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
                 :aria-label="t('다음 페이지', 'Halaman berikutnya')"
-                :disabled="page.noreply >= pageCount(noReply)"
-                @click="page.noreply++"
+                :disabled="pageNow(noReply, 'noreply') >= pageCount(noReply)"
+                @click="step(noReply, 'noreply', 1)"
               >
                 ›
               </button>
@@ -307,19 +352,40 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
           </h2>
           <div class="pic-cols">
             <table v-for="(col, i) in byPicCols" :key="i" class="table asm-table pic-table">
+              <caption class="sr-only">
+                {{ t('담당자별 진행 중', 'Berjalan per PIC') }}
+              </caption>
               <thead>
                 <tr>
-                  <th>{{ L('it_pic') }}</th>
-                  <th class="num">Open</th>
-                  <th class="num">Ongoing</th>
-                  <th class="num total">{{ t('합계', 'Total') }}</th>
+                  <th scope="col">{{ L('it_pic') }}</th>
+                  <th scope="col" class="num">Open</th>
+                  <th scope="col" class="num">Ongoing</th>
+                  <th scope="col" class="num total">{{ t('합계', 'Total') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="p in col" :key="p.pic">
-                  <td>{{ p.pic }}</td>
-                  <td class="num">{{ p.open || '' }}</td>
-                  <td class="num">{{ p.ongoing || '' }}</td>
+                  <th scope="row" class="pic-name">
+                    {{ p.pic === UNASSIGNED ? t('미지정', 'Belum ditentukan') : p.pic }}
+                  </th>
+                  <td class="num">
+                    <RouterLink
+                      v-if="p.open && p.pic !== UNASSIGNED"
+                      :to="listTo({ pic: p.pic, itStatus: 'Open' })"
+                      class="cell-link"
+                      >{{ p.open }}</RouterLink
+                    >
+                    <template v-else>{{ p.open || '' }}</template>
+                  </td>
+                  <td class="num">
+                    <RouterLink
+                      v-if="p.ongoing && p.pic !== UNASSIGNED"
+                      :to="listTo({ pic: p.pic, itStatus: 'Ongoing' })"
+                      class="cell-link"
+                      >{{ p.ongoing }}</RouterLink
+                    >
+                    <template v-else>{{ p.ongoing || '' }}</template>
+                  </td>
                   <td class="num total">{{ p.total }}</td>
                 </tr>
               </tbody>
@@ -388,18 +454,62 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
   font-size: 22px;
   line-height: 1.3;
 }
-/* 톤 — 가이드 3-3 상태색을 좌측 3px 띠로 */
+/* 톤 — Triple Status Rule: 글자색 · soft 배경 · 테두리 3종을 함께 씁니다(좌측 띠 폐지). */
 .tone-danger {
-  border-left: 3px solid var(--asm-danger);
+  color: var(--asm-danger-fg);
+  background: var(--asm-danger-bg);
+  border-color: var(--asm-danger-border);
 }
-.tone-info {
-  border-left: 3px solid var(--asm-primary);
+.tone-info,
+.tone-primary {
+  color: var(--asm-info-fg);
+  background: var(--asm-info-bg);
+  border-color: var(--asm-info-border);
 }
 .tone-success {
-  border-left: 3px solid var(--asm-success);
+  color: var(--asm-success-fg);
+  background: var(--asm-success-bg);
+  border-color: var(--asm-success-border);
 }
-.tone-primary {
-  border-left: 3px solid var(--asm-primary);
+.card .asm-kpi-label,
+.card .asm-kpi-delta {
+  color: inherit;
+}
+.stat-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.stat-link:hover,
+.cell-link:hover {
+  text-decoration: underline;
+}
+.stat-link:focus-visible,
+.cell-link:focus-visible {
+  outline: 2px solid var(--asm-primary);
+  outline-offset: 2px;
+}
+.cell-link {
+  display: inline-block;
+  min-width: 1.5em;
+  color: inherit;
+  text-decoration: none;
+  font-weight: inherit;
+}
+.pic-name {
+  font-weight: 400;
+  text-align: left;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .sec {
   padding: 20px 24px;
@@ -435,7 +545,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
   color: var(--asm-primary);
   background: var(--asm-primary-soft);
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: 4px;
 }
 .table-scroll {
   overflow-x: auto;
@@ -475,7 +585,7 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
   gap: 10px;
   padding: 8px 4px;
   border-top: 1px solid var(--asm-border);
-  cursor: pointer;
+  position: relative;
   font-size: 13px;
 }
 .list li:first-child {
@@ -484,14 +594,57 @@ const open = (r) => router.push(`/csr/${encodeURIComponent(r.issue_no)}`)
 .list li:hover {
   background: var(--asm-primary-6);
 }
-.list li:focus-visible {
+/* 행 전체를 번호 링크의 클릭 영역으로 확장(stretched link). 실제 href 라 새 탭·링크 목록에서도 동작합니다. */
+.list .row-link {
+  color: inherit;
+  text-decoration: none;
+}
+.list .row-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.list li:has(.row-link:focus-visible) {
+  outline: 2px solid var(--asm-primary);
+  outline-offset: -2px;
+}
+.list .row-link:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 2px var(--asm-primary-40);
 }
 .list .no {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   min-width: 2.2em;
+}
+/* 320px — 번호·배지·담당자를 윗줄에, 제목은 아랫줄 전체 폭에 두 줄까지 보여 줍니다. */
+@media (max-width: 520px) {
+  .list li {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'no badge pic'
+      'ttl ttl ttl';
+    row-gap: 4px;
+  }
+  .list li > .no {
+    grid-area: no;
+  }
+  .list li > :nth-child(2) {
+    grid-area: badge;
+  }
+  .list li > .pic {
+    grid-area: pic;
+    justify-self: end;
+    white-space: normal;
+    text-align: right;
+  }
+  .list li > .ttl {
+    grid-area: ttl;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
 }
 .list .ttl {
   overflow: hidden;

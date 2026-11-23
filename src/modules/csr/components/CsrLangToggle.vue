@@ -74,11 +74,17 @@ const pick = (v) => emit('update:modelValue', v)
 .flag {
   border: 1px solid var(--asm-border);
   background: var(--asm-card);
+  /* 컨트롤 최소 높이 Small 30px (DESIGN.md) */
+  min-width: 30px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 3px;
   border-radius: var(--asm-radius-sm);
   line-height: 0;
   cursor: pointer;
-  opacity: 0.55;
+  opacity: 0.7;
   transition:
     opacity 0.15s,
     box-shadow 0.15s;
@@ -93,7 +99,7 @@ const pick = (v) => emit('update:modelValue', v)
   outline-offset: -1px;
 }
 .flag:hover {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 /* 활성 국기는 또렷하게 + 블루 링 (가이드 7-2 활성 표시와 같은 색) */
 .flag.active {

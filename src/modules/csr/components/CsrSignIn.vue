@@ -29,7 +29,7 @@ async function submit() {
     운영 화면의 AuthPage.vue 와 별개입니다. 그쪽은 실서버 세션(현재 비활성)을 쓰고,
     이쪽은 Neon Auth 를 씁니다 — 인증 주체가 다르므로 화면도 나눕니다.
   -->
-  <form class="asm-panel signin" @submit.prevent="submit">
+  <form class="asm-panel signin" :aria-busy="busy" @submit.prevent="submit">
     <h2 class="asm-title">{{ t('로그인', 'Masuk') }}</h2>
     <p class="lead">
       {{
@@ -64,13 +64,18 @@ async function submit() {
         autocomplete="current-password"
         required
         :disabled="busy"
+        :aria-invalid="!!session.error"
+        :aria-describedby="session.error ? 'signin-err' : undefined"
       />
     </label>
 
     <!-- 로그인 실패 사유는 서버 문구를 그대로 보여 줍니다 — 임의로 바꾸면 원인 파악이 어렵습니다. -->
-    <p v-if="session.error" class="err" role="alert">{{ session.error }}</p>
+    <div v-if="session.error" id="signin-err" class="err" role="alert">
+      <p>{{ session.error }}</p>
+      <p>{{ t('이메일·비밀번호를 확인하십시오.', 'Periksa email dan kata sandi.') }}</p>
+    </div>
 
-    <button type="submit" class="btn btn-primary" :disabled="busy">
+    <button type="submit" class="btn btn-primary btn-lg" :disabled="busy">
       {{ busy ? t('확인 중…', 'Memeriksa…') : t('로그인', 'Masuk') }}
     </button>
 
@@ -108,6 +113,9 @@ async function submit() {
 .field span {
   font-size: 12px;
   font-weight: 500;
+}
+.err p {
+  margin: 0;
 }
 .err {
   margin: 0;

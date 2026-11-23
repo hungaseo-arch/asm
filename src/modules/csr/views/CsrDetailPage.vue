@@ -635,6 +635,10 @@ async function onRemoveAttachment(a) {
  * 캐시를 건너뜁니다(세 호스트 모두 모르는 쿼리를 무시하고 200 을 줍니다). 첫 시도는 그대로 두어 정상
  * 캐시는 계속 살립니다. 크기 suffix 없는 세 번째 주소는 원본 바이트라 리사이즈 생성 단계도 피합니다.
  */
+/*
+ * Referer 는 보내지 않습니다 (img referrerpolicy="no-referrer") — Google 이 Referer 가 localhost 인 요청에
+ * 세 주소 모두 429 를 돌려줘, 로컬 개발·미리보기에서 캡쳐가 전부 안내 문구로 떨어졌습니다(github.io 는 정상).
+ */
 const THUMB_URLS = (fileId, w) => [
   `https://lh3.googleusercontent.com/d/${fileId}=w${w}`,
   `https://drive.google.com/thumbnail?id=${fileId}&sz=w${w}`,
@@ -879,6 +883,7 @@ watch(
                     width="320"
                     height="200"
                     loading="lazy"
+                    referrerpolicy="no-referrer"
                     @error="onThumbError(a.drive_file_id)"
                   />
                   <span v-else class="shot-fallback">
@@ -1278,6 +1283,7 @@ watch(
           <img
             :src="thumb(lightbox.drive_file_id, 2000)"
             :alt="lightbox.file_name ?? ''"
+            referrerpolicy="no-referrer"
             @error="onThumbError(lightbox.drive_file_id)"
           />
           <div class="lightbox-bar">

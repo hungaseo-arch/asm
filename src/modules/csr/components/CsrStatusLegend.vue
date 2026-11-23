@@ -15,6 +15,7 @@ import CsrStatusDefTable from './CsrStatusDefTable.vue'
 const props = defineProps({ lang: { type: String, default: 'id' } })
 const open = ref(false)
 const root = ref(null)
+const toggleBtn = ref(null)
 const { t } = useCsrLang(() => props.lang)
 
 // 노션 잔존값(On Hold · N/A)은 표준 4단계가 아니라 범례에서 뺍니다.
@@ -26,7 +27,10 @@ function onDoc(e) {
   if (open.value && root.value && !root.value.contains(e.target)) open.value = false
 }
 function onKey(e) {
-  if (e.key === 'Escape') open.value = false
+  if (e.key === 'Escape' && open.value) {
+    open.value = false
+    toggleBtn.value?.focus() // 닫힌 뒤 포커스를 열었던 단추로 되돌립니다
+  }
 }
 onMounted(() => {
   document.addEventListener('click', onDoc)
@@ -41,18 +45,21 @@ onBeforeUnmount(() => {
 <template>
   <div ref="root" class="legend">
     <button
+      ref="toggleBtn"
       type="button"
       class="btn btn-sm btn-outline-secondary"
+      aria-controls="csr-legend-panel"
       :aria-expanded="open"
       @click="open = !open"
     >
-      {{ t('범례', 'Legenda') }} {{ open ? '▴' : '▾' }}
+      {{ t('범례', 'Legenda') }} <span aria-hidden="true">{{ open ? '▴' : '▾' }}</span>
     </button>
 
     <div
       v-if="open"
+      id="csr-legend-panel"
       class="legend-panel asm-panel"
-      role="dialog"
+      role="region"
       :aria-label="t('상태 범례', 'Legenda status')"
     >
       <h3>
@@ -94,9 +101,11 @@ onBeforeUnmount(() => {
   right: 0;
   top: calc(100% + 6px);
   z-index: 1060;
-  width: min(760px, 92vw);
+  width: min(760px, calc(100vw - 32px));
+  max-height: 70vh;
+  overflow: auto;
   padding: 14px 16px;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  box-shadow: var(--asm-shadow-md);
   font-size: 13px;
 }
 .legend-panel h3 {

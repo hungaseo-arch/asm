@@ -8,7 +8,7 @@ import { issueTitle, label, pickLinesLang } from '../i18n'
 import CsrSignIn from '../components/CsrSignIn.vue'
 import CsrStatusLegend from '../components/CsrStatusLegend.vue'
 import CsrStatusBadge from '../components/CsrStatusBadge.vue'
-import { verifyFilterLabel } from '../status'
+import { PENDING_VERIFICATION, verifyFilterLabel } from '../status'
 
 /** 미등록 화면의 「다시 확인」 — 역할을 다시 읽고, 있으면 바로 목록을 불러옵니다. */
 async function recheck() {
@@ -101,6 +101,8 @@ onMounted(async () => {
 })
 
 const lang = computed(() => issues.lang)
+/** 이 파일 안에서만 쓰는 한·인니 선택자. */
+const t = (ko, id) => (lang.value === 'id' ? id : ko)
 
 /**
  * 표 열 — 라벨 키와 정렬 컬럼. 제목은 토글 언어 쪽 컬럼으로 정렬합니다.
@@ -115,6 +117,7 @@ const COLUMNS = computed(() => [
   { key: 'verification_result', sortKey: 'verification_result' },
   { key: 'it_pic', sortKey: 'it_pic' },
 ])
+const COL_COUNT = 6
 const sortMark = (k) => (issues.sort.key !== k ? '' : issues.sort.dir === 'asc' ? '▲' : '▼')
 const ariaSort = (k) =>
   issues.sort.key !== k ? 'none' : issues.sort.dir === 'asc' ? 'ascending' : 'descending'
@@ -130,6 +133,19 @@ const priorityLabel = (p) => String(p).replace(/^(S[0-9]) +(.+)$/, '$1 ($2)')
  */
 const title = (row) => issueTitle(row, lang.value)
 
+/** 활성 프리셋 표시 — 현재 필터가 어떤 프리셋(또는 전체)과 같은지만 계산합니다. 보관 표시 여부는 무관. */
+const matchesOnly = (patch) => {
+  const f = issues.filters
+  return Object.keys(FILTER_DEFAULTS).every(
+    (k) => k === 'showArchived' || f[k] === (k in patch ? patch[k] : FILTER_DEFAULTS[k]),
+  )
+}
+const presetIt = computed(() => matchesOnly({ excludeVerified: true }))
+const presetPending = computed(() => matchesOnly({ itStatus: PENDING_VERIFICATION.itStatus }))
+const presetAll = computed(() => matchesOnly({}))
+const isSet = (k) => issues.filters[k] !== 'All'
+
+/** 행 어디를 눌러도 상세로(마우스 보조 동작). 키보드·보조기기는 이슈번호 링크를 씁니다. */
 const openDetail = (row) => router.push(`/csr/${encodeURIComponent(row.issue_no)}`)
 
 /** 목록 상단 스트립에 보일 고정 공지(만료 전). 공지 화면이 없어진 뒤 읽기 전용입니다. */
@@ -179,8 +195,12 @@ watch(
 
       <!-- 설정 누락 · 미로그인 · 미등록은 각각 다른 안내가 필요합니다. -->
       <div v-if="!isConfigured()" class="asm-panel state">
-        <h2 class="asm-title">설정이 필요합니다</h2>
-        <p>
+        <h2 class="asm-title">{{ t('설정이 필요합니다', 'Pengaturan diperlukan') }}</h2>
+        <p v-if="lang === 'id'">
+          <code>VITE_CSR_DATA_API_URL</code> · <code>VITE_CSR_AUTH_URL</code> kosong sehingga tidak
+          dapat terhubung ke Neon. Periksa file <code>.env</code>.
+        </p>
+        <p v-else>
           <code>VITE_CSR_DATA_API_URL</code> · <code>VITE_CSR_AUTH_URL</code> 이 비어 있어 Neon 에
           연결할 수 없습니다. <code>.env</code> 를 확인하십시오.
         </p>
@@ -230,22 +250,39 @@ watch(
               :placeholder="L('search')"
               :aria-label="L('search')"
             />
-            <button type="button" class="btn btn-sm preset-btn" @click="issues.applyPreset('it')">
-              {{ L('preset_it') }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm preset-btn"
-              @click="issues.applyPreset('pending')"
-            >
-              {{ L('preset_pending') }}
-            </button>
-            <button type="button" class="btn btn-sm preset-btn" @click="issues.reset()">
-              {{ L('reset') }}
-            </button>
+            <div class="preset-group" role="group" :aria-label="t('빠른 필터', 'Filter cepat')">
+              <button
+                type="button"
+                class="btn btn-sm preset-btn"
+                :class="{ active: presetAll }"
+                :aria-pressed="presetAll"
+                @click="issues.reset()"
+              >
+                {{ L('reset') }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm preset-btn"
+                :class="{ active: presetIt }"
+                :aria-pressed="presetIt"
+                @click="issues.applyPreset('it')"
+              >
+                {{ L('preset_it') }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm preset-btn"
+                :class="{ active: presetPending }"
+                :aria-pressed="presetPending"
+                @click="issues.applyPreset('pending')"
+              >
+                {{ L('preset_pending') }}
+              </button>
+            </div>
             <select
               v-model="issues.filters.priority"
               class="form-select form-select-sm w-auto filter-select"
+              :class="{ 'is-set': isSet('priority') }"
               :aria-label="L('priority')"
             >
               <option value="All">{{ L('priority') }}: {{ L('reset') }}</option>
@@ -256,6 +293,7 @@ watch(
             <select
               v-model="issues.filters.verification"
               class="form-select form-select-sm w-auto filter-select"
+              :class="{ 'is-set': isSet('verification') }"
               :aria-label="L('verification_result')"
             >
               <option value="All">{{ L('verification_result') }}: {{ L('reset') }}</option>
@@ -266,12 +304,13 @@ watch(
             <select
               v-model="issues.filters.pic"
               class="form-select form-select-sm w-auto filter-select"
+              :class="{ 'is-set': isSet('pic') }"
               :aria-label="L('it_pic')"
             >
               <option value="All">{{ L('it_pic') }}: {{ L('reset') }}</option>
               <option v-for="p in issues.options.pic" :key="p" :value="p">{{ p }}</option>
             </select>
-            <span class="vr"></span>
+            <span class="vr" aria-hidden="true"></span>
             <router-link to="/csr/dashboard" class="btn btn-sm nav-btn">
               {{ lang === 'id' ? 'Dasbor' : '대시보드' }}
             </router-link>
@@ -309,22 +348,28 @@ watch(
                     class="sortable"
                     :class="{ active: issues.sort.key === c.sortKey }"
                     :aria-sort="ariaSort(c.sortKey)"
-                    @click="issues.toggleSort(c.sortKey)"
                   >
-                    {{ L(c.key) }}
-                    <span class="sort-mark" aria-hidden="true">{{ sortMark(c.sortKey) }}</span>
+                    <button type="button" class="sort-btn" @click="issues.toggleSort(c.sortKey)">
+                      {{ L(c.key) }}
+                      <span class="sort-mark" aria-hidden="true">{{ sortMark(c.sortKey) }}</span>
+                    </button>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="issues.loading">
-                  <td colspan="7" class="empty-row">{{ L('loading') }}</td>
+                  <td :colspan="COL_COUNT" class="empty-row">{{ L('loading') }}</td>
                 </tr>
                 <tr v-else-if="issues.error">
-                  <td colspan="7" class="empty-row err">{{ issues.error }}</td>
+                  <td :colspan="COL_COUNT" class="empty-row err">
+                    {{ issues.error }}
+                    <button type="button" class="btn btn-sm nav-btn ms-2" @click="issues.load()">
+                      {{ t('다시 시도', 'Coba lagi') }}
+                    </button>
+                  </td>
                 </tr>
                 <tr v-else-if="!issues.filtered.length">
-                  <td colspan="7" class="empty-row">{{ L('empty') }}</td>
+                  <td :colspan="COL_COUNT" class="empty-row">{{ L('empty') }}</td>
                 </tr>
                 <tr
                   v-for="row in issues.filtered"
@@ -332,13 +377,20 @@ watch(
                   :key="row.id"
                   class="row-link"
                   :class="{ 'is-archived': row.is_archived }"
-                  tabindex="0"
-                  role="button"
                   @click="openDetail(row)"
-                  @keydown.enter="openDetail(row)"
-                  @keydown.space.prevent="openDetail(row)"
                 >
-                  <td class="no-col">{{ row.issue_no }}</td>
+                  <td class="no-col">
+                    <router-link
+                      :to="`/csr/${encodeURIComponent(row.issue_no)}`"
+                      class="no-link"
+                      @click.stop
+                    >
+                      {{ row.issue_no }}
+                    </router-link>
+                    <span v-if="row.is_archived" class="archived-tag">
+                      {{ t('(삭제)', '(dihapus)') }}
+                    </span>
+                  </td>
                   <!-- 말줄임 — 전체 제목은 title 툴팁으로. 겹침의 원인이던 넘침을 여기서 막습니다. -->
                   <td class="title-col" :title="title(row)">{{ title(row) }}</td>
                   <td class="nowrap">
@@ -394,15 +446,10 @@ watch(
   max-width: 60%;
   padding: 4px 10px;
   border: 1px solid var(--asm-border);
-  border-radius: 9999px;
+  border-radius: var(--asm-radius-md);
   background: var(--asm-secondary);
   color: var(--asm-fg);
   font-size: 12px;
-  cursor: pointer;
-}
-.notice:hover {
-  background: var(--asm-primary-10);
-  border-color: var(--asm-primary-40);
 }
 .notice-text {
   overflow: hidden;
@@ -441,48 +488,41 @@ watch(
   flex-wrap: wrap;
 }
 /*
- * 툴바 세 무리를 색으로 갈라 둡니다(2026-09-14 요청). 전부 같은 회색 테두리라
- * 「무엇을 하는 단추인지」가 한눈에 잡히지 않았습니다 —
- * 프리셋(파랑) · 필터(초록) · 이동(회색). 글자는 Bootstrap sm 기본 14px 에서 2px 줄인 12px.
+ * 툴바는 한 목소리 — 블루는 「지금 걸린 필터」에만 씁니다(DESIGN.md One Voice). 프리셋·필터·이동은
+ * 모두 회색 테두리 컨트롤이고, 활성 프리셋·값이 골라진 셀렉트만 블루 soft + 블루 테두리로 올라옵니다.
+ * 글자는 Bootstrap sm 기본 14px 에서 2px 줄인 12px.
  */
 .preset-btn,
 .filter-select,
 .nav-btn {
   font-size: 12px;
   line-height: 1.5;
+  font-weight: 500;
+  color: var(--asm-fg);
+  background-color: var(--asm-card);
+  border: 1px solid var(--asm-border);
+  border-radius: var(--asm-radius-md);
 }
-.preset-btn {
-  color: var(--asm-info);
-  background: var(--asm-info-soft);
-  border: 1px solid var(--asm-info-border);
-  font-weight: 600;
+.preset-group {
+  display: inline-flex;
+  gap: 4px;
 }
 .preset-btn:hover,
-.preset-btn:focus-visible {
-  color: var(--asm-primary-fg);
-  background: var(--asm-primary);
-  border-color: var(--asm-primary);
-}
-.filter-select {
-  color: var(--asm-success);
-  background-color: var(--asm-success-soft);
-  border: 1px solid var(--asm-success-border);
-  font-weight: 600;
-}
-.filter-select:focus-visible {
-  border-color: var(--asm-success);
-  box-shadow: 0 0 0 3px rgb(30 123 52 / 0.15);
-}
-.nav-btn {
-  color: var(--asm-fg-muted);
-  background: var(--asm-card);
-  border: 1px solid var(--asm-border);
-}
-.nav-btn:hover,
-.nav-btn:focus-visible {
+.nav-btn:hover {
   color: var(--asm-fg);
   background: var(--asm-secondary);
   border-color: var(--asm-border-strong);
+}
+.preset-btn.active,
+.filter-select.is-set {
+  color: var(--asm-primary);
+  background-color: var(--asm-primary-soft);
+  border-color: var(--asm-primary-40);
+  font-weight: 700;
+}
+.preset-btn.active:hover {
+  color: var(--asm-primary);
+  background: var(--asm-primary-10);
 }
 .search {
   width: 260px;
@@ -500,7 +540,7 @@ watch(
   color: var(--asm-primary);
   background: var(--asm-primary-soft);
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: var(--asm-radius-sm);
 }
 .archived {
   margin-left: auto;
@@ -511,14 +551,22 @@ watch(
   gap: 6px;
 }
 .sortable {
-  cursor: pointer;
-  user-select: none;
   white-space: nowrap;
 }
-.sortable:hover {
-  color: var(--asm-primary);
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  user-select: none;
 }
-.sortable.active {
+.sort-btn:hover,
+.sortable.active .sort-btn {
   color: var(--asm-primary);
 }
 .sort-mark {
@@ -554,16 +602,26 @@ watch(
 .row-link:hover {
   background: var(--asm-primary-6);
 }
-.row-link:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 2px var(--asm-primary-40);
+.row-link:focus-within {
+  background: var(--asm-primary-6);
 }
-/* 아카이브는 표시하더라도 살아 있는 건과 구분되어야 합니다. */
-.is-archived {
-  opacity: 0.55;
+.no-link {
+  color: var(--asm-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
-.is-archived .no-col::after {
-  content: ' (삭제)';
+/* 아카이브 — 투명도 대신 muted 글자색 + 제목 취소선 + 「삭제」 표식(대비 유지, 색 단독 아님). */
+.is-archived td {
+  color: var(--asm-fg-muted);
+}
+.is-archived .title-col {
+  text-decoration: line-through;
+}
+.is-archived .no-link {
+  color: var(--asm-fg-muted);
+}
+.archived-tag {
+  margin-left: 4px;
   font-size: 12px;
   color: var(--asm-fg-muted);
 }

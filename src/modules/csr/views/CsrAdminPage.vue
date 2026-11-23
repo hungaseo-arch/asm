@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, reactive, ref } from 'vue'
 import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { authApi, getDb, unwrap } from '../api/neon'
@@ -31,6 +31,20 @@ const loading = ref(true)
 const error = ref('')
 const saving = ref(false)
 const tab = ref('users')
+const TABS = ['users', 'log', 'logins']
+const tabEls = ref({})
+function onTabKey(e) {
+  const i = TABS.indexOf(tab.value)
+  let n = -1
+  if (e.key === 'ArrowRight') n = (i + 1) % TABS.length
+  else if (e.key === 'ArrowLeft') n = (i - 1 + TABS.length) % TABS.length
+  else if (e.key === 'Home') n = 0
+  else if (e.key === 'End') n = TABS.length - 1
+  if (n < 0) return
+  e.preventDefault()
+  tab.value = TABS[n]
+  nextTick(() => tabEls.value[TABS[n]]?.focus())
+}
 
 async function load() {
   loading.value = true
@@ -69,7 +83,7 @@ async function load() {
 }
 onMounted(async () => {
   if (!isConfigured()) {
-    error.value = 'Neon 접속 정보가 설정되지 않았습니다'
+    error.value = t('Neon 접속 정보가 설정되지 않았습니다', 'Informasi koneksi Neon belum diatur')
     loading.value = false
     return
   }
@@ -79,8 +93,8 @@ onMounted(async () => {
 })
 
 function report(e, fallback) {
-  if (e?.forbidden) toast.error(`권한이 없습니다 — ${e.message}`)
-  else toast.error(e?.message ?? fallback)
+  if (e?.forbidden) toast.error(t(`권한이 없습니다 — ${e.message}`, `Tidak ada izin — ${e.message}`))
+  else toast.error(e?.message ?? t(fallback[0], fallback[1]))
 }
 
 // ─── 사용자 · 역할 ───────────────────────────────────────────────────────────
@@ -115,7 +129,7 @@ function startEdit(u) {
  */
 async function findOrCreateAuthUser({ email, name }) {
   const admin = authApi()?.admin
-  if (!admin?.createUser) throw new Error('admin 플러그인이 클라이언트에 없습니다')
+  if (!admin?.createUser) throw new Error(t('admin 플러그인이 클라이언트에 없습니다', 'Plugin admin tidak tersedia di klien'))
   const found = await admin.listUsers({
     query: { searchValue: email, searchField: 'email', searchOperator: 'contains', limit: 10 },
   })
@@ -125,7 +139,7 @@ async function findOrCreateAuthUser({ email, name }) {
   const made = await admin.createUser({ email, name: name ?? email, password: INITIAL_PASSWORD })
   if (made?.error) throw new Error(made.error.message ?? made.error.statusText ?? 'create-user')
   const id = made?.data?.user?.id
-  if (!id) throw new Error('계정은 만들어졌으나 id 를 받지 못했습니다')
+  if (!id) throw new Error(t('계정은 만들어졌으나 id 를 받지 못했습니다', 'Akun dibuat tetapi id tidak diterima'))
   return { id, created: true }
 }
 
@@ -166,29 +180,25 @@ async function saveUser() {
     await load()
     toast.success(t('저장했습니다', 'Tersimpan'))
   } catch (e) {
-    report(e, '저장에 실패했습니다')
+    report(e, ['저장에 실패했습니다', 'Gagal menyimpan'])
   } finally {
     saving.value = false
   }
 }
-async function removeUser(u) {
+// 제외 확인 — 인페이지 패널. 취소 / 역할만 제외 / 계정까지 삭제 를 각각 명시 버튼으로 분리합니다.
+const removeTarget = ref(null)
+const cancelRemoveBtn = ref(null)
+function askRemove(u) {
   if (u.user_id === session.user?.id) {
     toast.error(t('자기 자신은 지울 수 없습니다', 'Tidak dapat menghapus diri sendiri'))
     return
   }
-  if (
-    !window.confirm(
-      t(`${u.email} 을(를) CSR 사용자에서 제외할까요?`, `Hapus ${u.email} dari pengguna CSR?`),
-    )
-  )
-    return
-  // 계정까지 지울지는 따로 묻습니다 — 역할만 지우면 로그인은 되지만 아무것도 못 봅니다(퇴사면 계정도).
-  const dropAccount = window.confirm(
-    t(
-      `Neon 로그인 계정도 삭제할까요? [확인] 계정까지 삭제 · [취소] 역할만 제외(로그인은 유지)`,
-      `Hapus juga akun login Neon? [OK] hapus akun · [Cancel] hanya peran`,
-    ),
-  )
+  removeTarget.value = u
+  nextTick(() => cancelRemoveBtn.value?.focus())
+}
+async function removeUser(dropAccount) {
+  const u = removeTarget.value
+  if (!u) return
   saving.value = true
   try {
     unwrap(await getDb().from('csr_user_roles').delete().eq('user_id', u.user_id).select('user_id'))
@@ -196,14 +206,21 @@ async function removeUser(u) {
       // 옵셔널 호출 금지 — 프록시 메서드는 직접 부릅니다(session.js signOut 주석 참고).
       const admin = authApi()?.admin
       const r = admin ? await admin.removeUser({ userId: u.user_id }) : null
-      if (r?.error) throw new Error(`역할은 제외했으나 계정 삭제 실패: ${r.error.message ?? ''}`)
+      if (r?.error)
+        throw new Error(
+          t(
+            `역할은 제외했으나 계정 삭제 실패: ${r.error.message ?? ''}`,
+            `Peran dihapus tetapi gagal menghapus akun: ${r.error.message ?? ''}`,
+          ),
+        )
     }
+    removeTarget.value = null
     await load()
     toast.success(
       dropAccount ? t('계정까지 삭제했습니다', 'Akun dihapus') : t('제외했습니다', 'Dihapus'),
     )
   } catch (e) {
-    report(e, '삭제에 실패했습니다')
+    report(e, ['삭제에 실패했습니다', 'Gagal menghapus'])
   } finally {
     saving.value = false
   }
@@ -231,9 +248,9 @@ async function resetPassword() {
   try {
     const api = authApi()
     const fn = api?.admin?.setUserPassword
-    if (!fn) throw new Error('admin 플러그인이 클라이언트에 없습니다')
+    if (!fn) throw new Error(t('admin 플러그인이 클라이언트에 없습니다', 'Plugin admin tidak tersedia di klien'))
     const r = await fn({ userId: pwTarget.value.user_id, newPassword: pwValue.value })
-    if (r?.error) throw new Error(r.error.message ?? r.error.statusText ?? '실패')
+    if (r?.error) throw new Error(r.error.message ?? r.error.statusText ?? t('실패', 'Gagal'))
     toast.success(
       t(
         `${pwTarget.value.email} 비밀번호를 바꿨습니다`,
@@ -246,7 +263,7 @@ async function resetPassword() {
     toast.error(
       t(
         `초기화 실패: ${e.message}. 콘솔 계정에 Admin 권한이 없으면 scripts/csr_set_password.mjs 로 SQL 을 만들어 적용하십시오.`,
-        `Gagal: ${e.message}`,
+        `Reset gagal: ${e.message}. Jika akun konsol tidak memiliki izin Admin, buat SQL dengan scripts/csr_set_password.mjs lalu terapkan.`,
       ),
     )
   } finally {
@@ -281,8 +298,8 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
         </div>
       </div>
 
-      <div v-if="loading" class="asm-panel state">{{ t('불러오는 중…', 'Memuat…') }}</div>
-      <div v-else-if="error" class="asm-panel state err">{{ error }}</div>
+      <div v-if="loading" class="asm-panel state" role="status">{{ t('불러오는 중…', 'Memuat…') }}</div>
+      <div v-else-if="error" class="asm-panel state err" role="alert">{{ error }}</div>
       <CsrSignIn v-else-if="!session.isAuthenticated" />
       <div v-else-if="!session.isAdmin" class="asm-panel state">
         {{ t('관리자만 볼 수 있습니다', 'Hanya untuk admin') }} ({{
@@ -291,42 +308,27 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
       </div>
 
       <template v-else>
-        <div class="tabs" role="tablist">
+        <div class="tabs" role="tablist" :aria-label="t('관리 구역', 'Bagian administrasi')">
           <button
-            id="tab-users"
+            v-for="tb in [
+              { k: 'users', ko: '사용자 · 역할', id: 'Pengguna · Peran', n: users.length },
+              { k: 'log', ko: '상태 변경 로그', id: 'Log perubahan', n: log.length },
+              { k: 'logins', ko: '접속 로그', id: 'Log akses', n: logins.length },
+            ]"
+            :id="`tab-${tb.k}`"
+            :key="tb.k"
+            :ref="(el) => (tabEls[tb.k] = el)"
             type="button"
             role="tab"
-            :aria-selected="tab === 'users'"
-            aria-controls="panel-users"
-            :class="{ active: tab === 'users' }"
-            @click="tab = 'users'"
+            :aria-selected="tab === tb.k"
+            :aria-controls="`panel-${tb.k}`"
+            :tabindex="tab === tb.k ? 0 : -1"
+            :class="{ active: tab === tb.k }"
+            @click="tab = tb.k"
+            @keydown="onTabKey"
           >
-            {{ t('사용자 · 역할', 'Pengguna · Peran') }}
-            <span class="count-pill">{{ users.length }}</span>
-          </button>
-          <button
-            id="tab-log"
-            type="button"
-            role="tab"
-            :aria-selected="tab === 'log'"
-            aria-controls="panel-log"
-            :class="{ active: tab === 'log' }"
-            @click="tab = 'log'"
-          >
-            {{ t('상태 변경 로그', 'Log perubahan') }}
-            <span class="count-pill">{{ log.length }}</span>
-          </button>
-          <button
-            id="tab-logins"
-            type="button"
-            role="tab"
-            :aria-selected="tab === 'logins'"
-            aria-controls="panel-logins"
-            :class="{ active: tab === 'logins' }"
-            @click="tab = 'logins'"
-          >
-            {{ t('접속 로그', 'Log akses') }}
-            <span class="count-pill">{{ logins.length }}</span>
+            {{ t(tb.ko, tb.id) }}
+            <span class="count-pill">{{ tb.n }}</span>
           </button>
         </div>
 
@@ -390,7 +392,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
               {{
                 t(
                   '권한은 admin · it_dept · business 3종뿐입니다. 소속은 표시·집계용이며 권한과 무관합니다.',
-                  'Peran hanya admin · it_dept · business. Bagian hanya untuk tampilan.',
+                  'Peran hanya admin · it_dept · business. Bagian hanya untuk tampilan dan rekap, tidak terkait izin.',
                 )
               }}
               <template v-if="isNew">
@@ -402,7 +404,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                 }}
               </template>
               <template v-else>
-                <span class="mono">ID {{ form.user_id }}</span>
+                <span class="num">ID {{ form.user_id }}</span>
               </template>
             </p>
             <div class="actions">
@@ -419,6 +421,48 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
             </div>
           </form>
 
+          <div v-if="removeTarget" class="sub-form rm" role="group" aria-labelledby="rm-title">
+            <b id="rm-title">{{
+              t(`${removeTarget.email} 을(를) 제외합니다`, `Hapus ${removeTarget.email}`)
+            }}</b>
+            <p class="muted hint">
+              {{
+                t(
+                  '「역할만 제외」는 CSR 권한만 지웁니다(Neon 로그인 계정은 유지). 「계정까지 삭제」는 로그인 계정도 영구 삭제하며 되돌릴 수 없습니다.',
+                  '«Hanya hapus peran» hanya menghapus peran CSR (akun login Neon tetap ada). «Hapus beserta akun» juga menghapus akun login secara permanen dan tidak dapat dibatalkan.',
+                )
+              }}
+            </p>
+            <div class="actions">
+              <button
+                ref="cancelRemoveBtn"
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                :disabled="saving"
+                @click="removeTarget = null"
+              >
+                {{ t('취소', 'Batal') }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                :disabled="saving"
+                @click="removeUser(false)"
+              >
+                {{ t('역할만 제외', 'Hanya hapus peran') }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                :disabled="saving"
+                @click="removeUser(true)"
+              >
+                {{ t('계정까지 삭제', 'Hapus beserta akun') }}
+              </button>
+            </div>
+          </div>
+
+          <div class="table-scroll">
           <table class="table asm-table">
             <thead>
               <tr>
@@ -426,8 +470,8 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                 <th>Email</th>
                 <th>{{ t('권한', 'Peran') }}</th>
                 <th>{{ t('소속', 'Bagian') }}</th>
-                <th class="nowrap">{{ t('등록일', 'Terdaftar') }}</th>
-                <th class="nowrap">{{ t('최종 접속', 'Akses terakhir') }}</th>
+                <th class="nowrap cell-date">{{ t('등록일', 'Terdaftar') }}</th>
+                <th class="nowrap cell-date">{{ t('최종 접속', 'Akses terakhir') }}</th>
                 <th></th>
               </tr>
             </thead>
@@ -443,8 +487,8 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                   <span class="asm-pill">{{ u.role }}</span>
                 </td>
                 <td class="truncate-cell">{{ u.department ?? '—' }}</td>
-                <td class="nowrap muted">{{ fmtDate(u.created_at) }}</td>
-                <td class="nowrap muted" :title="fmtTs(u.last_seen_at)">{{ lastSeen(u) }}</td>
+                <td class="nowrap muted cell-date">{{ fmtDate(u.created_at) }}</td>
+                <td class="nowrap muted cell-date" :title="fmtTs(u.last_seen_at)">{{ lastSeen(u) }}</td>
                 <td class="nowrap ops">
                   <button type="button" class="btn btn-sm btn-link" @click="startEdit(u)">
                     {{ t('편집', 'Ubah') }}
@@ -456,7 +500,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
                     type="button"
                     class="btn btn-sm btn-link text-danger"
                     :disabled="u.user_id === session.user?.id"
-                    @click="removeUser(u)"
+                    @click="askRemove(u)"
                   >
                     {{ t('제외', 'Hapus') }}
                   </button>
@@ -464,6 +508,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
               </tr>
             </tbody>
           </table>
+          </div>
 
           <!-- 비밀번호 초기화 -->
           <form v-if="pwTarget" class="sub-form pw" @submit.prevent="resetPassword">
@@ -486,7 +531,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
               {{
                 t(
                   '초기화 후 본인이 로그인해 헤더 계정 메뉴에서 바꾸도록 안내하십시오.',
-                  'Minta pengguna mengubahnya sendiri setelah masuk.',
+                  'Setelah reset, minta pengguna masuk lalu menggantinya sendiri lewat menu akun di header.',
                 )
               }}
             </p>
@@ -522,7 +567,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
             <table class="table asm-table">
               <thead>
                 <tr>
-                  <th class="nowrap">{{ t('일시', 'Waktu') }}</th>
+                  <th class="nowrap cell-date">{{ t('일시', 'Waktu') }}</th>
                   <th class="nowrap">{{ t('이슈', 'Isu') }}</th>
                   <th class="nowrap">{{ t('컬럼', 'Kolom') }}</th>
                   <th>{{ t('이전', 'Sebelum') }}</th>
@@ -532,7 +577,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
               </thead>
               <tbody>
                 <tr v-for="l in log" :key="l.id">
-                  <td class="nowrap">{{ fmtDate(l.changed_at) }}</td>
+                  <td class="nowrap cell-date">{{ fmtDate(l.changed_at) }}</td>
                   <td class="nowrap">
                     <router-link :to="`/csr/${encodeURIComponent(l.csr_issues?.issue_no ?? '')}`">
                       {{ l.csr_issues?.issue_no ?? l.issue_id }}
@@ -565,20 +610,20 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
             <small>{{ t('최근 200건', '200 terakhir') }}</small>
           </h2>
           <p v-if="!logins.length" class="muted">
-            {{ t('기록이 없습니다 — db/044 적용 전이면 아직 쌓이지 않습니다', 'Belum ada catatan') }}
+            {{ t('기록이 없습니다', 'Belum ada catatan') }}
           </p>
           <div v-else class="table-scroll">
             <table class="table asm-table">
               <thead>
                 <tr>
-                  <th class="nowrap">{{ t('로그인 일시', 'Waktu masuk') }}</th>
+                  <th class="nowrap cell-date">{{ t('로그인 일시', 'Waktu masuk') }}</th>
                   <th>{{ t('이름', 'Nama') }}</th>
                   <th class="nowrap">Email</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="l in logins" :key="l.id">
-                  <td class="nowrap">{{ fmtTs(l.logged_in_at) }}</td>
+                  <td class="nowrap cell-date">{{ fmtTs(l.logged_in_at) }}</td>
                   <td>{{ l.csr_user_roles?.display_name ?? '—' }}</td>
                   <td class="nowrap muted">{{ l.csr_user_roles?.email ?? l.user_id }}</td>
                 </tr>
@@ -613,9 +658,13 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
   color: var(--asm-fg-muted);
   font-size: 12px;
 }
-.mono {
-  font-family: ui-monospace, Consolas, monospace;
+.num {
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.cell-date {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 .hint {
   margin: 8px 0 0;
@@ -627,6 +676,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
 .tabs button {
   border: 0;
   background: transparent;
+  min-height: 36px;
   padding: 6px 12px;
   border-radius: var(--asm-radius-md);
   font-size: 13px;
@@ -635,6 +685,14 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
   display: flex;
   align-items: center;
   gap: 6px;
+}
+.tabs button:hover:not(.active) {
+  background: var(--asm-primary-6);
+  color: var(--asm-primary);
+}
+.tabs button:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 3px var(--asm-primary-40);
 }
 .tabs button.active {
   background: var(--asm-primary-10);
@@ -647,7 +705,7 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
   color: var(--asm-primary);
   background: var(--asm-primary-soft);
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: var(--asm-radius-sm);
 }
 .sec {
   padding: 20px 24px;
@@ -677,10 +735,14 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
   color: var(--asm-fg-muted);
 }
 .sub-form {
-  border: 1px dashed var(--asm-border);
+  border: 1px solid var(--asm-border);
   border-radius: var(--asm-radius-md);
   padding: 12px;
   margin-bottom: 12px;
+}
+.sub-form.rm {
+  border-color: var(--asm-danger-border);
+  background: var(--asm-danger-soft);
 }
 .sub-form.pw {
   margin-top: 12px;
@@ -723,10 +785,10 @@ const userName = (id) => users.value.find((u) => u.user_id === id)?.display_name
 .ops {
   text-align: right;
 }
+.ops .btn {
+  min-height: 36px;
+}
 tr.me td {
   background: var(--asm-primary-6);
-}
-.table-scroll {
-  overflow-x: auto;
 }
 </style>

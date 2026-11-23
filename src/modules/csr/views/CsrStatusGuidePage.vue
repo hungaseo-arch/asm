@@ -337,10 +337,14 @@ const FOLD_SECTIONS = [
 </template>
 
 <style scoped>
+/* 제목줄과 카드를 같은 960px 열에 넣어 화면 가운데에 둡니다(카드만 960px 이고 제목줄은 전체 폭이라 어긋나던 것). */
 .guide {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
 }
 .head {
   display: flex;
@@ -351,7 +355,6 @@ const FOLD_SECTIONS = [
 }
 .doc {
   padding: 20px 24px;
-  max-width: 960px;
   font-size: 14px;
   line-height: 1.6;
   font-variant-numeric: tabular-nums;
@@ -370,13 +373,14 @@ const FOLD_SECTIONS = [
   color: var(--asm-fg);
   margin: 16px 0 8px;
 }
+/* 점(•) 목록은 어디서나 같은 폭(24px)만큼 안쪽으로 들입니다 — 제목·문단보다 한 단계 안. 중첩 목록은 부모를 따릅니다. */
 .doc ul {
-  margin: 0 0 4px;
+  margin: 0 0 4px 24px;
   padding-left: 20px;
   max-width: 72ch;
 }
 .doc ul ul {
-  margin-top: 2px;
+  margin: 2px 0 0;
 }
 .doc code {
   font-family: inherit;
@@ -406,6 +410,11 @@ const FOLD_SECTIONS = [
 }
 .fold[open] summary {
   color: var(--asm-primary);
+}
+/* 펼친 본문은 ▼ 마커보다 안쪽으로 들여 요약줄의 하위임을 보입니다(마커 폭 + 요약 안쪽 여백 ≈ 24px).
+   목록은 위의 `.doc ul` 이 이미 24px 들이므로 여기서 빼서 이중 들여쓰기를 막습니다. */
+.fold > :not(summary):not(ul) {
+  margin-left: 24px;
 }
 .fold ul {
   padding-bottom: 8px;

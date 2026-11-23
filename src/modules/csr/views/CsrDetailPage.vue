@@ -130,6 +130,26 @@ const DICT = {
     '저장하지 않은 입력 내용이 있습니다. 이 화면을 떠나시겠습니까?',
     'Ada input yang belum disimpan. Tinggalkan halaman ini?',
   ],
+  discard_confirm: [
+    '작성 중인 내용이 있습니다. 버리고 계속하시겠습니까?',
+    'Ada isian yang belum disimpan. Buang dan lanjutkan?',
+  ],
+  unreg_title: ['접근 권한이 없습니다', 'Tidak memiliki akses'],
+  unreg_body: [
+    '계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다. 관리자에게 역할 등록을 요청하십시오.',
+    'Akun dikenali tetapi belum terdaftar sebagai pengguna CSR. Mintakan pendaftaran peran kepada admin.',
+  ],
+  recheck: ['다시 확인', 'Periksa lagi'],
+  other_account: ['다른 계정으로 로그인', 'Masuk dengan akun lain'],
+  verify_note: [
+    '현업검증·최종검증일은 7. 검증 이력에서 「+ 검증 추가」로 변경하면 헤더가 자동 갱신됩니다. 여기서 직접 고치면 이력이 남지 않습니다.',
+    'Verifikasi bisnis dan tanggal verifikasi akhir akan diperbarui otomatis di header bila diubah lewat «+ Tambah verifikasi» pada 7. Riwayat Verifikasi. Jika diubah langsung di sini, riwayat tidak tercatat.',
+  ],
+  required: ['필수', 'Wajib'],
+  lb_failed: [
+    '큰 이미지를 불러오지 못했습니다 — Drive 에서 여십시오',
+    'Gambar besar gagal dimuat — buka di Drive',
+  ],
 }
 const T = (key) => DICT[key]?.[lang.value === 'id' ? 1 : 0] ?? key
 /**
@@ -181,6 +201,67 @@ const md = (text) =>
           return open + pick + close
         })
         .join('\n')
+/**
+ * 마크다운 경량 변환 — 제목(#)·굵게(**)·목록(-, *, 1.)·문단만 처리합니다(신규 의존성 없음).
+ * 안전: 입력 전체를 먼저 HTML 이스케이프한 뒤 우리가 만든 태그(h4·p·strong·ul·ol·li·br)만 삽입하므로
+ * 본문에 들어 있는 어떤 태그·속성도 실행되지 않습니다. 링크·이미지·원시 HTML 은 변환하지 않고 글자 그대로 둡니다.
+ */
+const escapeHtml = (s) =>
+  s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+const inlineMd = (s) => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+const renderMd = (text) => {
+  const src = md(text)
+  if (src == null || src === '') return ''
+  const out = []
+  let para = []
+  let listType = null // 'ul' | 'ol'
+  const flushPara = () => {
+    if (para.length) out.push(`<p>${para.join('<br>')}</p>`)
+    para = []
+  }
+  const closeList = () => {
+    if (listType) out.push(`</${listType}>`)
+    listType = null
+  }
+  for (const raw of String(src).replace(/\r/g, '').split('\n')) {
+    const line = escapeHtml(raw.replace(/\s+$/, ''))
+    if (!line.trim()) {
+      flushPara()
+      closeList()
+      continue
+    }
+    const heading = line.match(/^\s{0,3}#{1,6}[ ]+(.+)$/)
+    if (heading) {
+      flushPara()
+      closeList()
+      out.push(`<h4>${inlineMd(heading[1])}</h4>`)
+      continue
+    }
+    const item = line.match(/^(\s*)(?:([-*+])|(\d+)[.)])[ ]+(.+)$/)
+    if (item) {
+      flushPara()
+      const type = item[3] ? 'ol' : 'ul'
+      if (listType !== type) {
+        closeList()
+        out.push(`<${type}>`)
+        listType = type
+      }
+      const level = Math.min(Math.floor(item[1].replace(/\t/g, '  ').length / 2), 3)
+      out.push(`<li class="lv${level}">${inlineMd(item[4])}</li>`)
+      continue
+    }
+    closeList()
+    para.push(inlineMd(line.trim()))
+  }
+  flushPara()
+  closeList()
+  return out.join('')
+}
 /**
  * 화면경로가 여럿이면 " · "(양쪽 공백) 로 이어져 있습니다 — "신규·상세" 처럼 공백 없는 가운뎃점은
  * 한 경로 안의 구분이라 건드리지 않습니다. 경로마다 칩으로 그려 어디서 끊기는지 보이게
@@ -238,7 +319,8 @@ const picOptions = computed(() => {
   const cur = issue.value?.it_pic?.trim()
   return cur && !userNames.value.includes(cur) ? [cur, ...userNames.value] : userNames.value
 })
-onMounted(async () => {
+async function init() {
+  loading.value = true
   await session.refresh()
   if (session.isAuthenticated && !session.isUnregistered) {
     try {
@@ -249,7 +331,8 @@ onMounted(async () => {
   }
   if (session.isAuthenticated && !session.isUnregistered) await load()
   else loading.value = false
-})
+}
+onMounted(init)
 watch(() => route.params.issueNo, load)
 
 /** 실패 사유를 사용자 말로. DB 가 권한으로 막은 것과 그 밖의 오류를 구분합니다. */
@@ -335,6 +418,10 @@ function startEdit() {
   for (const k of ALL_KEYS) draft[k] = formValue(k) ?? ''
   editing.value = true
 }
+function cancelEdit() {
+  if (editDirty.value && !window.confirm(T('discard_confirm'))) return
+  editing.value = false
+}
 async function saveEdit() {
   const patch = {}
   for (const k of ALL_KEYS) {
@@ -381,6 +468,10 @@ const mdDraft = reactive({ ko: '', id: '' })
 const mdSnapshot = reactive({ ko: '', id: '' })
 const mdDate = ref('')
 function startMd(key) {
+  // 본문 편집 상태(mdDraft)는 하나를 공유합니다 — 다른 절을 작성 중이면 덮어쓰기 전에 확인합니다.
+  if (mdEditing.value && mdEditing.value !== key && mdDirty.value) {
+    if (!window.confirm(T('discard_confirm'))) return
+  }
   const i = issue.value
   // 쌍이 비어 있으면 원문을 원문 언어 쪽 칸에 채워 줍니다 — 010 전 데이터도 편집 가능하게.
   const legacy = i[key] ?? ''
@@ -519,18 +610,38 @@ async function submitVerification() {
  * 있으면 화면을 떠날 때(새로고침 포함) 한 번 더 묻습니다. 회신·검증 폼은 날짜가 기본값(오늘)
  * 으로 미리 채워져 있어 그 칸만으로는 "손댔다"고 보지 않습니다.
  */
-const isDirty = computed(() => {
-  if (editing.value && ALL_KEYS.some((k) => nullIfBlank(draft[k]) !== formValue(k))) return true
-  if (mdEditing.value && (mdDraft.ko !== mdSnapshot.ko || mdDraft.id !== mdSnapshot.id)) return true
-  if (
+const editDirty = computed(
+  () => editing.value && ALL_KEYS.some((k) => nullIfBlank(draft[k]) !== formValue(k)),
+)
+const mdDirty = computed(
+  () => Boolean(mdEditing.value) && (mdDraft.ko !== mdSnapshot.ko || mdDraft.id !== mdSnapshot.id),
+)
+const replyDirty = computed(
+  () =>
     replyOpen.value &&
-    (replyDraft.decision || REPLY_TEXT_KEYS.some((k) => replyDraft[k + '_ko'] || replyDraft[k + '_id']))
-  )
-    return true
-  if (verifyOpen.value && (verifyDraft.result || verifyDraft.note_ko || verifyDraft.note_id))
-    return true
-  return false
-})
+    Boolean(
+      replyDraft.decision ||
+        REPLY_TEXT_KEYS.some((k) => replyDraft[k + '_ko'] || replyDraft[k + '_id']),
+    ),
+)
+const verifyDirty = computed(
+  () =>
+    verifyOpen.value && Boolean(verifyDraft.result || verifyDraft.note_ko || verifyDraft.note_id),
+)
+const isDirty = computed(
+  () => editDirty.value || mdDirty.value || replyDirty.value || verifyDirty.value,
+)
+/** 취소 버튼 — 작성 중인 내용이 있으면 폐기 전에 확인합니다. */
+const discardOk = (dirty) => !dirty || window.confirm(T('discard_confirm'))
+function cancelMd() {
+  if (discardOk(mdDirty.value)) mdEditing.value = null
+}
+function cancelReply() {
+  if (discardOk(replyDirty.value)) replyOpen.value = false
+}
+function cancelVerify() {
+  if (discardOk(verifyDirty.value)) verifyOpen.value = false
+}
 function onBeforeUnload(e) {
   if (!isDirty.value) return
   e.preventDefault()
@@ -665,22 +776,53 @@ const onThumbError = (fileId) => {
  */
 const lightbox = ref(null)
 const lightboxCloseBtn = ref(null)
+const lightboxEl = ref(null)
 let lightboxTrigger = null
+let bodyOverflowBefore = ''
 const openLightbox = (a, event) => {
   lightboxTrigger = event?.currentTarget ?? null
   lightbox.value = a
+  // 배경 스크롤 잠금 — 닫을 때 원래 값으로 되돌립니다.
+  bodyOverflowBefore = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
   nextTick(() => lightboxCloseBtn.value?.focus())
 }
 const closeLightbox = () => {
+  if (lightbox.value) document.body.style.overflow = bodyOverflowBefore
   lightbox.value = null
   lightboxTrigger?.focus()
   lightboxTrigger = null
 }
 function onLightboxKey(e) {
-  if (e.key === 'Escape' && lightbox.value) closeLightbox()
+  if (!lightbox.value) return
+  if (e.key === 'Escape') {
+    closeLightbox()
+    return
+  }
+  // 포커스 트랩 — Tab 이 모달 밖으로 빠지지 않게 모달 안 초점 요소를 순환합니다.
+  if (e.key === 'Tab' && lightboxEl.value) {
+    const items = [...lightboxEl.value.querySelectorAll('a[href], button:not([disabled])')]
+    if (!items.length) return
+    const first = items[0]
+    const last = items[items.length - 1]
+    const active = document.activeElement
+    if (!lightboxEl.value.contains(active)) {
+      e.preventDefault()
+      first.focus()
+    } else if (e.shiftKey && active === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
 }
 onMounted(() => document.addEventListener('keydown', onLightboxKey))
-onBeforeUnmount(() => document.removeEventListener('keydown', onLightboxKey))
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onLightboxKey)
+  if (lightbox.value) document.body.style.overflow = bodyOverflowBefore
+})
 watch(
   () => route.params.issueNo,
   () => {
@@ -705,9 +847,27 @@ watch(
         <CsrStatusLegend :lang="lang" />
       </div>
 
-      <div v-if="loading" class="asm-panel state">{{ L('loading') }}</div>
-      <div v-else-if="error" class="asm-panel state err">{{ error }}</div>
-      <div v-else-if="!session.isAuthenticated" class="asm-panel state">{{ T('need_login') }}</div>
+      <div v-if="loading" class="asm-panel state" role="status">{{ L('loading') }}</div>
+      <div v-else-if="error" class="asm-panel state err" role="alert">{{ error }}</div>
+      <div v-else-if="!session.isAuthenticated" class="asm-panel state" role="status">
+        {{ T('need_login') }}
+      </div>
+      <!-- 로그인은 됐지만 역할 미등록 — 빈 화면 대신 안내와 복귀 경로 -->
+      <div v-else-if="session.isUnregistered" class="asm-panel state" role="status">
+        <h2 class="asm-title">{{ T('unreg_title') }}</h2>
+        <p class="unreg-body">{{ T('unreg_body') }} ({{ session.user?.email }})</p>
+        <div class="unreg-actions">
+          <button type="button" class="btn btn-sm btn-primary" @click="init">
+            {{ T('recheck') }}
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" @click="session.signOut()">
+            {{ T('other_account') }}
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" @click="router.push('/csr')">
+            {{ T('back') }}
+          </button>
+        </div>
+      </div>
 
       <template v-else-if="issue">
         <!-- 속성 카드 (작업지시서 §5-2 상단 — 역할별 편집 가능 필드만 활성) -->
@@ -744,9 +904,7 @@ watch(
                 <dd v-else-if="BADGE_KEYS.has(f.key) && issue[f.key]">
                   <CsrStatusBadge :kind="f.key" :value="issue[f.key]" :lang="lang" />
                 </dd>
-                <dd v-else :title="VF(f.key, issue[f.key]) ?? ''">
-                  {{ VF(f.key, issue[f.key]) ?? '—' }}
-                </dd>
+                <dd v-else>{{ VF(f.key, issue[f.key]) ?? '—' }}</dd>
               </div>
             </dl>
           </template>
@@ -795,6 +953,10 @@ watch(
                 />
               </label>
             </div>
+            <!-- 현업검증 변경 경로 안내 — 이력 추가가 정식 경로이고 헤더는 트리거가 맞춥니다 -->
+            <p v-if="editable('verification_result') || editable('verified_on')" class="muted">
+              {{ T('verify_note') }}
+            </p>
 
             <!-- 두 언어 텍스트는 KO·ID 를 나란히 둡니다 — 한쪽만 고치고 다른 쪽을 잊지 않도록. -->
             <div v-for="p in TEXT_PAIRS.filter((x) => editable(x.ko))" :key="p.ko" class="pair">
@@ -825,7 +987,7 @@ watch(
               <button
                 type="button"
                 class="btn btn-outline-secondary btn-sm"
-                @click="editing = false"
+                @click="cancelEdit"
               >
                 {{ T('cancel') }}
               </button>
@@ -941,7 +1103,7 @@ watch(
                 <button
                   type="button"
                   class="btn btn-outline-secondary btn-sm"
-                  @click="mdEditing = null"
+                  @click="cancelMd"
                 >
                   {{ T('cancel') }}
                 </button>
@@ -955,16 +1117,25 @@ watch(
                 </button>
               </div>
             </template>
-            <pre v-else-if="bodyOf(sec.key)" class="md">{{ md(bodyOf(sec.key)) }}</pre>
+            <div
+              v-else-if="bodyOf(sec.key)"
+              class="md"
+              :lang="lang"
+              v-html="renderMd(bodyOf(sec.key))"
+            ></div>
             <p v-else class="muted">—</p>
           </section>
         </div>
 
         <section class="asm-panel sec">
           <h2 class="asm-title">4. {{ L('acceptance') }}</h2>
-          <pre class="md">{{
-            md(pickPair(issue.acceptance_ko, issue.acceptance_id, lang)) ?? '—'
-          }}</pre>
+          <div
+            v-if="pickPair(issue.acceptance_ko, issue.acceptance_id, lang)"
+            class="md"
+            :lang="lang"
+            v-html="renderMd(pickPair(issue.acceptance_ko, issue.acceptance_id, lang))"
+          ></div>
+          <p v-else class="muted">—</p>
         </section>
 
         <!-- §5 IT부서 회신 · §6 현업 답변 을 한 행 두 열로(2026-09-10 요청) -->
@@ -986,7 +1157,10 @@ watch(
             <form v-if="replyOpen" class="sub-form" @submit.prevent="submitReply">
               <div class="grid">
                 <label class="field">
-                  <span>{{ T('replied_on') }}</span>
+                  <span
+                    >{{ T('replied_on')
+                    }}<em class="req" :title="T('required')" aria-hidden="true">*</em></span
+                  >
                   <input
                     v-model="replyDraft.replied_on"
                     type="date"
@@ -1032,7 +1206,7 @@ watch(
                 <button
                   type="button"
                   class="btn btn-outline-secondary btn-sm"
-                  @click="replyOpen = false"
+                  @click="cancelReply"
                 >
                   {{ T('cancel') }}
                 </button>
@@ -1046,7 +1220,7 @@ watch(
             <article v-for="r in sortedReplies" :key="r.id" class="reply">
               <!-- 머리: 회신일 + 수용 여부 배지. 본문: 채워진 항목만, 긴 글은 전폭. -->
               <div class="reply-head">
-                <h3>{{ r.replied_on }}</h3>
+                <h3 class="date-val">{{ r.replied_on }}</h3>
                 <span
                   v-if="r.decision"
                   class="asm-badge"
@@ -1099,7 +1273,7 @@ watch(
                 <button
                   type="button"
                   class="btn btn-outline-secondary btn-sm"
-                  @click="mdEditing = null"
+                  @click="cancelMd"
                 >
                   {{ T('cancel') }}
                 </button>
@@ -1113,9 +1287,12 @@ watch(
                 </button>
               </div>
             </template>
-            <pre v-else-if="bodyOf('business_answer_md')" class="md">{{
-              md(bodyOf('business_answer_md'))
-            }}</pre>
+            <div
+              v-else-if="bodyOf('business_answer_md')"
+              class="md"
+              :lang="lang"
+              v-html="renderMd(bodyOf('business_answer_md'))"
+            ></div>
             <p v-else class="muted">{{ T('no_answer') }}</p>
           </section>
         </div>
@@ -1137,7 +1314,9 @@ watch(
           <form v-if="verifyOpen" class="sub-form" @submit.prevent="submitVerification">
             <div class="grid">
               <label class="field">
-                <span>{{ T('date') }}</span>
+                <span
+                  >{{ T('date') }}<em class="req" :title="T('required')" aria-hidden="true">*</em></span
+                >
                 <input
                   v-model="verifyDraft.verified_on"
                   type="date"
@@ -1148,7 +1327,9 @@ watch(
                 />
               </label>
               <label class="field">
-                <span>{{ T('result') }}</span>
+                <span
+                  >{{ T('result') }}<em class="req" :title="T('required')" aria-hidden="true">*</em></span
+                >
                 <select v-model="verifyDraft.result" class="form-select form-select-sm" required>
                   <option value="">—</option>
                   <option v-for="c in VERIFY_CODES" :key="c" :value="c">
@@ -1182,7 +1363,7 @@ watch(
               <button
                 type="button"
                 class="btn btn-outline-secondary btn-sm"
-                @click="verifyOpen = false"
+                @click="cancelVerify"
               >
                 {{ T('cancel') }}
               </button>
@@ -1193,7 +1374,8 @@ watch(
           </form>
 
           <p v-if="!sortedVerifications.length" class="muted">{{ T('no_verif') }}</p>
-          <table v-else class="table asm-table verif">
+          <div v-else class="table-scroll">
+          <table class="table asm-table verif">
             <thead>
               <tr>
                 <th>{{ T('date') }}</th>
@@ -1204,7 +1386,7 @@ watch(
             </thead>
             <tbody>
               <tr v-for="v in sortedVerifications" :key="v.id">
-                <td class="nowrap">{{ v.verified_on }}</td>
+                <td class="nowrap date-val">{{ v.verified_on }}</td>
                 <!-- 검증 시점의 IT 상태(036) — 로그로 역산되지 않는 이관분은 빈칸입니다. -->
                 <td class="nowrap">
                   <CsrStatusBadge kind="it_status" :value="v.it_status_at" :lang="lang" />
@@ -1227,22 +1409,27 @@ watch(
               </tr>
             </tbody>
           </table>
+          </div>
         </section>
 
         <!-- 상태 변경 로그 (접기) — 003 트리거가 자동 적재. 아무도 직접 쓰지 못합니다. -->
         <section class="asm-panel sec">
-          <button
-            type="button"
-            class="log-toggle"
-            :aria-expanded="logOpen"
-            @click="logOpen = !logOpen"
-          >
-            <h2 class="asm-title">
-              {{ T('log') }} <small>({{ statusLog.length }})</small>
-            </h2>
-            <span>{{ logOpen ? T('collapse') : T('expand') }}</span>
-          </button>
-          <table v-if="logOpen && statusLog.length" class="table asm-table mt-2">
+          <h2 class="asm-title log-title">
+            <button
+              type="button"
+              class="log-toggle"
+              :aria-expanded="logOpen"
+              aria-controls="csr-status-log"
+              @click="logOpen = !logOpen"
+            >
+              <span
+                >{{ T('log') }} <small>({{ statusLog.length }})</small></span
+              >
+              <span class="log-toggle-hint">{{ logOpen ? T('collapse') : T('expand') }}</span>
+            </button>
+          </h2>
+          <div v-if="logOpen && statusLog.length" id="csr-status-log" class="table-scroll mt-2">
+          <table class="table asm-table">
             <thead>
               <tr>
                 <th>{{ T('ts') }}</th>
@@ -1254,8 +1441,8 @@ watch(
             </thead>
             <tbody>
               <tr v-for="l in statusLog" :key="l.id">
-                <td class="nowrap">{{ fmtDate(l.changed_at) }}</td>
-                <td class="nowrap">{{ l.column_name }}</td>
+                <td class="nowrap date-val">{{ fmtDate(l.changed_at) }}</td>
+                <td class="nowrap">{{ L(l.column_name) }}</td>
                 <td :class="isDateValue(l.old_value) ? 'nowrap' : 'wrap'">
                   {{ logValue(VF(l.column_name, l.old_value)) ?? '—' }}
                 </td>
@@ -1266,7 +1453,8 @@ watch(
               </tr>
             </tbody>
           </table>
-          <p v-else-if="logOpen" class="muted mt-2">{{ T('no_log') }}</p>
+          </div>
+          <p v-else-if="logOpen" id="csr-status-log" class="muted mt-2">{{ T('no_log') }}</p>
         </section>
       </template>
 
@@ -1279,13 +1467,15 @@ watch(
         :aria-label="lightbox.file_name ?? ''"
         @click.self="closeLightbox"
       >
-        <div class="lightbox-body">
+        <div ref="lightboxEl" class="lightbox-body">
           <img
+            v-if="!thumbFailed(lightbox.drive_file_id)"
             :src="thumb(lightbox.drive_file_id, 2000)"
             :alt="lightbox.file_name ?? ''"
             referrerpolicy="no-referrer"
             @error="onThumbError(lightbox.drive_file_id)"
           />
+          <p v-else class="lightbox-fallback" role="alert">{{ T('lb_failed') }}</p>
           <div class="lightbox-bar">
             <span class="fname">{{ lightbox.caption ?? lightbox.file_name ?? '' }}</span>
             <a
@@ -1319,7 +1509,23 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
+}
+.unreg-body {
+  margin: 8px 0 12px;
+}
+.unreg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.req {
+  font-style: normal;
+  color: var(--asm-danger);
+}
+.date-val {
+  font-variant-numeric: tabular-nums;
 }
 .verif .legacy {
   display: block;
@@ -1344,6 +1550,11 @@ watch(
 }
 .head {
   padding: 20px 24px;
+}
+@media (max-width: 767.98px) {
+  .head {
+    padding: 16px;
+  }
 }
 .head-top {
   display: flex;
@@ -1375,6 +1586,15 @@ watch(
 @media (max-width: 991.98px) {
   .props {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* 576px 미만은 1열 — 열당 140px 에서 값이 잘리던 것을 막습니다. */
+@media (max-width: 575.98px) {
+  .props {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .props .full-row {
+    grid-column: auto;
   }
 }
 .props div {
@@ -1413,28 +1633,26 @@ watch(
  */
 .props > div {
   background: var(--asm-muted-20);
-  border-left: 3px solid var(--asm-primary-10);
+  border: 1px solid var(--asm-border);
   border-radius: var(--asm-radius-sm);
   padding: 6px 10px;
 }
 .props dt {
   font-size: 12px;
   color: var(--asm-fg-muted);
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 /*
- * 값은 한 줄 고정(2026-09-10 요청) — 화면경로처럼 긴 값이 세 줄로 접혀 카드를 늘리던 것을
- * 막습니다. 잘린 부분은 dd 의 title 툴팁으로 봅니다. min-width:0 이 부모에 있어야 격자
- * 칸 안에서 말줄임이 먹습니다.
+ * 값은 줄바꿈을 허용합니다 — 말줄임은 툴팁에만 전체가 있어 터치·키보드 사용자가 잘린 값을
+ * 볼 수 없었습니다(이중언어 값은 인니어가 더 깁니다). 긴 값은 칸 안에서 접힙니다.
  */
 .props dd {
   margin: 3px 0 0;
   font-size: 13px;
   color: var(--asm-fg);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .edit-form {
@@ -1525,22 +1743,52 @@ watch(
   color: var(--asm-fg-muted);
 }
 .sub-form {
-  border: 1px dashed var(--asm-border);
+  border: 1px solid var(--asm-border);
   border-radius: var(--asm-radius-md);
   padding: 12px;
   margin-bottom: 12px;
 }
 /*
- * 본문은 Notion 마크다운 원문입니다. 렌더러를 붙이면 의존성이 하나 더 늘고(§9 승인 대상)
- * 원문과 화면이 어긋날 여지가 생겨, 줄바꿈만 지켜 그대로 보여 줍니다.
+ * 본문은 renderMd() 가 만든 최소 HTML(제목·굵게·목록·문단)입니다. v-html 로 들어온 요소라
+ * scoped 선택자가 닿지 않아 :deep 으로 지정합니다. 저장된 원문은 그대로이고 화면만 바꿉니다.
  */
 .md {
   margin: 0;
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-family: inherit;
   font-size: 13px;
   line-height: 1.7;
+}
+.md :deep(p) {
+  margin: 0 0 8px;
+}
+.md :deep(h4) {
+  margin: 12px 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.md :deep(strong) {
+  font-weight: 700;
+}
+.md :deep(ul),
+.md :deep(ol) {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+.md :deep(li.lv1) {
+  margin-left: 16px;
+}
+.md :deep(li.lv2) {
+  margin-left: 32px;
+}
+.md :deep(li.lv3) {
+  margin-left: 48px;
+}
+.md > :deep(:first-child) {
+  margin-top: 0;
+}
+.md > :deep(:last-child) {
+  margin-bottom: 0;
 }
 /* 본문 편집은 KO·ID 나란히 — 한쪽만 고치고 다른 쪽을 잊지 않도록(TEXT_PAIRS 와 같은 이유). */
 .md-pair {
@@ -1572,7 +1820,7 @@ watch(
 .reply h3 {
   font-size: 13px;
   font-weight: 700;
-  color: var(--asm-primary);
+  color: var(--asm-fg);
   margin: 0;
 }
 /* 짧은 항목은 나란히, 긴 글(.wide)은 전폭 — 세로로 라벨·값이 번갈아 늘어지던 것을 접습니다. */
@@ -1585,7 +1833,7 @@ watch(
 /* 라벨과 값의 구분(2026-09-10 요청) — 속성 격자와 같은 칸 모양: 옅은 바탕 · 왼쪽 띠 · 라벨 작고 굵게 · 값 본문색 */
 .reply-body > div {
   background: var(--asm-muted-20);
-  border-left: 3px solid var(--asm-primary-10);
+  border: 1px solid var(--asm-border);
   border-radius: var(--asm-radius-sm);
   padding: 6px 10px;
 }
@@ -1594,7 +1842,7 @@ watch(
 }
 .reply dt {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--asm-fg-muted);
 }
@@ -1661,7 +1909,7 @@ watch(
   line-height: 1.5;
   color: var(--asm-fg-muted);
   background: var(--asm-muted-20);
-  border: 1px dashed var(--asm-border);
+  border: 1px solid var(--asm-border);
   border-radius: var(--asm-radius-sm);
   text-align: center;
 }
@@ -1679,7 +1927,7 @@ watch(
   position: fixed;
   inset: 0;
   z-index: 1100;
-  background: rgb(0 0 0 / 0.72);
+  background: var(--asm-scrim-media);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1691,6 +1939,7 @@ watch(
   cursor: default;
   max-width: min(1400px, 96vw);
   max-height: 92vh;
+  max-height: 92dvh;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1698,15 +1947,24 @@ watch(
 .lightbox-body img {
   max-width: 100%;
   max-height: calc(92vh - 44px);
+  max-height: calc(92dvh - 44px);
   object-fit: contain;
-  background: #fff;
+  background: var(--asm-card);
   border-radius: var(--asm-radius-md);
+}
+.lightbox-fallback {
+  margin: 0;
+  padding: 24px 16px;
+  background: var(--asm-card);
+  color: var(--asm-fg);
+  border-radius: var(--asm-radius-md);
+  font-size: 13px;
 }
 .lightbox-bar {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #fff;
+  color: var(--asm-card);
   font-size: 12px;
 }
 .lightbox-bar .fname {
@@ -1717,7 +1975,7 @@ watch(
   white-space: nowrap;
 }
 .lightbox-bar a {
-  color: #fff;
+  color: var(--asm-card);
 }
 .shot figcaption {
   display: flex;
@@ -1746,7 +2004,16 @@ watch(
   background: transparent;
   padding: 0;
   text-align: left;
-  font-size: 12px;
-  color: var(--asm-fg-muted);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.sec > h2.log-title {
+  margin: 0;
+}
+.log-toggle-hint {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--asm-primary);
 }
 </style>

@@ -511,10 +511,25 @@ async function signOut() {
   font-size: 13px;
   white-space: nowrap;
 }
-/* 자리표시자(로그인 없음)는 흐리게 — 실제 사람으로 오해하지 않도록. */
-.profile.is-placeholder,
+/*
+ * 자리표시자(로그인 없음) — 흐리게(opacity) 하면 글자 대비가 AA 밑으로 떨어지고 비활성 버튼처럼
+ * 읽힙니다. 대신 중립 회색 아바타 + 1px 테두리로 「눌러서 로그인하는 버튼」임을 드러내고,
+ * 실제 사람(파란 아바타)과도 구분합니다(impeccable A-3).
+ */
+.profile.is-placeholder {
+  border: 1px solid var(--asm-border);
+  background: var(--asm-card);
+}
+.profile.is-placeholder:hover {
+  border-color: var(--asm-primary);
+}
+.profile.is-placeholder .avatar {
+  background: var(--asm-neutral-soft);
+  color: var(--asm-neutral);
+}
 .asm-pill.is-placeholder {
-  opacity: 0.55;
+  background: var(--asm-neutral-soft);
+  color: var(--asm-neutral);
 }
 
 @media (max-width: 991.98px) {
@@ -538,6 +553,23 @@ async function signOut() {
   }
   .brand-symbol {
     display: block;
+  }
+}
+/*
+ * 480px 미만 — 3열 그리드의 좌우 열은 내용 폭(max-content)이 최솟값이라, 320px 에서 패딩·간격 때문에
+ * 가로로 넘칠 수 있습니다(audit-shell P1, 계산 추정). 좌우 여백과 간격만 줄여 한 줄에 맞춥니다(impeccable A-4).
+ */
+@media (max-width: 479.98px) {
+  .brand {
+    padding: 0 8px;
+    gap: 6px;
+  }
+  .top-actions {
+    padding: 0 8px;
+    gap: 4px;
+  }
+  .account {
+    margin-left: 0;
   }
 }
 </style>

@@ -123,6 +123,8 @@
 
   /* 스크림 — 가이드 8-5 오버레이 rgb(51 51 51 / .5) */
   --asm-scrim: rgb(51 51 51 / 0.5);
+  /* 이미지 라이트박스 뒷배경 — 사진이 주인공이라 검정 계열로 더 어둡게(2026-11 impeccable A-7) */
+  --asm-scrim-media: rgb(0 0 0 / 0.72);
 
   /*
    * 레이아웃 치수 (가이드 7-1) — BI 는 헤더 위에 4px 블루 액센트 바를 둡니다(전 대형
@@ -186,6 +188,38 @@ body {
 }
 html {
   scroll-behavior: smooth;
+}
+/* 모션 줄이기 설정을 존중 — 부드러운 스크롤·전환을 끕니다(impeccable A-7) */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * 포커스 가시성 (impeccable A-1) — 컴포넌트가 outline 을 지우고 box-shadow 링만 그리면
+ * Windows 고대비 모드(forced-colors)에서 링이 사라집니다. 투명 outline 을 깔아 두면 일반
+ * 모드에서는 보이지 않고, 고대비 모드에서만 시스템 색 윤곽선으로 나타납니다.
+ */
+:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight !important;
+  }
+}
+
+/* 표 가로 스크롤 래퍼 — 좁은 화면에서 표가 패널 밖으로 넘치지 않게(impeccable A-2). 화면별 정의와 같은 값 */
+.table-scroll {
+  overflow-x: auto;
 }
 
 /* 가이드 5-2 — 제목 계열은 700(Bold) + tracking-tight */

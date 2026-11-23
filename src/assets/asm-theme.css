@@ -204,13 +204,12 @@ html {
 
 /*
  * 포커스 가시성 (impeccable A-1) — 컴포넌트가 outline 을 지우고 box-shadow 링만 그리면
- * Windows 고대비 모드(forced-colors)에서 링이 사라집니다. 투명 outline 을 깔아 두면 일반
- * 모드에서는 보이지 않고, 고대비 모드에서만 시스템 색 윤곽선으로 나타납니다.
+ * Windows 고대비 모드(forced-colors)에서 링이 사라집니다. 그래서 고대비 모드에서만 시스템 색
+ * 윤곽선을 강제합니다.
+ * 주의: 일반 모드용 `:focus-visible { outline: 2px solid transparent }` 를 전역에 두지 말 것 —
+ * 자체 링이 없는 버튼·링크·체크박스의 브라우저 기본 포커스 표시까지 지워 버립니다
+ * (impeccable 검증 R-1, CDP 실측).
  */
-:focus-visible {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-}
 @media (forced-colors: active) {
   :focus-visible {
     outline: 2px solid Highlight !important;

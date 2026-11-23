@@ -126,9 +126,20 @@ const UNASSIGNED = '—'
 
 /**
  * 숫자 → 목록 이동. 목록 화면이 이미 읽는 쿼리(itStatus · verification · pic)만 씁니다.
- * 목록은 진입 시 쿼리에 있는 키만 덮어쓰므로 목록에 남아 있던 다른 필터는 유지됩니다.
+ * 목록은 진입 시 쿼리에 있는 키만 덮어쓰고 나머지는 스토어에 남은 필터를 유지하므로,
+ * 눌러도 건수가 어긋나거나 빈 목록이 되지 않게 나머지 필터는 기본값으로 명시합니다
+ * (impeccable 검증 R-2). 기본값은 CsrListPage 의 FILTER_DEFAULTS 와 같아야 합니다.
  */
-const listTo = (q = {}) => ({ path: '/csr', query: q })
+const LIST_RESET = {
+  search: '',
+  itStatus: 'All',
+  verification: 'All',
+  priority: 'All',
+  pic: 'All',
+  showArchived: '0',
+  excludeVerified: '0',
+}
+const listTo = (q = {}) => ({ path: '/csr', query: { ...LIST_RESET, ...q } })
 const known = (v) => VERIFY_CODES.includes(v)
 </script>
 

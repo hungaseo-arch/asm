@@ -167,7 +167,7 @@ async function saveUser() {
       if (acct.created)
         toast.info(
           t(
-            `계정을 만들었습니다 — 초기 비밀번호 ${INITIAL_PASSWORD}. 본인이 로그인 뒤 바꾸게 하십시오.`,
+            `계정을 만들었습니다 — 초기 비밀번호 ${INITIAL_PASSWORD}. 본인이 로그인한 뒤 바꾸게 하십시오.`,
             `Akun dibuat — kata sandi awal ${INITIAL_PASSWORD}. Minta pengguna menggantinya setelah masuk.`,
           ),
           { duration: 8000 },

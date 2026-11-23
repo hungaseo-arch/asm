@@ -136,13 +136,13 @@ const DICT = {
   ],
   unreg_title: ['접근 권한이 없습니다', 'Tidak memiliki akses'],
   unreg_body: [
-    '계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다. 관리자에게 역할 등록을 요청하십시오.',
+    '계정은 확인했지만 CSR 사용자로 등록돼 있지 않습니다. 관리자에게 역할 등록을 요청하십시오.',
     'Akun dikenali tetapi belum terdaftar sebagai pengguna CSR. Mintakan pendaftaran peran kepada admin.',
   ],
   recheck: ['다시 확인', 'Periksa lagi'],
   other_account: ['다른 계정으로 로그인', 'Masuk dengan akun lain'],
   verify_note: [
-    '현업검증·최종검증일은 7. 검증 이력에서 「+ 검증 추가」로 변경하면 헤더가 자동 갱신됩니다. 여기서 직접 고치면 이력이 남지 않습니다.',
+    '현업검증·최종검증일은 7. 검증 이력의 「+ 검증 추가」로 바꾸면 헤더에 자동 반영됩니다. 여기서 직접 고치면 이력이 남지 않습니다.',
     'Verifikasi bisnis dan tanggal verifikasi akhir akan diperbarui otomatis di header bila diubah lewat «+ Tambah verifikasi» pada 7. Riwayat Verifikasi. Jika diubah langsung di sini, riwayat tidak tercatat.',
   ],
   required: ['필수', 'Wajib'],

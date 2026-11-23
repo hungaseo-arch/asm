@@ -27,7 +27,7 @@ export const VERIFY_STATUS = [
     code: 'NOT APPLIED',
     ko: '미조치',
     id: 'Belum Diterapkan',
-    desc: '검증 결과 실서버에 반영 없음',
+    desc: '검증 결과 실서버에 반영되지 않음',
     desc_id: 'Hasil verifikasi: belum diterapkan di server produksi',
     tone: 'danger',
     legacy: ['미조치', 'Belum ditindaklanjuti'],

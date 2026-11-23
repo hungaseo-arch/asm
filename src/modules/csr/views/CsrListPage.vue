@@ -222,7 +222,7 @@ watch(
           {{
             lang === 'id'
               ? `Akun dikenali tetapi belum terdaftar sebagai pengguna CSR (${session.user?.email}). Mintakan pendaftaran peran kepada admin.`
-              : `계정은 확인되었으나 CSR 사용자로 등록되지 않았습니다(${session.user?.email}). 관리자에게 역할 등록을 요청하십시오.`
+              : `계정은 확인됐지만 CSR 사용자로 등록돼 있지 않습니다(${session.user?.email}). 관리자에게 역할 등록을 요청하십시오.`
           }}
         </p>
         <button type="button" class="btn btn-sm btn-primary mt-3 me-2" @click="recheck">

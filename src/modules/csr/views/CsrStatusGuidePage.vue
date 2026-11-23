@@ -37,7 +37,7 @@ const LEAD = [
     items: [
       {
         t: [
-          'CSR 화면(`/csr`, `/csr/nn`, 교차집계 표)의 상태 명칭을 현지 직원과 공용 가능한 영문 코드로 통일',
+          'CSR 화면(`/csr`, `/csr/nn`, 교차집계 표)의 상태 명칭을 현지 직원과 함께 쓸 수 있는 영문 코드로 통일',
           'Menyeragamkan nama status pada layar CSR (`/csr`, `/csr/nn`, tabel silang) menjadi kode bahasa Inggris yang dapat dipakai bersama staf lokal',
         ],
       },

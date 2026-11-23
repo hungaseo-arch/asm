@@ -40,7 +40,7 @@ const DIAGRAMS = [
     file: 'dev.html',
     name: ['개발 개선요청 프로세스', 'Proses permintaan pengembangan'],
     desc: [
-      '개발요청 → 개발 → 문서화 3단계 — 문서정합성 검증에서 불일치가 나오면 1단계로 환류합니다.',
+      '개발요청 → 개발 → 문서화 3단계 — 문서정합성 검증에서 불일치가 나오면 1단계로 되돌아갑니다.',
       '3 tahap: permintaan pengembangan → pengembangan → dokumentasi — ketidaksesuaian pada verifikasi dikembalikan ke tahap 1.',
     ],
   },
@@ -250,7 +250,7 @@ onBeforeUnmount(() => {
       <p class="note">
         {{
           t([
-            '도면 본문은 영어입니다. 축소된 상태에서 글씨가 작으면 100% 로 두고 가로로 넘겨 보시거나 새 창에서 여십시오.',
+            '도면 본문은 영어입니다. 축소해서 글씨가 작게 보이면 100% 로 두고 가로로 넘겨 보거나 새 창에서 여십시오.',
             'Isi diagram berbahasa Inggris. Jika huruf terlalu kecil saat diperkecil, pakai 100% lalu geser ke samping, atau buka di tab baru.',
           ])
         }}

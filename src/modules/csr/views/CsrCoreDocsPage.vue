@@ -13,14 +13,13 @@
  * 고릅니다(coreDocs.js DOC_SETS). 표준양식은 한·인니 겸용이라 언어 토글과 무관하게 PDF 하나.
  */
 import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useCsrLang } from '../composables/useCsrLang'
 import { DOC_SETS, coreDocFileName, coreDocUrl } from '../coreDocs'
 
 const { tp: t, lang } = useCsrLang()
 const route = useRoute()
-const router = useRouter()
 
 const set = computed(() => DOC_SETS[route.meta.docSet] ?? DOC_SETS.docs)
 const items = computed(() => set.value.items)
@@ -29,43 +28,32 @@ const active = computed(() => items.value.find((d) => d.no === docNo.value) ?? n
 /** 주소에 번호가 있는데 목록에 없으면 「없는 문서」. */
 const missing = computed(() => !!docNo.value && !active.value)
 
-const open = (doc) => router.push({ name: set.value.route, params: { docNo: doc.no } })
+const to = (doc) => ({ name: set.value.route, params: { docNo: doc.no } })
 const url = (doc) => coreDocUrl(doc, lang.value, set.value)
 </script>
 
 <template>
   <DefaultLayout>
-    <section class="docs">
+    <section class="docs" :lang="lang">
       <div class="head">
         <div class="page-titles">
           <h1 class="page-title">{{ t(set.title) }}</h1>
           <p class="page-sub mb-0">{{ t(set.sub) }}</p>
         </div>
-        <button
-          v-if="docNo"
-          type="button"
-          class="btn btn-sm btn-link"
-          @click="router.push({ name: set.route })"
-        >
+        <router-link v-if="docNo" class="btn btn-sm btn-link" :to="{ name: set.route }">
           ← {{ t(['전체 목록', 'Semua dokumen']) }}
-        </button>
+        </router-link>
       </div>
 
       <!-- 목록 (index) -->
       <div v-if="!docNo" class="grid">
-        <button
-          v-for="d in items"
-          :key="d.no"
-          type="button"
-          class="asm-panel card-doc"
-          @click="open(d)"
-        >
+        <router-link v-for="d in items" :key="d.no" :to="to(d)" class="asm-panel card-doc">
           <span class="no">{{ d.no }}</span>
           <b class="title">{{ t(d.title) }}</b>
           <small class="en">{{ d.en }}</small>
           <span class="desc">{{ t(d.desc) }}</span>
           <span class="meta">{{ [d.version, d.date].filter(Boolean).join(' · ') }}</span>
-        </button>
+        </router-link>
       </div>
 
       <div v-else-if="missing" class="asm-panel empty">
@@ -76,18 +64,19 @@ const url = (doc) => coreDocUrl(doc, lang.value, set.value)
       <!-- 하위 페이지 (viewer) -->
       <div v-else class="viewer">
         <nav class="asm-panel side" :aria-label="t(['문서 목록', 'Daftar dokumen'])">
-          <button
+          <router-link
             v-for="d in items"
             :key="d.no"
-            type="button"
+            :to="to(d)"
             class="side-item"
             :class="{ 'side-item--on': d.no === active.no }"
             :aria-current="d.no === active.no ? 'page' : undefined"
-            @click="open(d)"
+            :aria-label="`${d.no} ${t(d.title)}`"
+            :title="t(d.title)"
           >
             <span class="no">{{ d.no }}</span>
             <span class="side-title">{{ t(d.title) }}</span>
-          </button>
+          </router-link>
         </nav>
 
         <div class="main">
@@ -146,7 +135,8 @@ const url = (doc) => coreDocUrl(doc, lang.value, set.value)
   gap: 16px;
 }
 .no {
-  font-size: 11px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: var(--asm-primary);
   letter-spacing: 0.03em;
@@ -157,6 +147,7 @@ const url = (doc) => coreDocUrl(doc, lang.value, set.value)
 }
 .meta {
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
   color: var(--asm-fg-muted);
 }
 
@@ -175,6 +166,7 @@ const url = (doc) => coreDocUrl(doc, lang.value, set.value)
   border: 1px solid var(--asm-border);
   background: var(--asm-card);
   color: var(--asm-fg);
+  text-decoration: none;
   cursor: pointer;
   transition:
     border-color 0.15s,
@@ -188,7 +180,8 @@ const url = (doc) => coreDocUrl(doc, lang.value, set.value)
   box-shadow: 0 0 0 3px var(--asm-primary-40);
 }
 .card-doc .title {
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 700;
 }
 .card-doc .en {
   font-size: 12px;
@@ -234,6 +227,11 @@ const url = (doc) => coreDocUrl(doc, lang.value, set.value)
   border-radius: var(--asm-radius-md);
   color: var(--asm-fg);
   font-size: 13px;
+  text-decoration: none;
+}
+.side-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--asm-primary-40);
 }
 .side-item:hover {
   background: var(--asm-secondary);
@@ -273,10 +271,10 @@ const url = (doc) => coreDocUrl(doc, lang.value, set.value)
 .sheet {
   display: block;
   width: 100%;
-  height: calc(100vh - 220px);
+  height: calc(100vh - var(--asm-header-offset) - 160px);
   min-height: 520px;
   border: 0;
-  background: #fff;
+  background: var(--asm-card);
 }
 
 @media (max-width: 991.98px) {
@@ -289,11 +287,20 @@ const url = (doc) => coreDocUrl(doc, lang.value, set.value)
     flex-direction: row;
     overflow-x: auto;
   }
+  /* 칩 — 번호 + 짧은 제목(말줄임). 접근 이름·title 에는 전체 제목이 들어 있습니다. */
   .side-item {
     flex: none;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+    max-width: 220px;
+    min-height: 36px;
+    align-items: center;
   }
   .side-title {
-    display: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .doc-head {
     flex-direction: column;

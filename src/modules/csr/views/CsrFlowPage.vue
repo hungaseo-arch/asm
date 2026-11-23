@@ -14,7 +14,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useCsrLang } from '../composables/useCsrLang'
 
-const { tp: t } = useCsrLang()
+const { tp: t, lang } = useCsrLang()
 
 const DIAGRAMS = [
   {
@@ -85,6 +85,8 @@ const applyFit = () => {
  * 축소되어 화면에 빈 공간만 남음). body 의 첫 자식(실제 콘텐츠 박스)의 렌더 크기를 재면 max-width 로
  * 꺾인 진짜 폭이 나옵니다.
  */
+let retryTimer = null
+let resizeTimer = null
 const measure = (tries = 0) => {
   let size = null
   try {
@@ -108,7 +110,10 @@ const measure = (tries = 0) => {
     size = null // 혹시 접근이 막히면 기본값 그대로
   }
   if (!size) {
-    if (tries < 10) setTimeout(() => measure(tries + 1), 100)
+    if (tries < 10) {
+      clearTimeout(retryTimer)
+      retryTimer = setTimeout(() => measure(tries + 1), 100)
+    }
     return
   }
   natural.value = size
@@ -130,13 +135,36 @@ watch(current, () => {
   ready.value = false // 도면이 바뀌면 크기를 다시 잽니다
 })
 
-onMounted(() => window.addEventListener('resize', applyFit))
-onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
+/** 탭 — 방향키 · Home/End 로 이동(자동 활성). roving tabindex 는 템플릿의 tabindex 로. */
+const tabKey = (e) => {
+  const i = DIAGRAMS.findIndex((d) => d.key === current.value)
+  let n = -1
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % DIAGRAMS.length
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')
+    n = (i - 1 + DIAGRAMS.length) % DIAGRAMS.length
+  else if (e.key === 'Home') n = 0
+  else if (e.key === 'End') n = DIAGRAMS.length - 1
+  if (n < 0) return
+  e.preventDefault()
+  current.value = DIAGRAMS[n].key
+  document.getElementById(`flow-tab-${DIAGRAMS[n].key}`)?.focus()
+}
+
+const onResize = () => {
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(applyFit, 100)
+}
+onMounted(() => window.addEventListener('resize', onResize))
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+  clearTimeout(retryTimer)
+  clearTimeout(resizeTimer)
+})
 </script>
 
 <template>
   <DefaultLayout>
-    <section class="flow">
+    <section class="flow" :lang="lang">
       <div class="head">
         <div class="page-titles">
           <h1 class="page-title">Flow Diagram</h1>
@@ -155,15 +183,23 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
       </div>
 
       <div class="toolbar">
-        <div class="tabs" role="tablist">
+        <div
+          class="tabs"
+          role="tablist"
+          :aria-label="t(['업무 흐름도 선택', 'Pilih diagram alur kerja'])"
+          @keydown="tabKey"
+        >
           <button
             v-for="d in DIAGRAMS"
+            :id="`flow-tab-${d.key}`"
             :key="d.key"
             type="button"
             role="tab"
             class="tab"
             :class="{ 'tab--on': d.key === current }"
             :aria-selected="d.key === current"
+            aria-controls="flow-panel"
+            :tabindex="d.key === current ? 0 : -1"
             @click="current = d.key"
           >
             {{ t(d.name) }}
@@ -178,7 +214,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
           >
             −
           </button>
-          <span class="zoom-now">{{ Math.round(zoom * 100) }}%</span>
+          <span class="zoom-now" role="status" aria-live="polite"
+            >{{ Math.round(zoom * 100) }}%</span
+          >
           <button
             type="button"
             class="zoom-btn"
@@ -191,6 +229,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
             type="button"
             class="zoom-btn wide"
             :class="{ 'zoom-btn--on': fit }"
+            :aria-pressed="fit"
             @click="setFit"
           >
             {{ t(['화면 맞춤', 'Sesuaikan layar']) }}
@@ -199,6 +238,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
             type="button"
             class="zoom-btn wide"
             :class="{ 'zoom-btn--on': !fit && zoom === 1 }"
+            :aria-pressed="!fit && zoom === 1"
             @click="setZoom(1)"
           >
             100%
@@ -207,28 +247,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
       </div>
 
       <p class="desc">{{ t(active.desc) }}</p>
-
-      <div ref="stage" class="asm-panel stage">
-        <div
-          class="canvas"
-          :style="{ width: `${natural.w * zoom}px`, height: `${natural.h * zoom}px` }"
-        >
-          <iframe
-            ref="frame"
-            :key="active.key"
-            :src="src"
-            class="sheet"
-            :title="t(active.name)"
-            :style="{
-              width: `${natural.w}px`,
-              height: `${natural.h}px`,
-              transform: `scale(${zoom})`,
-            }"
-            @load="onLoad"
-          ></iframe>
-        </div>
-      </div>
-
       <p class="note">
         {{
           t([
@@ -237,6 +255,48 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
           ])
         }}
       </p>
+
+      <div
+        id="flow-panel"
+        role="tabpanel"
+        :aria-labelledby="`flow-tab-${active.key}`"
+        :aria-busy="!ready"
+      >
+        <p v-if="!ready" class="note" role="status">
+          {{ t(['도면을 불러오는 중…', 'Memuat diagram…']) }}
+        </p>
+        <div
+          ref="stage"
+          class="asm-panel stage"
+          tabindex="0"
+          role="region"
+          :aria-label="
+            t([
+              `${active.name[0]} 도면 — 방향키로 가로·세로 스크롤`,
+              `Diagram ${active.name[1]} — gulir dengan tombol panah`,
+            ])
+          "
+        >
+          <div
+            class="canvas"
+            :style="{ width: `${natural.w * zoom}px`, height: `${natural.h * zoom}px` }"
+          >
+            <iframe
+              ref="frame"
+              :key="active.key"
+              :src="src"
+              class="sheet"
+              :title="t(active.name)"
+              :style="{
+                width: `${natural.w}px`,
+                height: `${natural.h}px`,
+                transform: `scale(${zoom})`,
+              }"
+              @load="onLoad"
+            ></iframe>
+          </div>
+        </div>
+      </div>
     </section>
   </DefaultLayout>
 </template>
@@ -270,10 +330,20 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
   font-size: 12px;
   font-weight: 600;
   padding: 6px 14px;
-  border-radius: 6px;
+  min-height: 32px;
+  border-radius: var(--asm-radius-md);
   color: var(--asm-info);
   background: var(--asm-info-soft);
   border: 1px solid var(--asm-info-border);
+}
+.tab:focus-visible,
+.zoom-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--asm-primary-40);
+}
+.stage:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--asm-primary-40);
 }
 .tab--on {
   color: var(--asm-primary-fg);
@@ -287,9 +357,10 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
 }
 .zoom-btn {
   font-size: 12px;
-  min-width: 30px;
-  padding: 5px 8px;
-  border-radius: 6px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 5px 10px;
+  border-radius: var(--asm-radius-md);
   color: var(--asm-fg-muted);
   background: var(--asm-card);
   border: 1px solid var(--asm-border);
@@ -303,9 +374,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
   border-color: var(--asm-border-strong);
 }
 .zoom-btn--on {
-  color: var(--asm-success);
-  background: var(--asm-success-soft);
-  border-color: var(--asm-success-border);
+  color: var(--asm-primary);
+  background: var(--asm-primary-10);
+  border-color: var(--asm-primary-40);
   font-weight: 600;
 }
 .zoom-now {
@@ -314,7 +385,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
   color: var(--asm-primary);
   background: var(--asm-primary-soft);
   padding: 3px 8px;
-  border-radius: 9999px;
+  border-radius: var(--asm-radius-md);
+  font-variant-numeric: tabular-nums;
   min-width: 46px;
   text-align: center;
 }
@@ -335,7 +407,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', applyFit))
   display: block;
   border: 0;
   transform-origin: top left;
-  background: #fff;
+  background: var(--asm-card);
 }
 .note {
   margin: 0;

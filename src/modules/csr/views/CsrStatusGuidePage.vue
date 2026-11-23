@@ -3,11 +3,12 @@
  * CSR 상태 기준 — 「작업지시서: 상태 명칭 표준화(IT상태 × 현업검증)」(2026-09-10) 본문.
  *
  * 대시보드 교차표 제목 옆 링크에서 들어옵니다. 원문은 docs/csr/작업지시서_상태명칭표준화.md —
- * 두 곳을 같이 고칩니다. 정적 문서라 DB 를 쓰지 않습니다(로그인 없이도 열림).
+ * 원문은 그대로 두고, 이 화면은 읽는 사람 순서(상태 정의 → 전환 규칙 → 작업지시서 상세 접힘)로
+ * 재배열하며 낡은 수치(60건)·자기모순 문장은 정리했습니다. 정적 문서라 DB 를 쓰지 않습니다(로그인 없이도 열림).
  *
  * 본문은 **토글 언어 한쪽만** 보여 줍니다(2026-09-11 「범례 분리」 · 2026-09-14 「작업지시서 페이지도 분리」).
  * 그래서 문단마다 [한국어, 인도네시아어] 쌍으로 적어 둡니다 — 한쪽을 고치면 다른 쪽도 같이 고치십시오.
- * 인니어는 Claude 번역(검수 서종환). §3 표는 status.js 의 정의를 그대로 그려 문서와 화면이 어긋나지 않게 합니다.
+ * 인니어는 Claude 번역(검수 서종환). 상태 정의 표는 status.js 의 정의를 그대로 그려 문서와 화면이 어긋나지 않게 합니다.
  */
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useCsrLang } from '../composables/useCsrLang'
@@ -17,6 +18,7 @@ import CsrStatusDefTable from '../components/CsrStatusDefTable.vue'
 const { lang, tp: t } = useCsrLang()
 /** 백틱으로 감싼 조각은 <code> 로 — 문장마다 태그를 섞지 않으려고 문자열 한 줄로 적습니다. */
 const parts = (s) => s.split('`').map((x, i) => ({ code: i % 2 === 1, text: x }))
+const plain = (s) => s.replace(/`/g, '')
 
 // 표 4행·5행 — 정의는 status.js(작업지시서 v1.1 §C: 상수 1곳). On Hold · N/A 는 표준 4단계가 아니라 제외.
 const IT_ROWS = IT_STATUS.filter((s) =>
@@ -24,19 +26,19 @@ const IT_ROWS = IT_STATUS.filter((s) =>
 )
 
 const TITLE = [
-  '작업지시서 — ASM CSR 상태 명칭 표준화 (IT상태 × 현업검증)',
-  'Instruksi Kerja — Standardisasi Nama Status CSR ASM (Status IT × Hasil Verifikasi)',
+  'ASM CSR 상태 기준 (IT상태 × 현업검증)',
+  'Standar Status CSR ASM (Status IT × Hasil Verifikasi)',
 ]
 
-/** §1 · §2 — 표 앞 절 */
-const HEAD_SECTIONS = [
+/** 목적 — 표 앞에 짧게 */
+const LEAD = [
   {
-    h: ['1. 목적', '1. Tujuan'],
+    h: ['목적', 'Tujuan'],
     items: [
       {
         t: [
-          'CSR 목업 사이트(`/csr`, `/csr/nn`, 교차집계 표)의 상태 명칭을 현지 직원과 공용 가능한 영문 코드로 통일',
-          'Menyeragamkan nama status pada situs mock-up CSR (`/csr`, `/csr/nn`, tabel silang) menjadi kode bahasa Inggris yang dapat dipakai bersama staf lokal',
+          'CSR 화면(`/csr`, `/csr/nn`, 교차집계 표)의 상태 명칭을 현지 직원과 공용 가능한 영문 코드로 통일',
+          'Menyeragamkan nama status pada layar CSR (`/csr`, `/csr/nn`, tabel silang) menjadi kode bahasa Inggris yang dapat dipakai bersama staf lokal',
         ],
       },
       {
@@ -47,8 +49,58 @@ const HEAD_SECTIONS = [
       },
     ],
   },
+]
+
+/** 상태 정의 소제목 · 색상 규칙 · 전환 규칙 */
+const SEC3 = {
+  h: ['상태 정의', 'Definisi Status'],
+  h31: [
+    'IT상태 (세로축, IT부서 관리) — `itStatus`',
+    'Status IT (sumbu vertikal, dikelola Tim IT) — `itStatus`',
+  ],
+  h32: [
+    '현업검증 (가로축, 총괄팀 관리) — `verifyStatus`',
+    'Hasil Verifikasi (sumbu horizontal, dikelola Tim Umum) — `verifyStatus`',
+  ],
+  h33: ['배지 색상 (기존 톤 유지)', 'Warna Badge (mempertahankan tone yang ada)'],
+  tones: [
+    {
+      t: [
+        'itStatus: OPEN 빨강 · ONGOING 파랑 · COMPLETED 초록 · VERIFIED 남색/회청',
+        'itStatus: OPEN merah · ONGOING biru · COMPLETED hijau · VERIFIED biru tua/abu kebiruan',
+      ],
+    },
+    {
+      t: [
+        'verifyStatus: PENDING 회색 · NOT APPLIED 빨강 · PARTIAL 노랑 · ACCEPTED 초록 · REJECTED 주황 (v1.1 §C-2 에서 주황으로 확정)',
+        'verifyStatus: PENDING abu-abu · NOT APPLIED merah · PARTIAL kuning · ACCEPTED hijau · REJECTED oranye (ditetapkan oranye pada v1.1 §C-2)',
+      ],
+    },
+  ],
+  trans: {
+    h: ['전환 규칙', 'Aturan Transisi'],
+    items: [
+      [
+        'COMPLETED + ACCEPTED → VERIFIED 전환 (총괄팀)',
+        'COMPLETED + ACCEPTED → beralih ke VERIFIED (Tim Umum)',
+      ],
+      [
+        'COMPLETED + REJECTED → ONGOING 으로 되돌림 (IT부서)',
+        'COMPLETED + REJECTED → dikembalikan ke ONGOING (Tim IT)',
+      ],
+    ],
+  },
+  cols: {
+    code: ['Code', 'Code'],
+    name: ['한국어', 'Bahasa Indonesia'],
+    desc: ['설명', 'Keterangan'],
+  },
+}
+
+/** 작업지시서 상세 — 기본 접힘. §2 대상 범위 · §4 구현 요구사항 · §5 제외 사항 · §6 완료 기준 */
+const FOLD_SECTIONS = [
   {
-    h: ['2. 대상 범위', '2. Ruang Lingkup'],
+    h: ['대상 범위 (작업지시서 §2)', 'Ruang Lingkup (Instruksi Kerja §2)'],
     items: [
       {
         t: [
@@ -76,45 +128,8 @@ const HEAD_SECTIONS = [
       },
     ],
   },
-]
-
-/** §3 소제목 · 색상 규칙 */
-const SEC3 = {
-  h: ['3. 상태 정의 (단일 상수로 관리)', '3. Definisi Status (dikelola sebagai satu konstanta)'],
-  h31: [
-    '3-1. IT상태 (세로축, IT부서 관리) — `itStatus`',
-    '3-1. Status IT (sumbu vertikal, dikelola Tim IT) — `itStatus`',
-  ],
-  h32: [
-    '3-2. 현업검증 (가로축, 총괄팀 관리) — `verifyStatus`',
-    '3-2. Hasil Verifikasi (sumbu horizontal, dikelola Tim Umum) — `verifyStatus`',
-  ],
-  h33: ['3-3. 배지 색상 (기존 톤 유지)', '3-3. Warna Badge (mempertahankan tone yang ada)'],
-  tones: [
-    {
-      t: [
-        'itStatus: OPEN 빨강 · ONGOING 파랑 · COMPLETED 초록 · VERIFIED 남색/회청',
-        'itStatus: OPEN merah · ONGOING biru · COMPLETED hijau · VERIFIED biru tua/abu kebiruan',
-      ],
-    },
-    {
-      t: [
-        'verifyStatus: PENDING 회색 · NOT APPLIED 빨강 · PARTIAL 노랑 · ACCEPTED 초록 · REJECTED 주황 (v1.1 §C-2 에서 주황으로 확정)',
-        'verifyStatus: PENDING abu-abu · NOT APPLIED merah · PARTIAL kuning · ACCEPTED hijau · REJECTED oranye (ditetapkan oranye pada v1.1 §C-2)',
-      ],
-    },
-  ],
-  cols: {
-    code: ['Code', 'Code'],
-    name: ['한국어', 'Bahasa Indonesia'],
-    desc: ['설명', 'Keterangan'],
-  },
-}
-
-/** §4 · §5 · §6 — 표 뒤 절 */
-const TAIL_SECTIONS = [
   {
-    h: ['4. 구현 요구사항', '4. Persyaratan Implementasi'],
+    h: ['구현 요구사항 (작업지시서 §4)', 'Persyaratan Implementasi (Instruksi Kerja §4)'],
     items: [
       {
         t: [
@@ -142,24 +157,14 @@ const TAIL_SECTIONS = [
       },
       {
         t: [
-          '필터 옵션 라벨 = `en (ko)` 형식, 「검증 대기」 필터 정의 유지: `itStatus = COMPLETED AND verifyStatus ≠ ACCEPTED/REJECTED 미확정 상태` → 실제로는 `itStatus = COMPLETED AND itStatus ≠ VERIFIED` 기존 로직 그대로',
-          'Label opsi filter = format `en (ko)`; definisi filter 「menunggu verifikasi」 tetap: `itStatus = COMPLETED AND verifyStatus ≠ ACCEPTED/REJECTED (belum pasti)` → pada praktiknya logika lama `itStatus = COMPLETED AND itStatus ≠ VERIFIED` dipertahankan',
+          '필터 옵션 라벨 = `en (ko)` 형식, 「검증 대기」 필터 정의는 기존 그대로: `itStatus = COMPLETED AND itStatus ≠ VERIFIED`',
+          'Label opsi filter = format `en (ko)`; definisi filter 「menunggu verifikasi」 tetap seperti semula: `itStatus = COMPLETED AND itStatus ≠ VERIFIED`',
         ],
       },
       {
         t: [
-          '전환 규칙 안내 문구를 범례 하단에 표기(3개 언어)',
-          'Cantumkan keterangan aturan transisi di bawah legenda (3 bahasa)',
-        ],
-        sub: [
-          [
-            'COMPLETED + ACCEPTED → VERIFIED 전환(총괄팀)',
-            'COMPLETED + ACCEPTED → beralih ke VERIFIED (Tim Umum)',
-          ],
-          [
-            'COMPLETED + REJECTED → ONGOING 으로 되돌림(IT부서)',
-            'COMPLETED + REJECTED → dikembalikan ke ONGOING (Tim IT)',
-          ],
+          '전환 규칙 안내 문구를 범례 하단에 표기(위 「전환 규칙」 참조)',
+          'Cantumkan keterangan aturan transisi di bawah legenda (lihat 「Aturan Transisi」 di atas)',
         ],
       },
       {
@@ -171,7 +176,7 @@ const TAIL_SECTIONS = [
     ],
   },
   {
-    h: ['5. 제외 사항', '5. Di Luar Lingkup'],
+    h: ['제외 사항 (작업지시서 §5)', 'Di Luar Lingkup (Instruksi Kerja §5)'],
     items: [
       {
         t: ['노션 CSR DB 속성명 변경 금지', 'Dilarang mengubah nama properti DB CSR di Notion'],
@@ -184,25 +189,25 @@ const TAIL_SECTIONS = [
       },
       {
         t: [
-          '디자인 개편 금지 — 명칭·범례·툴팁만 추가',
-          'Dilarang mengubah desain — hanya menambah nama · legenda · tooltip',
+          '화면 구조·스타일은 그대로 두고 명칭·범례·툴팁만 추가',
+          'Struktur dan gaya tampilan tidak diubah — hanya menambah nama · legenda · tooltip',
         ],
       },
     ],
   },
   {
-    h: ['6. 완료 기준', '6. Kriteria Selesai'],
+    h: ['완료 기준 (작업지시서 §6)', 'Kriteria Selesai (Instruksi Kerja §6)'],
     items: [
       {
         t: [
-          '`/csr` 목록 60건 전부 신규 코드 배지로 표시, 한국어 배지 잔존 0건',
-          'Seluruh 60 item pada daftar `/csr` tampil dengan badge kode baru, badge bahasa Korea tersisa 0',
+          '`/csr` 목록 전체 건이 신규 코드 배지로 표시, 한국어 배지 잔존 0건',
+          'Semua item pada daftar `/csr` tampil dengan badge kode baru, badge bahasa Korea tersisa 0',
         ],
       },
       {
         t: [
-          '교차집계 표 합계 60건 및 각 셀 수치가 변경 전과 동일',
-          'Total tabel silang 60 item dan angka tiap sel sama seperti sebelum perubahan',
+          '교차집계 표 합계(= 목록 전체 건수) 및 각 셀 수치가 변경 전과 동일',
+          'Total tabel silang (= jumlah seluruh item daftar) dan angka tiap sel sama seperti sebelum perubahan',
         ],
       },
       {
@@ -213,8 +218,8 @@ const TAIL_SECTIONS = [
       },
       {
         t: [
-          '범례 표 2개(IT상태 4행·현업검증 5행) 및 전환 규칙 문구 3개 언어 표시 확인',
-          'Dua tabel legenda (Status IT 4 baris · Hasil Verifikasi 5 baris) dan keterangan aturan transisi dalam 3 bahasa tampil',
+          '범례 표 2개(IT상태 4행·현업검증 5행) 및 전환 규칙 문구 표시 확인',
+          'Dua tabel legenda (Status IT 4 baris · Hasil Verifikasi 5 baris) dan keterangan aturan transisi tampil',
         ],
       },
       {
@@ -230,7 +235,7 @@ const TAIL_SECTIONS = [
 
 <template>
   <DefaultLayout>
-    <section class="guide">
+    <section class="guide" :lang="lang">
       <div class="head">
         <div class="page-titles">
           <h1 class="page-title">Status Guide</h1>
@@ -251,8 +256,7 @@ const TAIL_SECTIONS = [
       <article class="asm-panel doc">
         <h2 class="asm-title">{{ t(TITLE) }}</h2>
 
-        <!-- §1 · §2 -->
-        <template v-for="sec in HEAD_SECTIONS" :key="sec.h[0]">
+        <template v-for="sec in LEAD" :key="sec.h[0]">
           <h3>{{ t(sec.h) }}</h3>
           <ul>
             <li v-for="(it, i) in sec.items" :key="i">
@@ -264,7 +268,7 @@ const TAIL_SECTIONS = [
           </ul>
         </template>
 
-        <!-- §3 — 표는 status.js 정의, 이름·설명은 토글 언어 -->
+        <!-- 상태 정의 — 표는 status.js 정의, 이름·설명은 토글 언어 -->
         <h3>{{ t(SEC3.h) }}</h3>
 
         <h4>
@@ -273,7 +277,7 @@ const TAIL_SECTIONS = [
             ><template v-else>{{ seg.text }}</template></template
           >
         </h4>
-        <div class="table-scroll">
+        <div class="table-scroll" tabindex="0" role="region" :aria-label="plain(t(SEC3.h31))">
           <CsrStatusDefTable
             :rows="IT_ROWS"
             :lang="lang"
@@ -290,7 +294,7 @@ const TAIL_SECTIONS = [
             ><template v-else>{{ seg.text }}</template></template
           >
         </h4>
-        <div class="table-scroll">
+        <div class="table-scroll" tabindex="0" role="region" :aria-label="plain(t(SEC3.h32))">
           <CsrStatusDefTable
             :rows="VERIFY_STATUS"
             :lang="lang"
@@ -306,9 +310,15 @@ const TAIL_SECTIONS = [
           <li v-for="(it, i) in SEC3.tones" :key="i">{{ t(it.t) }}</li>
         </ul>
 
-        <!-- §4 · §5 · §6 -->
-        <template v-for="sec in TAIL_SECTIONS" :key="sec.h[0]">
-          <h3>{{ t(sec.h) }}</h3>
+        <h3>{{ t(SEC3.trans.h) }}</h3>
+        <ul>
+          <li v-for="(it, i) in SEC3.trans.items" :key="i">{{ t(it) }}</li>
+        </ul>
+
+        <!-- 작업지시서 상세 — 기본 접힘 -->
+        <h3 class="fold-title">{{ t(['작업지시서 상세', 'Rincian Instruksi Kerja']) }}</h3>
+        <details v-for="sec in FOLD_SECTIONS" :key="sec.h[0]" class="fold">
+          <summary>{{ t(sec.h) }}</summary>
           <ul>
             <li v-for="(it, i) in sec.items" :key="i">
               <template v-for="(seg, k) in parts(t(it.t))" :key="k"
@@ -320,7 +330,7 @@ const TAIL_SECTIONS = [
               </ul>
             </li>
           </ul>
-        </template>
+        </details>
       </article>
     </section>
   </DefaultLayout>
@@ -341,37 +351,63 @@ const TAIL_SECTIONS = [
 }
 .doc {
   padding: 20px 24px;
+  max-width: 960px;
   font-size: 14px;
   line-height: 1.6;
+  font-variant-numeric: tabular-nums;
 }
 .doc h2 {
   margin: 0 0 16px;
 }
 .doc h3 {
-  font-size: 15px;
+  font-size: 1.125rem;
   font-weight: 700;
-  margin: 20px 0 8px;
+  margin: 24px 0 8px;
 }
 .doc h4 {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
-  color: var(--asm-fg-muted);
-  margin: 14px 0 6px;
+  color: var(--asm-fg);
+  margin: 16px 0 8px;
 }
 .doc ul {
   margin: 0 0 4px;
   padding-left: 20px;
+  max-width: 72ch;
 }
 .doc ul ul {
   margin-top: 2px;
 }
 .doc code {
-  font-size: 12.5px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--asm-fg);
   background: var(--asm-muted-20);
   padding: 1px 5px;
   border-radius: var(--asm-radius-sm);
 }
-.table-scroll {
-  overflow-x: auto;
+.table-scroll:focus-visible,
+.fold summary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--asm-primary-40);
+}
+.fold-title {
+  padding-top: 16px;
+  border-top: 1px solid var(--asm-border);
+}
+.fold {
+  border-bottom: 1px solid var(--asm-border);
+}
+.fold summary {
+  cursor: pointer;
+  padding: 10px 4px;
+  font-weight: 700;
+  border-radius: var(--asm-radius-sm);
+}
+.fold[open] summary {
+  color: var(--asm-primary);
+}
+.fold ul {
+  padding-bottom: 8px;
 }
 </style>

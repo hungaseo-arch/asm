@@ -65,22 +65,32 @@ export function getAuth() {
 async function getJwt() {
   const client = getAuth()
   if (!client) return null
-  try {
-    // ※ 프록시 메서드에 옵셔널 호출(?.())을 쓰지 마십시오 — 프로덕션 빌드가 .call(client) 로 바꾸고
-    //    better-auth 프록시는 .call 을 경로로 읽어 클라이언트 자신을 인자로 넘깁니다(2026-09-11 로그아웃 불가 원인).
-    const result = await client.token()
-    const token = result?.data?.token ?? result?.token ?? null
-    if (token) return token
-  } catch {
-    // 아래 직접 호출로 넘어갑니다.
+  // 토큰 발급이 한 번 실패하면 곧바로 AuthRequiredError 가 났습니다(2026-10-23 「로그인 불안정」).
+  // 세션이 살아 있으면 다음 시도에서 받히므로 최대 3회, 간격을 늘려 다시 받습니다.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      // ※ 프록시 메서드에 옵셔널 호출(?.())을 쓰지 마십시오 — 프로덕션 빌드가 .call(client) 로 바꾸고
+      //    better-auth 프록시는 .call 을 경로로 읽어 클라이언트 자신을 인자로 넘깁니다(2026-09-11 로그아웃 불가 원인).
+      const result = await client.token()
+      const token = result?.data?.token ?? result?.token ?? null
+      if (token) return token
+    } catch {
+      // 아래 직접 호출로 넘어갑니다.
+    }
+    try {
+      const res = await fetch(`${AUTH_URL}/token`, { credentials: 'include' })
+      if (res.ok) {
+        const token = (await res.json())?.token ?? null
+        if (token) return token
+      } else if (res.status === 401) {
+        return null // 세션이 실제로 없습니다 — 재시도해도 같습니다.
+      }
+    } catch {
+      // 네트워크 오류 — 다시 시도합니다.
+    }
+    await new Promise((r) => setTimeout(r, 400 * (attempt + 1)))
   }
-  try {
-    const res = await fetch(`${AUTH_URL}/token`, { credentials: 'include' })
-    if (!res.ok) return null
-    return (await res.json())?.token ?? null
-  } catch {
-    return null
-  }
+  return null
 }
 
 /**
